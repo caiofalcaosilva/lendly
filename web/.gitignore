@@ -1,0 +1,21 @@
+# Env files — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Ruff / mypy
+.ruff_cache/
+.mypy_cache/
+
+# Misc
+.DS_Store
