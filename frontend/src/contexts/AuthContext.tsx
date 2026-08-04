@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User } from '@/types'
 import { authService } from '@/services/auth'
 import { usersService } from '@/services/users'
+import { clearTokens, getRefreshToken, setTokens } from '@/lib/tokenStorage'
 
 interface RegisterData {
   name: string
@@ -16,6 +17,11 @@ interface RegisterData {
   neighborhood?: string
   city?: string
   state?: string
+  account_type?: 'individual' | 'business'
+  company_name?: string
+  trade_name?: string
+  cnpj?: string
+  business_category?: string
 }
 
 interface AuthContextType {
@@ -71,18 +77,16 @@ function geocodeAndPersist(zipCode: string, currentUser: User, onUpdated: (u: Us
     .catch(() => {})
 }
 
-function persist(token: string, user: User, deviceToken: string) {
-  localStorage.setItem('lendly_token', token)
+function persist(accessToken: string, refreshToken: string, user: User, deviceToken: string) {
+  setTokens(accessToken, refreshToken)
   localStorage.setItem('lendly_user', JSON.stringify(user))
   localStorage.setItem('lendly_device', deviceToken)
-  document.cookie = `lendly_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
 }
 
 function clear() {
-  localStorage.removeItem('lendly_token')
+  clearTokens()
   localStorage.removeItem('lendly_user')
   localStorage.removeItem('lendly_device')
-  document.cookie = 'lendly_token=; path=/; max-age=0'
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -120,20 +124,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { requires_2fa: true, temp_token: data.temp_token }
     }
 
-    persist(data.access_token!, data.user!, data.device_token!)
+    persist(data.access_token!, data.refresh_token!, data.user!, data.device_token!)
     setUser(data.user!)
     return { requires_2fa: false }
   }
 
   const completeTwoFactor = async (tempToken: string, code: string, trustDevice = true) => {
     const data = await authService.completeTwoFactor(tempToken, code, trustDevice)
-    persist(data.access_token, data.user, data.device_token)
+    persist(data.access_token, data.refresh_token, data.user, data.device_token)
     setUser(data.user)
   }
 
   const register = async (formData: RegisterData) => {
     const data = await authService.register(formData)
-    persist(data.access_token, data.user, data.device_token)
+    persist(data.access_token, data.refresh_token, data.user, data.device_token)
     setUser(data.user)
   }
 
@@ -143,7 +147,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
-    clear()
+    const refreshToken = getRefreshToken()
+    // clear() must wait until the logout request has actually gone out with
+    // its Authorization header — otherwise it races the axios request
+    // interceptor (which reads the token from storage) and the header ends
+    // up missing.
+    authService.logout(refreshToken).catch(() => {}).finally(() => clear())
     setUser(null)
   }
 

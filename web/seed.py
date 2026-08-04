@@ -1,14 +1,37 @@
 #!/usr/bin/env python3
 """
-Seed script: 8 users + 50 items + 20 finished loan requests + ~35 reviews.
+Seed script: 20 users (5 business) + 112 items + 3 groups + ~35 finished
+loan requests with reviews. Everything centered on Campo Grande, Recife (PE)
+and its neighboring bairros.
 Run from the repo root:  python web/seed.py
 Requires: pip install requests
 """
+
+import itertools
+import random
+import time
 
 import requests
 from datetime import datetime, timedelta, timezone
 
 BASE = "http://localhost:8000"
+
+random.seed(42)
+
+
+def post_retrying(url: str, **kwargs) -> requests.Response:
+    """POST that waits out 429s from the auth rate limiter (5/min on register & login)."""
+    while True:
+        r = requests.post(url, **kwargs)
+        if r.status_code != 429:
+            return r
+        wait = 13
+        try:
+            wait = max(wait, int(float(r.headers.get("Retry-After", wait))) + 1)
+        except (TypeError, ValueError):
+            pass
+        print(f"    ⏳ rate limited, aguardando {wait}s...")
+        time.sleep(wait)
 
 
 def iso(dt: datetime) -> str:
@@ -19,287 +42,404 @@ def past(days: int) -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
 
+# ── Neighborhoods — Campo Grande, Recife (PE) + the RPA-2/Norte bairros around it ──
+
+NEIGHBORHOODS = {
+    "Campo Grande":        {"zip": "52031-380", "lat": -8.0397, "lng": -34.9022, "street": "Rua José Osório"},
+    "Encruzilhada":        {"zip": "52041-013", "lat": -8.0409, "lng": -34.8908, "street": "Rua do Hospício"},
+    "Rosarinho":           {"zip": "52061-400", "lat": -8.0328, "lng": -34.8871, "street": "Rua Conselheiro Portela"},
+    "Arruda":              {"zip": "52070-000", "lat": -8.0294, "lng": -34.9016, "street": "Estrada do Arraial"},
+    "Fundão":              {"zip": "52060-320", "lat": -8.0342, "lng": -34.9068, "street": "Rua do Futuro"},
+    "Hipódromo":           {"zip": "52050-050", "lat": -8.0466, "lng": -34.9010, "street": "Avenida Beira Rio"},
+    "Torreão":             {"zip": "53040-000", "lat": -8.0508, "lng": -34.8971, "street": "Rua Torreão"},
+    "Água Fria":           {"zip": "52080-030", "lat": -8.0180, "lng": -34.9080, "street": "Estrada de Água Fria"},
+    "Campina do Barreto":  {"zip": "52090-005", "lat": -8.0110, "lng": -34.9040, "street": "Rua Campina do Barreto"},
+    "Peixinhos":           {"zip": "53230-540", "lat": -7.9980, "lng": -34.8730, "street": "Avenida Presidente Kennedy"},
+    "Cajueiro":            {"zip": "52100-070", "lat": -8.0230, "lng": -34.9130, "street": "Rua do Cajueiro"},
+    "Beberibe":            {"zip": "52110-030", "lat": -7.9950, "lng": -34.9100, "street": "Estrada de Beberibe"},
+}
+
+
+def addr(neighborhood: str, number: str, complement: str = None) -> dict:
+    n = NEIGHBORHOODS[neighborhood]
+    d = {
+        "zip_code": n["zip"],
+        "street": n["street"],
+        "number": number,
+        "neighborhood": neighborhood,
+        "city": "Recife",
+        "state": "PE",
+        "latitude": n["lat"],
+        "longitude": n["lng"],
+    }
+    if complement:
+        d["complement"] = complement
+    return d
+
+
 # ── Users ──────────────────────────────────────────────────────────────────────
+# idx 0-14: individuals. idx 15-19: businesses.
 
 USERS = [
-    {
-        "name": "Ana Carvalho",
-        "email": "ana.carvalho@exemplo.com",
-        "password": "senha123",
-        "phone": "(11) 98765-4321",
-        "zip_code": "01310-100",
-        "street": "Avenida Paulista",
-        "number": "1578",
-        "complement": "Apto 42",
-        "neighborhood": "Bela Vista",
-        "city": "São Paulo",
-        "state": "SP",
-    },
-    {
-        "name": "Bruno Martins",
-        "email": "bruno.martins@exemplo.com",
-        "password": "senha123",
-        "phone": "(21) 97654-3210",
-        "zip_code": "20040-020",
-        "street": "Avenida Rio Branco",
-        "number": "200",
-        "neighborhood": "Centro",
-        "city": "Rio de Janeiro",
-        "state": "RJ",
-    },
-    {
-        "name": "Camila Souza",
-        "email": "camila.souza@exemplo.com",
-        "password": "senha123",
-        "phone": "(31) 96543-2109",
-        "zip_code": "30112-010",
-        "street": "Rua dos Caetés",
-        "number": "85",
-        "neighborhood": "Centro",
-        "city": "Belo Horizonte",
-        "state": "MG",
-    },
-    {
-        "name": "Diego Ferreira",
-        "email": "diego.ferreira@exemplo.com",
-        "password": "senha123",
-        "phone": "(41) 95432-1098",
-        "zip_code": "80010-020",
-        "street": "Rua XV de Novembro",
-        "number": "450",
-        "neighborhood": "Centro",
-        "city": "Curitiba",
-        "state": "PR",
-    },
-    {
-        "name": "Elena Rocha",
-        "email": "elena.rocha@exemplo.com",
-        "password": "senha123",
-        "phone": "(51) 94321-0987",
-        "zip_code": "90010-150",
-        "street": "Rua dos Andradas",
-        "number": "1234",
-        "complement": "Sala 3",
-        "neighborhood": "Centro Histórico",
-        "city": "Porto Alegre",
-        "state": "RS",
-    },
-    {
-        "name": "Felipe Lima",
-        "email": "felipe.lima@exemplo.com",
-        "password": "senha123",
-        "phone": "(85) 93210-9876",
-        "zip_code": "60135-220",
-        "street": "Avenida Beira Mar",
-        "number": "3003",
-        "neighborhood": "Meireles",
-        "city": "Fortaleza",
-        "state": "CE",
-    },
-    {
-        "name": "Gabriela Nunes",
-        "email": "gabriela.nunes@exemplo.com",
-        "password": "senha123",
-        "phone": "(71) 92109-8765",
-        "zip_code": "40020-010",
-        "street": "Avenida Sete de Setembro",
-        "number": "777",
-        "neighborhood": "Pelourinho",
-        "city": "Salvador",
-        "state": "BA",
-    },
-    {
-        "name": "Hugo Pereira",
-        "email": "hugo.pereira@exemplo.com",
-        "password": "senha123",
-        "phone": "(62) 91098-7654",
-        "zip_code": "74015-010",
-        "street": "Avenida Goiás",
-        "number": "500",
-        "complement": "Bloco B",
-        "neighborhood": "Setor Central",
-        "city": "Goiânia",
-        "state": "GO",
-    },
+    {"name": "Ana Beatriz Lima", "email": "ana.lima@exemplo.com", "password": "senha123",
+     "phone": "(81) 98811-2233", **addr("Campo Grande", "145")},
+    {"name": "Bruno Henrique Costa", "email": "bruno.costa@exemplo.com", "password": "senha123",
+     "phone": "(81) 98722-3344", **addr("Encruzilhada", "302", "Apto 201")},
+    {"name": "Camila Ferreira Dias", "email": "camila.dias@exemplo.com", "password": "senha123",
+     "phone": "(81) 98633-4455", **addr("Rosarinho", "88")},
+    {"name": "Diego Almeida Souza", "email": "diego.souza@exemplo.com", "password": "senha123",
+     "phone": "(81) 98544-5566", **addr("Arruda", "410")},
+    {"name": "Elaine Cristina Rocha", "email": "elaine.rocha@exemplo.com", "password": "senha123",
+     "phone": "(81) 98455-6677", **addr("Fundão", "67", "Casa 2")},
+    {"name": "Fábio Nascimento Silva", "email": "fabio.silva@exemplo.com", "password": "senha123",
+     "phone": "(81) 98366-7788", **addr("Hipódromo", "230")},
+    {"name": "Gabriela Torres Melo", "email": "gabriela.melo@exemplo.com", "password": "senha123",
+     "phone": "(81) 98277-8899", **addr("Torreão", "512")},
+    {"name": "Hugo Ribeiro Santos", "email": "hugo.santos@exemplo.com", "password": "senha123",
+     "phone": "(81) 98188-9900", **addr("Água Fria", "95")},
+    {"name": "Isabela Cavalcanti Souza", "email": "isabela.souza@exemplo.com", "password": "senha123",
+     "phone": "(81) 98099-0011", **addr("Campina do Barreto", "178")},
+    {"name": "João Vitor Barros", "email": "joao.barros@exemplo.com", "password": "senha123",
+     "phone": "(81) 97911-0022", **addr("Peixinhos", "340")},
+    {"name": "Karina Duarte Alves", "email": "karina.alves@exemplo.com", "password": "senha123",
+     "phone": "(81) 97822-1133", **addr("Cajueiro", "56")},
+    {"name": "Leonardo Pinto Farias", "email": "leonardo.farias@exemplo.com", "password": "senha123",
+     "phone": "(81) 97733-2244", **addr("Beberibe", "410")},
+    {"name": "Mariana Cordeiro Lima", "email": "mariana.lima@exemplo.com", "password": "senha123",
+     "phone": "(81) 97644-3355", **addr("Campo Grande", "620", "Bloco B")},
+    {"name": "Nicolas Barbosa Melo", "email": "nicolas.melo@exemplo.com", "password": "senha123",
+     "phone": "(81) 97555-4466", **addr("Encruzilhada", "77")},
+    {"name": "Otávio Ramos Guedes", "email": "otavio.guedes@exemplo.com", "password": "senha123",
+     "phone": "(81) 97466-5577", **addr("Rosarinho", "204")},
+    # ── Business accounts (5) ──
+    {"name": "Marcelo Andrade", "email": "locadoracampogrande@exemplo.com", "password": "senha123",
+     "phone": "(81) 3222-1010", **addr("Campo Grande", "890"),
+     "account_type": "business", "company_name": "Locadora Campo Grande Ferramentas LTDA",
+     "trade_name": "Locadora Ferramentas Campo Grande", "cnpj": "10433218000193",
+     "business_category": "Locação de ferramentas e equipamentos",
+     "business_phone": "(81) 3222-1010", "business_hours": "Seg-Sex 7h30-18h, Sáb 8h-13h",
+     "website": "https://locadoracampogrande.com.br"},
+    {"name": "Patrícia Gomes", "email": "eletrofesta@exemplo.com", "password": "senha123",
+     "phone": "(81) 3223-2020", **addr("Encruzilhada", "455"),
+     "account_type": "business", "company_name": "EletroFesta Recife Eventos LTDA",
+     "trade_name": "EletroFesta Recife", "cnpj": "19600133000127",
+     "business_category": "Locação de som, iluminação e equipamentos para eventos",
+     "business_phone": "(81) 3223-2020", "business_hours": "Seg-Sáb 9h-19h",
+     "website": "https://eletrofestarecife.com.br"},
+    {"name": "Renato Lucena", "email": "bikeecia@exemplo.com", "password": "senha123",
+     "phone": "(81) 3224-3030", **addr("Rosarinho", "150"),
+     "account_type": "business", "company_name": "Bike e Cia Comércio e Locação LTDA",
+     "trade_name": "Bike & Cia Recife", "cnpj": "89083863000183",
+     "business_category": "Locação de bicicletas e equipamentos esportivos",
+     "business_phone": "(81) 3224-3030", "business_hours": "Ter-Dom 8h-17h",
+     "website": "https://bikeeciarecife.com.br"},
+    {"name": "Sandra Melo", "email": "kidsfesta@exemplo.com", "password": "senha123",
+     "phone": "(81) 3225-4040", **addr("Água Fria", "210"),
+     "account_type": "business", "company_name": "Kids Festa Brinquedos e Eventos LTDA",
+     "trade_name": "Kids Festa Brinquedos", "cnpj": "79402654000100",
+     "business_category": "Locação de brinquedos e infláveis para festas infantis",
+     "business_phone": "(81) 3225-4040", "business_hours": "Seg-Sáb 8h-18h",
+     "website": "https://kidsfestabrinquedos.com.br"},
+    {"name": "Thiago Nogueira", "email": "cozinhapro@exemplo.com", "password": "senha123",
+     "phone": "(81) 3226-5050", **addr("Arruda", "330"),
+     "account_type": "business", "company_name": "Cozinha Pro Equipamentos para Eventos LTDA",
+     "trade_name": "Cozinha Pro Equipamentos", "cnpj": "23511615000188",
+     "business_category": "Locação de equipamentos de cozinha e gastronomia",
+     "business_phone": "(81) 3226-5050", "business_hours": "Seg-Sex 8h-18h, Sáb 8h-12h",
+     "website": "https://cozinhaproeventos.com.br"},
 ]
+
+BUSINESS_START_IDX = 15
+
+# ── Photo pools ──────────────────────────────────────────────────────────────────
+
+PHOTO_POOLS = {
+    "tools": [
+        "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=600",
+        "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=600",
+        "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600",
+        "https://images.unsplash.com/photo-1560472355-536de3962603?w=600",
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600",
+        "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600",
+    ],
+    "electronics": [
+        "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=600",
+        "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600",
+        "https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=600",
+        "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600",
+        "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600",
+        "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600",
+        "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=600",
+    ],
+    "sports": [
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600",
+        "https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=600",
+        "https://images.unsplash.com/photo-1611251135345-18c56206b863?w=600",
+        "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600",
+        "https://images.unsplash.com/photo-1547447134-cd3f5c716030?w=600",
+        "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600",
+    ],
+    "garden": [
+        "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600",
+        "https://images.unsplash.com/photo-1547447134-cd3f5c716030?w=600",
+    ],
+    "kitchen": [
+        "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600",
+        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600",
+        "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600",
+        "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=600",
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600",
+        "https://images.unsplash.com/photo-1593759608142-e9b58f000a53?w=600",
+    ],
+    "books": [
+        "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600",
+        "https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?w=600",
+        "https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=600",
+    ],
+    "toys": [
+        "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600",
+        "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=600",
+        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600",
+        "https://images.unsplash.com/photo-1611251135345-18c56206b863?w=600",
+    ],
+    "clothing": [
+        "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=600",
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600",
+        "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600",
+        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600",
+    ],
+    "furniture": [
+        "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600",
+        "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600",
+        "https://images.unsplash.com/photo-1586105449897-20b5efeb3233?w=600",
+    ],
+    "other": [
+        "https://images.unsplash.com/photo-1558171813-7cb24b1a1570?w=600",
+        "https://images.unsplash.com/photo-1446776709462-d6b525b9c0e0?w=600",
+        "https://images.unsplash.com/photo-1586105449897-20b5efeb3233?w=600",
+        "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600",
+    ],
+}
+_photo_cycles = {cat: itertools.cycle(pool) for cat, pool in PHOTO_POOLS.items()}
+
+
+def photo(category: str) -> list:
+    return [next(_photo_cycles[category])]
+
+
+def item(owner_idx, title, description, category, availability_type, daily_rate=None, subcategory=None):
+    d = {
+        "owner_idx": owner_idx,
+        "title": title,
+        "description": description,
+        "category": category,
+        "availability_type": availability_type,
+        "photos": photo(category),
+    }
+    if subcategory:
+        d["subcategory"] = subcategory
+    if daily_rate is not None:
+        d["daily_rate"] = daily_rate
+    return d
+
 
 # ── Items ──────────────────────────────────────────────────────────────────────
-# Items are distributed round-robin across users:
-#   item[i] is owned by user[i % 8]
+# 45 from individuals (3 each, idx 0-14) + 67 from the 5 businesses (idx 15-19).
 
 ITEMS = [
-    # Tools (0–6) → users 0,1,2,3,4,5,6
-    {"title": "Furadeira Bosch 650W com maleta", "description": "Furadeira de impacto em ótimo estado, acompanha 10 brocas e maleta original.", "category": "tools", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1504148455328-c376907d081c?w=600"]},
-    {"title": "Serra circular DeWalt 7 ¼\"", "description": "Serra profissional, usada apenas 3 vezes. Inclui disco diamantado.", "category": "tools", "availability_type": "paid", "daily_rate": 35.00, "photos": ["https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=600"]},
-    {"title": "Nível a laser Tramontina", "description": "Nível laser com tripé. Perfeito para instalações e reformas.", "category": "tools", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=600"]},
-    {"title": "Parafusadeira a bateria Makita", "description": "2 baterias, carregador e estojo. Carga dura o dia todo.", "category": "tools", "availability_type": "paid", "daily_rate": 25.00, "photos": ["https://images.unsplash.com/photo-1560472355-536de3962603?w=600"]},
-    {"title": "Esmerilhadeira angular 4½\"", "description": "Usada uma vez, com disco de corte e disco de desbaste extras.", "category": "tools", "availability_type": "paid", "daily_rate": 20.00, "photos": ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600"]},
-    {"title": "Betoneira elétrica 120 L", "description": "Ótima para pequenas obras. Capacidade 120 litros. Retirada no local.", "category": "tools", "availability_type": "paid", "daily_rate": 80.00, "photos": ["https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600"]},
-    {"title": "Lixadeira orbital 5\" Black+Decker", "description": "Com lixa de diferentes granulações incluídas.", "category": "tools", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600"]},
-    # Electronics (7–13) → users 7,0,1,2,3,4,5
-    {"title": "Projetor Epson 3500 lúmens", "description": "Full HD, HDMI. Tela de projeção de 2m inclusa. Ideal para eventos e apresentações.", "category": "electronics", "availability_type": "paid", "daily_rate": 120.00, "photos": ["https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=600"]},
-    {"title": "Caixa de som JBL Boombox 2", "description": "Som potente, bateria para 24h. Perfeita para festas ao ar livre.", "category": "electronics", "availability_type": "paid", "daily_rate": 60.00, "photos": ["https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600"]},
-    {"title": "Drone DJI Mini 3 com câmera 4K", "description": "Voo de até 38 min, câmera 4K. Inclui 2 baterias e controle.", "category": "electronics", "availability_type": "paid", "daily_rate": 150.00, "photos": ["https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=600"]},
-    {"title": "Câmera mirrorless Sony A6400", "description": "Com lente kit 16-50mm. Perfeita para eventos e fotos profissionais.", "category": "electronics", "availability_type": "paid", "daily_rate": 200.00, "photos": ["https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600"]},
-    {"title": "Notebook gamer para fins específicos", "description": "RTX 3060, 16GB RAM, SSD 512GB. Para uso em design ou edição de vídeo.", "category": "electronics", "availability_type": "paid", "daily_rate": 100.00, "photos": ["https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600"]},
-    {"title": "iPad Pro 12.9\" com Apple Pencil", "description": "Para designers e artistas. Inclui case e carregador.", "category": "electronics", "availability_type": "paid", "daily_rate": 80.00, "photos": ["https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600"]},
-    {"title": "Ring Light 18\" com tripé", "description": "3 temperaturas de cor, controle remoto. Perfeita para gravações e fotos.", "category": "electronics", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=600"]},
-    # Sports (14–19) → users 6,7,0,1,2,3
-    {"title": "Bicicleta de montanha Caloi 29\"", "description": "21 velocidades, freio a disco. Em excelente estado. Capacete incluso.", "category": "sports", "availability_type": "paid", "daily_rate": 45.00, "photos": ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600"]},
-    {"title": "Prancha de surf 6'2\"", "description": "Shape tri-fin para ondas médias. Com capa protetora.", "category": "sports", "availability_type": "paid", "daily_rate": 30.00, "photos": ["https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=600"]},
-    {"title": "Kit de tênis de mesa completo", "description": "2 raquetes, 6 bolinhas e rede retrátil para mesa. Pronto para jogar.", "category": "sports", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1611251135345-18c56206b863?w=600"]},
-    {"title": "Kayak inflável 2 lugares", "description": "Com remos, bomba de ar e bolsa de transporte. Ideal para rios calmos e lagoas.", "category": "sports", "availability_type": "paid", "daily_rate": 70.00, "photos": ["https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600"]},
-    {"title": "Skate completo profissional", "description": "Shape 8.0, rodas Bones, rolamentos Reds. Para skatistas intermediários.", "category": "sports", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1547447134-cd3f5c716030?w=600"]},
-    {"title": "Kit de camping completo (2 pessoas)", "description": "Barraca 2 lugares, 2 sacos de dormir, colchão inflável. Para 3 noites.", "category": "sports", "availability_type": "paid", "daily_rate": 55.00, "photos": ["https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600"]},
-    # Garden (20–23) → users 4,5,6,7
-    {"title": "Roçadeira elétrica 1200W", "description": "Corta grama e ervas daninhas. Fio de nylon extra incluso.", "category": "garden", "availability_type": "paid", "daily_rate": 30.00, "photos": ["https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600"]},
-    {"title": "Cortador de grama a gasolina", "description": "Motor 160cc, corte regulável. Para gramados de até 500m².", "category": "garden", "availability_type": "paid", "daily_rate": 50.00, "photos": ["https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600"]},
-    {"title": "Mangueira de jardim 30m + carrinho", "description": "Com bico regulável e suporte enrolador. Ótima para jardins e lavagens.", "category": "garden", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600"]},
-    {"title": "Motosserra elétrica 35 cm", "description": "Para poda de árvores e corte de lenha. Inclui equipamentos de proteção.", "category": "garden", "availability_type": "paid", "daily_rate": 40.00, "photos": ["https://images.unsplash.com/photo-1547447134-cd3f5c716030?w=600"]},
-    # Kitchen (24–29) → users 0,1,2,3,4,5
-    {"title": "Batedeira planetária KitchenAid", "description": "Tigela 4,8L, 10 velocidades. Acessórios: gancho, batedor e raquete.", "category": "kitchen", "availability_type": "paid", "daily_rate": 50.00, "photos": ["https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600"]},
-    {"title": "Chafing dish elétrico 3 cubas", "description": "Para manter alimentos quentes em eventos. Capacidade total 15L.", "category": "kitchen", "availability_type": "paid", "daily_rate": 45.00, "photos": ["https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600"]},
-    {"title": "Máquina de waffle e crepe", "description": "2 em 1. Placas antiaderentes removíveis. Perfeita para brunch e festas.", "category": "kitchen", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600"]},
-    {"title": "Sorveteira elétrica 1,5L", "description": "Faz sorvete em 20 minutos. Tigela interna para congelar antecipadamente.", "category": "kitchen", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=600"]},
-    {"title": "Cervejeira/adega 48 latas", "description": "Temperatura ajustável. Para festas e churrasco. Silenciosa.", "category": "kitchen", "availability_type": "paid", "daily_rate": 35.00, "photos": ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600"]},
-    {"title": "Air fryer Philips 5,7L", "description": "Capacidade família. Tira-gosto e almoços saudáveis. Limpa e conservada.", "category": "kitchen", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1593759608142-e9b58f000a53?w=600"]},
-    # Books (30–33) → users 6,7,0,1
-    {"title": "Coleção Harry Potter (7 volumes)", "description": "Edição brasileira Rocco, capa dura. Todos em ótimo estado.", "category": "books", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600"]},
-    {"title": "Curso de Direito Civil — Flávio Tartuce (5 vols)", "description": "Edição 2022. Ideais para concursos e faculdade.", "category": "books", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600"]},
-    {"title": "Box Senhor dos Anéis (3 volumes)", "description": "Tradução Lenita Esteves, Martins Fontes. Conservados.", "category": "books", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?w=600"]},
-    {"title": "Livros de culinária (lote 8 livros)", "description": "Receitas brasileiras, italiana, japonesa e vegana. Todos com fotos.", "category": "books", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=600"]},
-    # Toys (34–37) → users 2,3,4,5
-    {"title": "Lego Technic Bugatti Chiron (3.599 peças)", "description": "Conjunto completo, já montado uma vez e desmontado com cuidado.", "category": "toys", "availability_type": "paid", "daily_rate": 25.00, "photos": ["https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600"]},
-    {"title": "Videogame PlayStation 5 com 2 controles", "description": "Com jogos FIFA 24, God of War Ragnarök e Spider-Man 2.", "category": "toys", "availability_type": "paid", "daily_rate": 80.00, "photos": ["https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=600"]},
-    {"title": "Nintendo Switch OLED com 5 jogos", "description": "Mario Kart 8, Zelda BOTW, Mario Odyssey, Animal Crossing e Splatoon 3.", "category": "toys", "availability_type": "paid", "daily_rate": 60.00, "photos": ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600"]},
-    {"title": "Mesa de sinuca mini 5 pés", "description": "Para ambientes internos. Completa com tacos, bolas e triângulo.", "category": "toys", "availability_type": "paid", "daily_rate": 40.00, "photos": ["https://images.unsplash.com/photo-1611251135345-18c56206b863?w=600"]},
-    # Clothing (38–41) → users 6,7,0,1
-    {"title": "Fantasia Mulher Maravilha adulto M/G", "description": "Alta qualidade, usada 1 vez. Acompanha tiara, pulseiras e laço.", "category": "clothing", "availability_type": "paid", "daily_rate": 30.00, "photos": ["https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=600"]},
-    {"title": "Smoking completo masculino (P/M)", "description": "Paletó, calça e gravata borboleta. Ideal para formaturas e casamentos.", "category": "clothing", "availability_type": "paid", "daily_rate": 70.00, "photos": ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600"]},
-    {"title": "Vestido de festa longo dourado (38/40)", "description": "Um ombro só, com bordados. Perfeito para eventos sociais.", "category": "clothing", "availability_type": "paid", "daily_rate": 55.00, "photos": ["https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600"]},
-    {"title": "Fantasia Astronauta criança (4-8 anos)", "description": "Com capacete, luvas e mochila simulada. Ótima qualidade.", "category": "clothing", "availability_type": "paid", "daily_rate": 20.00, "photos": ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600"]},
-    # Furniture (42–45) → users 2,3,4,5
-    {"title": "Mesa de jantar com 6 cadeiras", "description": "Em madeira maciça, 1,80m. Disponível para eventos e festas. Retirada no local.", "category": "furniture", "availability_type": "paid", "daily_rate": 90.00, "photos": ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"]},
-    {"title": "Cadeiras dobráveis (lote 20 un.)", "description": "Alumínio, suporte 120kg. Ideais para festas, eventos e confraternizações.", "category": "furniture", "availability_type": "paid", "daily_rate": 60.00, "photos": ["https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600"]},
-    {"title": "Mesa bistrô alta + 4 banquetas", "description": "Estilo industrial. Perfeita para happy hour e eventos externos.", "category": "furniture", "availability_type": "paid", "daily_rate": 50.00, "photos": ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"]},
-    {"title": "Berço portátil (0-3 anos)", "description": "Desmontável, com colchonete lavável. Em excelente estado de conservação.", "category": "furniture", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1586105449897-20b5efeb3233?w=600"]},
-    # Other (46–49) → users 6,7,0,1
-    {"title": "Máquina de costura Singer Facilita", "description": "14 pontos, com acessórios. Ótima para iniciantes e reparos.", "category": "other", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1558171813-7cb24b1a1570?w=600"]},
-    {"title": "Telescópio refrator 70mm", "description": "Com tripé, ocular 10mm e 25mm. Para observação lunar e planetária.", "category": "other", "availability_type": "paid", "daily_rate": 45.00, "photos": ["https://images.unsplash.com/photo-1446776709462-d6b525b9c0e0?w=600"]},
-    {"title": "Carrinho de bebê Burigotto duplo", "description": "Para gêmeos ou irmãos próximos. Dobrável, com mosquiteiro.", "category": "other", "availability_type": "free", "photos": ["https://images.unsplash.com/photo-1586105449897-20b5efeb3233?w=600"]},
-    {"title": "Andaime tubular 3m (2 módulos)", "description": "Capacidade 200kg. Ideal para pintura de fachadas e serviços em altura.", "category": "other", "availability_type": "paid", "daily_rate": 65.00, "photos": ["https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600"]},
+    # ── Ana Beatriz Lima (0) — tools
+    item(0, "Furadeira de impacto Bosch 650W", "Furadeira de impacto em ótimo estado, acompanha maleta e brocas variadas.", "tools", "free", subcategory="electric"),
+    item(0, "Jogo de chaves de fenda e Phillips (32 peças)", "Estojo completo, ideal para pequenos reparos domésticos.", "tools", "free", subcategory="manual"),
+    item(0, "Trena a laser 40m", "Precisão de até 2mm, ótima para medições em reformas.", "tools", "paid", 15.00, subcategory="measuring"),
+
+    # ── Bruno Henrique Costa (1) — electronics
+    item(1, "Caixa de som Bluetooth JBL Charge 5", "Autonomia de 20h, à prova d'água. Ótima para praia e churrasco.", "electronics", "paid", 40.00, subcategory="audio_video"),
+    item(1, "Notebook Dell Inspiron para trabalhos", "8GB RAM, SSD 256GB. Bom para textos, planilhas e reuniões online.", "electronics", "paid", 70.00, subcategory="computers"),
+    item(1, "Câmera GoPro Hero 11", "Com case à prova d'água, bastão e 2 baterias extras.", "electronics", "paid", 50.00, subcategory="cameras"),
+
+    # ── Camila Ferreira Dias (2) — sports
+    item(2, "Bicicleta urbana aro 29", "21 marchas, ótima para pedalar pela orla do Recife.", "sports", "paid", 35.00, subcategory="cycling"),
+    item(2, "Kit de yoga (tapete + blocos + faixa)", "Tapete antiderrapante, 2 blocos e faixa elástica.", "sports", "free", subcategory="fitness"),
+    item(2, "Barraca de camping 4 pessoas", "Impermeável, fácil montagem, ideal para trilhas de fim de semana.", "sports", "paid", 45.00, subcategory="camping"),
+
+    # ── Diego Almeida Souza (3) — garden
+    item(3, "Aparador de grama a bateria", "2 baterias inclusas, ótimo para gramados pequenos e médios.", "garden", "free", subcategory="gardening"),
+    item(3, "Regador de jardim + mangueira 20m", "Mangueira flexível com bico regulável e suporte enrolador.", "garden", "free", subcategory="gardening"),
+    item(3, "Kit de jardinagem (pá, ancinho, tesoura)", "Ferramentas manuais completas para cuidar de hortas e jardins.", "garden", "free", subcategory="gardening"),
+
+    # ── Elaine Cristina Rocha (4) — kitchen
+    item(4, "Liquidificador industrial Philips Walita", "Copo de 2L, motor potente para vitaminas e sucos em quantidade.", "kitchen", "paid", 20.00, subcategory="appliances"),
+    item(4, "Jogo de panelas antiaderentes (5 peças)", "Conjunto completo, cabos que não esquentam.", "kitchen", "free", subcategory="utensils"),
+    item(4, "Jogo de taças de cristal (12 unidades)", "Perfeitas para jantares e comemorações especiais.", "kitchen", "free", subcategory="dishware"),
+
+    # ── Fábio Nascimento Silva (5) — books
+    item(5, "Coleção Percy Jackson (5 volumes)", "Edição brasileira, capa dura, em ótimo estado de conservação.", "books", "free", subcategory="fiction"),
+    item(5, "Livros de programação Python e JS (lote 6)", "Ideais para quem está começando em desenvolvimento web.", "books", "free", subcategory="non_fiction"),
+    item(5, "Gibis Turma da Mônica (30 edições)", "Coleção variada, ótima para crianças em fase de leitura.", "books", "free", subcategory="children"),
+
+    # ── Gabriela Torres Melo (6) — toys
+    item(6, "Patinete elétrico infantil", "Velocidade limitada, bateria dura cerca de 1h30 de uso contínuo.", "toys", "paid", 15.00, subcategory="outdoor"),
+    item(6, "Jogo Banco Imobiliário + Detetive (combo)", "Peças completas, ótimo para tardes em família.", "toys", "free", subcategory="board_games"),
+    item(6, "Blocos de montar educativos (500 peças)", "Compatível com as principais marcas do mercado.", "toys", "free", subcategory="educational"),
+
+    # ── Hugo Ribeiro Santos (7) — clothing
+    item(7, "Terno social completo (tam M)", "Paletó, calça e gravata. Ideal para formaturas e casamentos.", "clothing", "paid", 40.00),
+    item(7, "Fantasia de super-herói infantil (Homem-Aranha)", "Tamanho 6-8 anos, com máscara. Usada apenas uma vez.", "clothing", "paid", 20.00, subcategory="costumes"),
+    item(7, "Jaqueta corta-vento para trilha (tam G)", "Impermeável, leve, ótima para dias de chuva na trilha.", "clothing", "free", subcategory="sportswear"),
+
+    # ── Isabela Cavalcanti Souza (8) — furniture
+    item(8, "Mesa dobrável + 4 cadeiras para eventos", "Fácil transporte, ideal para festas e reuniões de família.", "furniture", "paid", 50.00, subcategory="living_room"),
+    item(8, "Berço portátil com colchonete", "Desmontável, colchonete lavável, em ótimo estado.", "furniture", "free", subcategory="bedroom"),
+    item(8, "Estante de livros modular", "3 módulos empilháveis, fácil de montar e desmontar.", "furniture", "free", subcategory="living_room"),
+
+    # ── João Vitor Barros (9) — other
+    item(9, "Máquina de costura portátil", "14 pontos, ótima para iniciantes e pequenos reparos.", "other", "free"),
+    item(9, "Kit de ferramentas para pesca (varas + molinete)", "2 varas, molinetes e caixa de iscas. Pronto para pescaria.", "other", "paid", 20.00),
+    item(9, "Carrinho de bebê Burigotto", "Dobrável, com cesto e capota removível.", "other", "free"),
+
+    # ── Karina Duarte Alves (10) — tools
+    item(10, "Serra tico-tico elétrica", "Com lâminas variadas, ótima para cortes precisos em madeira.", "tools", "paid", 18.00, subcategory="electric"),
+    item(10, "Escada de alumínio 5 degraus", "Leve e resistente, suporta até 120kg.", "tools", "paid", 15.00, subcategory="manual"),
+    item(10, "Nível a laser com tripé", "Projeção em linha cruzada, ótimo para instalações.", "tools", "free", subcategory="measuring"),
+
+    # ── Leonardo Pinto Farias (11) — electronics
+    item(11, "Projetor portátil Full HD", "Ótimo para sessões de cinema em casa ou apresentações.", "electronics", "paid", 60.00, subcategory="audio_video"),
+    item(11, "Console PlayStation 4 + 2 controles", "Com 3 jogos inclusos. Testado e funcionando perfeitamente.", "electronics", "paid", 40.00, subcategory="games"),
+    item(11, "Tablet Samsung Galaxy Tab", "Tela 10.5\", ótimo para estudos e leitura.", "electronics", "paid", 25.00, subcategory="computers"),
+
+    # ── Mariana Cordeiro Lima (12) — sports
+    item(12, "Prancha de stand up paddle (SUP)", "Inflável, com bomba e remo. Ideal para o Rio Capibaribe.", "sports", "paid", 50.00, subcategory="water_sports"),
+    item(12, "Kit de halteres ajustáveis", "De 2 a 20kg por unidade, ótimo para treino em casa.", "sports", "free", subcategory="fitness"),
+    item(12, "Rede de vôlei de praia + bola", "Rede com hastes portáteis, fácil montagem na areia.", "sports", "free"),
+
+    # ── Nicolas Barbosa Melo (13) — kitchen
+    item(13, "Air fryer Mondial 4L", "Pouco usada, ideal para refeições rápidas e saudáveis.", "kitchen", "free", subcategory="appliances"),
+    item(13, "Máquina de café expresso", "Com espumador de leite, faz cappuccino e café coado.", "kitchen", "paid", 25.00, subcategory="appliances"),
+    item(13, "Jogo de facas profissionais", "6 facas com bloco de madeira, fio de qualidade.", "kitchen", "free", subcategory="utensils"),
+
+    # ── Otávio Ramos Guedes (14) — garden
+    item(14, "Motosserra elétrica", "35cm de espada, ótima para poda de árvores e corte de lenha.", "garden", "paid", 35.00, subcategory="gardening"),
+    item(14, "Vasos grandes para plantas (kit 4 unidades)", "Cerâmica resistente, ótimos para plantas de médio porte.", "garden", "free"),
+    item(14, "Cortador de grama manual", "Sem motor, silencioso, ideal para gramados pequenos.", "garden", "free", subcategory="gardening"),
+
+    # ═══ Locadora Ferramentas Campo Grande (15) — tools ═══
+    item(15, "Furadeira de impacto profissional Bosch GSB", "Uso profissional, com maleta e jogo de brocas completo.", "tools", "paid", 30.00, subcategory="electric"),
+    item(15, "Betoneira elétrica 400L", "Ideal para obras de médio porte. Retirada no local.", "tools", "paid", 90.00),
+    item(15, "Compressor de ar 100L", "Motor 2HP, ótimo para pintura e ferramentas pneumáticas.", "tools", "paid", 60.00),
+    item(15, "Gerador a gasolina 5000W", "Autonomia de 8h, ideal para obras e eventos sem energia.", "tools", "paid", 100.00),
+    item(15, "Andaime tubular completo (3m)", "2 módulos, capacidade 200kg. Ideal para fachadas.", "tools", "paid", 65.00),
+    item(15, "Máquina de solda inversora", "220V, com máscara de proteção e eletrodos inclusos.", "tools", "paid", 45.00, subcategory="electric"),
+    item(15, "Lavadora de alta pressão profissional", "1900 PSI, ótima para limpeza de fachadas e calçadas.", "tools", "paid", 40.00, subcategory="electric"),
+    item(15, "Cortadora de piso/azulejo elétrica", "Disco diamantado incluso, corte de precisão.", "tools", "paid", 35.00, subcategory="electric"),
+    item(15, "Rompedor pneumático (martelete)", "Para quebra de concreto e alvenaria. Uso profissional.", "tools", "paid", 55.00, subcategory="electric"),
+    item(15, "Escada extensiva de alumínio 7m", "Dupla função, suporta até 150kg.", "tools", "paid", 25.00, subcategory="manual"),
+    item(15, "Parafusadeira de impacto industrial", "Torque alto, ideal para montagens estruturais.", "tools", "paid", 30.00, subcategory="electric"),
+    item(15, "Serra mármore profissional", "Disco diamantado incluso, corte preciso em granito e mármore.", "tools", "paid", 40.00, subcategory="electric"),
+    item(15, "Compactador de solo (placa vibratória)", "Ideal para calçamento e preparação de terrenos.", "tools", "paid", 70.00),
+    item(15, "Roçadeira costal a gasolina", "Motor 2 tempos, ótima para terrenos grandes.", "tools", "paid", 40.00, subcategory="gardening"),
+    item(15, "Kit de andaime + escora para laje", "Conjunto completo para concretagem de lajes pequenas.", "tools", "paid", 80.00),
+
+    # ═══ EletroFesta Recife (16) — electronics / events ═══
+    item(16, "Sistema de som completo para festas", "2 caixas ativas 15\", mesa de som e 2 microfones.", "electronics", "paid", 150.00, subcategory="audio_video"),
+    item(16, "Kit iluminação de LED para eventos", "8 refletores móveis com controle DMX.", "electronics", "paid", 100.00, subcategory="audio_video"),
+    item(16, "Projetor + tela 3m para eventos corporativos", "Full HD, 4000 lumens. Ótimo para palestras e workshops.", "electronics", "paid", 120.00, subcategory="audio_video"),
+    item(16, "Gerador silencioso 2000W para eventos externos", "Baixo ruído, ideal para casamentos ao ar livre.", "electronics", "paid", 90.00),
+    item(16, "Máquina de fumaça para festas", "Com líquido incluso para 2 horas de uso contínuo.", "electronics", "paid", 50.00),
+    item(16, "Caixa de som JBL PartyBox 310", "Bateria de longa duração, entrada para microfone e violão.", "electronics", "paid", 70.00, subcategory="audio_video"),
+    item(16, "Kit microfone sem fio duplo", "Alcance de até 50m, ótimo para casamentos e formaturas.", "electronics", "paid", 40.00, subcategory="audio_video"),
+    item(16, "Painel de LED para festas (backdrop)", "3x2m, RGB programável, com controle remoto.", "electronics", "paid", 130.00),
+    item(16, "Karaokê completo com telão", "Mais de 10 mil músicas, 2 microfones sem fio.", "electronics", "paid", 90.00, subcategory="audio_video"),
+    item(16, "Pista de dança de LED 3x3m", "Módulos que se encaixam, efeito impressionante para festas.", "electronics", "paid", 200.00),
+    item(16, "Estrutura de tenda 6x6m para eventos", "Impermeável, fácil montagem, ideal para chuva ou sol.", "electronics", "paid", 180.00),
+    item(16, "Refletores de palco LED (kit 4 unidades)", "RGB com controle DMX, ótimos para shows e eventos.", "electronics", "paid", 80.00, subcategory="audio_video"),
+    item(16, "Rack de DJ completo com mixer", "2 CDJs e mixer profissional, pronto para uso.", "electronics", "paid", 160.00, subcategory="audio_video"),
+
+    # ═══ Bike & Cia Recife (17) — sports ═══
+    item(17, "Bicicleta speed profissional", "Quadro em alumínio, 18 marchas, ótima para longas distâncias.", "sports", "paid", 55.00, subcategory="cycling"),
+    item(17, "Bicicleta elétrica urbana", "Autonomia de 40km, ótima para o dia a dia na cidade.", "sports", "paid", 70.00, subcategory="cycling"),
+    item(17, "Kayak caiaque individual", "Estável e leve, ideal para o Rio Capibaribe.", "sports", "paid", 60.00, subcategory="water_sports"),
+    item(17, "Prancha de surf 6'0\"", "Shape tri-fin, ótima para ondas médias. Com capa protetora.", "sports", "paid", 40.00, subcategory="water_sports"),
+    item(17, "Kit completo de mergulho", "Máscara, snorkel e nadadeiras. Vários tamanhos disponíveis.", "sports", "paid", 30.00, subcategory="water_sports"),
+    item(17, "Bike infantil aro 20", "Com rodinhas de apoio removíveis, ótima para crianças de 6-9 anos.", "sports", "paid", 25.00, subcategory="cycling"),
+    item(17, "Patins inline profissional", "Vários números disponíveis, com kit de proteção incluso.", "sports", "paid", 30.00, subcategory="fitness"),
+    item(17, "Skate longboard", "Ótimo para deslocamento urbano e passeios na orla.", "sports", "paid", 25.00),
+    item(17, "Kit de escalada indoor", "Arnês, cordas e mosquetões. Equipamento certificado.", "sports", "paid", 45.00, subcategory="fitness"),
+    item(17, "Barraca de camping 6 pessoas", "Espaçosa, impermeável, ideal para famílias e grupos.", "sports", "paid", 65.00, subcategory="camping"),
+    item(17, "Caiaque caribenho duplo", "Estável, ótimo para passeios em dupla no rio.", "sports", "paid", 80.00, subcategory="water_sports"),
+    item(17, "Kit de pesca esportiva completo", "2 varas, molinetes, caixa de iscas e apetrechos.", "sports", "paid", 35.00),
+    item(17, "Bicicleta de montanha full suspension", "Aro 29, suspensão dianteira e traseira. Para trilhas pesadas.", "sports", "paid", 75.00, subcategory="cycling"),
+
+    # ═══ Kids Festa Brinquedos (18) — toys / clothing ═══
+    item(18, "Pula-pula inflável (cama elástica)", "4x4m, com rede de proteção. Inclui compressor.", "toys", "paid", 180.00, subcategory="outdoor"),
+    item(18, "Piscina de bolinhas grande", "2x2m, com mais de 1000 bolinhas coloridas.", "toys", "paid", 120.00, subcategory="outdoor"),
+    item(18, "Fantasia de princesa infantil (kit 5 modelos)", "Tamanhos variados de 2 a 8 anos, com acessórios.", "clothing", "paid", 30.00, subcategory="costumes"),
+    item(18, "Fantasia de super-herói (kit 5 modelos)", "Homem-Aranha, Batman, Super-Homem e outros. Tam. infantil.", "clothing", "paid", 30.00, subcategory="costumes"),
+    item(18, "Mesa de air hockey infantil", "Compacta, elétrica, ótima para festas e eventos.", "toys", "paid", 60.00, subcategory="board_games"),
+    item(18, "Casa de boneca infantil grande", "Em MDF, 2 andares, com móveis inclusos.", "toys", "paid", 50.00, subcategory="educational"),
+    item(18, "Brinquedos educativos Montessori (kit)", "10 peças variadas, estimulam coordenação e raciocínio.", "toys", "free", subcategory="educational"),
+    item(18, "Escorregador inflável", "3m de altura, com piscina de recepção. Inclui compressor.", "toys", "paid", 150.00, subcategory="outdoor"),
+    item(18, "Kit de fantoches para teatro infantil", "12 personagens variados, com teatrinho dobrável.", "toys", "free", subcategory="educational"),
+    item(18, "Mini cozinha de brinquedo", "Com pia, fogão e utensílios. Ótima para brincadeiras de faz de conta.", "toys", "paid", 40.00, subcategory="educational"),
+    item(18, "Carrinho elétrico infantil", "Bateria recarregável, controle remoto para os pais.", "toys", "paid", 70.00, subcategory="outdoor"),
+    item(18, "Piscina inflável com escorregador", "3m, ótima para dias quentes no quintal.", "toys", "paid", 90.00, subcategory="outdoor"),
+    item(18, "Fantasias temáticas para festa junina (kit 10 unidades)", "Tamanhos variados, prontas para a quadrilha.", "clothing", "paid", 60.00, subcategory="costumes"),
+
+    # ═══ Cozinha Pro Equipamentos (19) — kitchen ═══
+    item(19, "Chafing dish elétrico completo (3 cubas)", "Mantém alimentos quentes por horas. Capacidade 15L.", "kitchen", "paid", 45.00, subcategory="appliances"),
+    item(19, "Máquina de algodão doce", "Pronta para uso, inclui bastões e açúcar colorido.", "kitchen", "paid", 50.00, subcategory="appliances"),
+    item(19, "Máquina de pipoca profissional", "Estilo cinema, inclui milho e óleo para 2h de uso.", "kitchen", "paid", 55.00, subcategory="appliances"),
+    item(19, "Churrasqueira a gás portátil", "3 queimadores, ótima para eventos ao ar livre.", "kitchen", "paid", 60.00),
+    item(19, "Forno de pizza a lenha portátil", "Assa uma pizza em até 90 segundos.", "kitchen", "paid", 80.00),
+    item(19, "Geladeira/frigobar para eventos", "80L, ótima para manter bebidas geladas em festas.", "kitchen", "paid", 40.00, subcategory="appliances"),
+    item(19, "Batedeira industrial 20L", "Ideal para confeitaria e produção em grande escala.", "kitchen", "paid", 70.00, subcategory="appliances"),
+    item(19, "Fritadeira industrial de imersão", "Capacidade 10L, ótima para eventos e food trucks.", "kitchen", "paid", 65.00, subcategory="appliances"),
+    item(19, "Cafeteira industrial para eventos", "Prepara até 100 xícaras por hora.", "kitchen", "paid", 45.00, subcategory="appliances"),
+    item(19, "Espetos e grelha para churrasco (kit completo)", "20 espetos, grelha grande e pegadores.", "kitchen", "paid", 30.00, subcategory="utensils"),
+    item(19, "Liquidificador industrial de alta rotação", "Copo de 4L, motor potente para grandes volumes.", "kitchen", "paid", 35.00, subcategory="appliances"),
+    item(19, "Fondue elétrico completo (kit 6 pessoas)", "Com garfos e rechaud elétrico. Ideal para jantares especiais.", "kitchen", "paid", 40.00, subcategory="utensils"),
+    item(19, "Sanduicheira e chapa industrial", "Ótima para lanches em grande quantidade em eventos.", "kitchen", "paid", 35.00, subcategory="appliances"),
 ]
 
-# ── Loan + Review scenarios ────────────────────────────────────────────────────
-# Each tuple:
-#   (requester_idx, item_idx, days_ago_start, duration_days,
-#    review_by_requester, review_by_owner)
-#
-# review_by_* is None (no review) or (rating, comment)
-# item[i] is owned by user[i % 8]  →  requester_idx must != item_idx % 8
+# ── Groups ─────────────────────────────────────────────────────────────────────
+# member_idxs[0] is the creator.
 
-LOAN_SCENARIOS = [
-    # requester=1(Bruno)  item=0(Ana's furadeira)
-    (1, 0, 60, 3,
-     (5, "Furadeira em perfeito estado e proprietária super atenciosa. Resolveu minha reforma com folga!"),
-     (5, "Bruno devolveu no prazo e com o item impecável. Recomendo sem hesitar!")),
-
-    # requester=2(Camila)  item=1(Bruno's serra)
-    (2, 1, 55, 2,
-     (4, "Serra funcionou muito bem, só havia um pequeno arranhão não mencionado. No geral, ótima experiência."),
-     (5, "Camila cuidou da serra como se fosse dela. Devolveu limpa e no prazo combinado.")),
-
-    # requester=3(Diego)  item=2(Camila's nível)
-    (3, 2, 50, 1,
-     (5, "Nível calibrado e funcionando perfeitamente. Camila foi muito solícita no combinado de retirada."),
-     (5, "Diego foi pontual na retirada e na devolução. Perfeito!")),
-
-    # requester=4(Elena)  item=3(Diego's parafusadeira)
-    (4, 3, 48, 2,
-     (5, "As duas baterias carregaram o dia todo. Excelente estado de conservação. Super recomendo!"),
-     (4, "Elena devolveu no prazo, mas uma das baterias voltou com carga baixa. Sem problemas graves.")),
-
-    # requester=5(Felipe)  item=4(Elena's esmerilhadeira)
-    (5, 4, 45, 1,
-     (5, "Exatamente como descrito. Elena respondeu rápido e o item veio com discos extras. Ótimo!"),
-     (5, "Felipe foi extremamente cuidadoso. Devolveu com tudo no lugar.")),
-
-    # requester=6(Gabriela)  item=5(Felipe's betoneira)
-    (6, 5, 40, 4,
-     (4, "Betoneira funcionou bem, mas estava um pouco suja na entrega. No geral, boa experiência."),
-     (5, "Gabriela usou por 4 dias e devolveu em perfeito estado. Pagamento pontual.")),
-
-    # requester=7(Hugo)  item=6(Gabriela's lixadeira)
-    (7, 6, 38, 2,
-     (5, "Lixadeira com todas as lixas. Acabamento da minha marcenaria ficou excelente. Obrigado!"),
-     (5, "Hugo devolveu com as lixas novas repostas. Locatário exemplar!")),
-
-    # requester=0(Ana)  item=7(Hugo's projetor)
-    (0, 7, 35, 1,
-     (5, "Projetor incrível! A tela inclusa fez toda a diferença na apresentação da empresa."),
-     (5, "Ana cuidou do projetor com muito zelo. Devolveu tudo organizado na maleta.")),
-
-    # requester=2(Camila)  item=8(Ana's caixa JBL)
-    (2, 8, 30, 2,
-     (5, "Caixa de som perfeita para a festa. Som potente e bateria durou as 24h prometidas!"),
-     (4, "Camila devolveu com um dia de atraso mas avisou com antecedência. Tudo ok no final.")),
-
-    # requester=3(Diego)  item=9(Bruno's drone)
-    (3, 9, 28, 1,
-     (4, "Drone excelente para fotos aéreas. Uma das baterias carregou menos que o esperado. No geral, ótimo!"),
-     (5, "Diego é piloto experiente. Devolveu o drone sem nenhum arranhão.")),
-
-    # requester=4(Elena)  item=10(Camila's câmera)
-    (4, 10, 25, 3,
-     (5, "Câmera top! As fotos do casamento ficaram profissionais. Camila foi super prestativa com dicas de uso."),
-     (5, "Elena é fotógrafa talentosa. Devolveu a câmera e a lente impecáveis.")),
-
-    # requester=5(Felipe)  item=11(Diego's notebook)
-    (5, 11, 22, 5,
-     (5, "Notebook rodou todos os softwares de edição sem travar. Perfeito para o projeto."),
-     (5, "Felipe usou o notebook intensamente por 5 dias e devolveu em excelente estado.")),
-
-    # requester=6(Gabriela)  item=12(Elena's iPad)
-    (6, 12, 20, 2,
-     (3, "iPad bom mas o Apple Pencil veio com a ponta desgastada. Elena foi atenciosa ao explicar."),
-     (4, "Gabriela devolveu o iPad bem, mas esqueceu o cabo carregador e precisei buscar.")),
-
-    # requester=7(Hugo)  item=13(Felipe's ring light)
-    (7, 13, 18, 1,
-     (5, "Ring light fez toda a diferença no meu vídeo de produto. Montagem simples e resultado profissional."),
-     (5, "Hugo devolveu a ring light montada e limpa. Recomendo como locatário!")),
-
-    # requester=0(Ana)  item=14(Gabriela's bicicleta)
-    (0, 14, 15, 2,
-     (5, "Bike em estado impecável. Capacete incluso foi um ótimo bônus. Passeio incrível na ciclovia!"),
-     (5, "Ana devolveu a bicicleta lavada e com os pneus calibrados. Perfeita!")),
-
-    # requester=1(Bruno)  item=15(Hugo's prancha de surf)
-    (1, 15, 12, 3,
-     (5, "Prancha perfeita para as ondas da praia do Leblon. Hugo deu ótimas dicas de locais."),
-     (5, "Bruno surfou bem e devolveu a prancha sem um arranhão. Volte sempre!")),
-
-    # requester=3(Diego)  item=16(Ana's kit tênis de mesa)
-    (3, 16, 10, 4,
-     (5, "Kit completo e em ótimo estado. Animou o happy hour da empresa!"),
-     (5, "Diego devolveu tudo certinho, inclusive as bolinhas que haviam sumido. Ótimo locatário!")),
-
-    # requester=4(Elena)  item=17(Bruno's kayak)
-    (4, 17, 8, 2,
-     (5, "Kayak fácil de inflar e super estável no lago. Acessórios completos. Recomendo muito!"),
-     (5, "Elena devolveu o kayak seco, limpo e bem dobrado. Nota 10!")),
-
-    # requester=5(Felipe)  item=18(Camila's skate)
-    (5, 18, 6, 1,
-     (4, "Skate em boas condições, os rolamentos fazem um leve barulho mas funcionam. Boa experiência."),
-     (5, "Felipe devolveu o skate e deixou os rolamentos mais silenciosos ainda. Grato!")),
-
-    # requester=6(Gabriela)  item=19(Diego's kit camping)
-    (6, 19, 4, 3,
-     (5, "Kit camping completo salvou minha trilha! Barraca fácil de montar e saco de dormir muito quentinho."),
-     (5, "Gabriela devolveu tudo limpo e organizado nos sacos originais. Locatária exemplar!")),
+GROUPS = [
+    {"name": "Vizinhos do Campo Grande",
+     "description": "Grupo para vizinhos de Campo Grande, Encruzilhada e Rosarinho compartilharem itens com segurança.",
+     "member_idxs": [0, 1, 2, 12, 13, 14, 15]},
+    {"name": "Zona Norte Compartilha",
+     "description": "Empréstimos entre vizinhos de Hipódromo, Torreão, Água Fria, Campina do Barreto e Peixinhos.",
+     "member_idxs": [5, 6, 7, 8, 9, 18]},
+    {"name": "Comunidade Arruda e Fundão",
+     "description": "Grupo local para moradores de Arruda, Fundão, Cajueiro e Beberibe.",
+     "member_idxs": [3, 4, 10, 11, 16, 19]},
 ]
 
+# ── Review comment templates (loan scenarios are generated, not hand-listed) ───
+
+REQ_COMMENTS = [
+    ("{item} funcionou perfeitamente durante todo o período. Recomendo muito!", 5),
+    ("Ótima experiência com {item}, tudo exatamente como no anúncio.", 5),
+    ("{item} chegou limpo e em ótimo estado. Combinação fácil pelo chat.", 5),
+    ("Gostei bastante de {item}, só achei o valor um pouco alto pelo tempo de uso.", 4),
+    ("{item} atendeu bem, mas veio com um pequeno detalhe de uso não informado antes.", 4),
+    ("Sem reclamações! {item} em excelente estado e retirada tranquila.", 5),
+    ("{item} salvou meu evento. Super recomendo o anúncio!", 5),
+    ("Boa experiência no geral, {item} funcionou como esperado.", 4),
+    ("{item} estava impecável, e a comunicação foi rápida do início ao fim.", 5),
+]
+
+OWNER_COMMENTS = [
+    ("Devolveu {item} no prazo combinado e em ótimo estado. Recomendo como locatário(a)!", 5),
+    ("Combinação tranquila do início ao fim. {item} voltou limpo e organizado.", 5),
+    ("Locatário(a) cuidadoso(a), {item} voltou impecável.", 5),
+    ("Pontual na retirada e na devolução de {item}. Sem intercorrências.", 5),
+    ("{item} voltou com um pequeno atraso, mas avisou com antecedência. Tudo certo no final.", 4),
+    ("Boa experiência, {item} devolvido em bom estado geral.", 4),
+    ("Ótimo(a) locatário(a), {item} voltou como se estivesse novo(a).", 5),
+]
+
+LOAN_COUNT = 35
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -317,8 +457,6 @@ def advance_request(req_id: str, owner_token: str) -> bool:
     return True
 
 
-# ── Seed ───────────────────────────────────────────────────────────────────────
-
 def _verify_user_in_db(email: str) -> None:
     """Seed users bypass email verification via direct DB update."""
     import subprocess
@@ -329,21 +467,22 @@ def _verify_user_in_db(email: str) -> None:
     )
 
 
+# ── Seed ───────────────────────────────────────────────────────────────────────
+
 def seed():
     # 1. Users
     tokens: list[str] = []
-    print(f"Registering {len(USERS)} users...")
+    print(f"Registering {len(USERS)} users ({BUSINESS_START_IDX} individuais + {len(USERS) - BUSINESS_START_IDX} empresas)...")
     for u in USERS:
-        r = requests.post(f"{BASE}/auth/register", json=u)
+        r = post_retrying(f"{BASE}/auth/register", json=u)
         if r.status_code == 201:
-            # Mark verified immediately so login works on re-runs
             _verify_user_in_db(u["email"])
             tokens.append(r.json()["access_token"])
-            print(f"  ✓ {u['name']}")
+            tag = "🏢" if u.get("account_type") == "business" else "  "
+            print(f"  ✓ {tag} {u['name']}")
         elif r.status_code == 409:
-            # Ensure existing user is verified before logging in
             _verify_user_in_db(u["email"])
-            r2 = requests.post(f"{BASE}/auth/login", json={"email": u["email"], "password": u["password"]})
+            r2 = post_retrying(f"{BASE}/auth/login", json={"email": u["email"], "password": u["password"]})
             if r2.status_code == 200:
                 tokens.append(r2.json()["access_token"])
                 print(f"  ~ {u['name']} (já existia, login ok)")
@@ -354,34 +493,64 @@ def seed():
 
     if len(tokens) < len(USERS):
         print("Atenção: nem todos os usuários foram obtidos.")
+        return
 
     # 2. Items
     item_ids: list[str] = []
     print(f"\nCreating {len(ITEMS)} items...")
-    for i, item in enumerate(ITEMS):
-        token = tokens[i % len(tokens)]
-        r = requests.post(f"{BASE}/items", json=item, headers=auth_header(token))
+    for it in ITEMS:
+        token = tokens[it["owner_idx"]]
+        payload = {k: v for k, v in it.items() if k != "owner_idx"}
+        r = requests.post(f"{BASE}/items/", json=payload, headers=auth_header(token))
         if r.status_code == 201:
             item_ids.append(r.json()["id"])
-            print(f"  ✓ [{item['category']:12s}] {item['title'][:55]}")
+            print(f"  ✓ [{it['category']:12s}] {it['title'][:55]}")
         else:
             item_ids.append("")
-            print(f"  ✗ {item['title'][:55]} — {r.status_code}: {r.text[:80]}")
+            print(f"  ✗ {it['title'][:55]} — {r.status_code}: {r.text[:80]}")
 
-    # 3. Loan requests + reviews
-    print(f"\nCreating {len(LOAN_SCENARIOS)} finished loan requests + reviews...")
+    ok_items = sum(1 for x in item_ids if x)
+
+    # 3. Groups
+    print(f"\nCreating {len(GROUPS)} groups...")
+    for g in GROUPS:
+        creator_idx = g["member_idxs"][0]
+        creator_token = tokens[creator_idx]
+        r = requests.post(f"{BASE}/groups/", json={"name": g["name"], "description": g["description"]},
+                           headers=auth_header(creator_token))
+        if r.status_code != 201:
+            print(f"  ✗ {g['name']} — {r.status_code}: {r.text[:80]}")
+            continue
+        group = r.json()
+        invite_code = group["invite_code"]
+        print(f"  ✓ {g['name']} (código: {invite_code}) — criado por {USERS[creator_idx]['name']}")
+        for member_idx in g["member_idxs"][1:]:
+            jr = requests.post(f"{BASE}/groups/join", json={"invite_code": invite_code},
+                                headers=auth_header(tokens[member_idx]))
+            if jr.status_code == 200:
+                print(f"      + {USERS[member_idx]['name']}")
+            else:
+                print(f"      ✗ {USERS[member_idx]['name']} não entrou: {jr.status_code} {jr.text[:60]}")
+
+    # 4. Loan requests + reviews (generated pairs, requester != owner)
+    print(f"\nCreating {LOAN_COUNT} finished loan requests + reviews...")
+    valid_positions = [i for i, iid in enumerate(item_ids) if iid]
     loan_ok = 0
     review_ok = 0
+    days_ago = 70
 
-    for (req_idx, item_idx, days_ago, duration, rev_req, rev_owner) in LOAN_SCENARIOS:
-        item_id = item_ids[item_idx] if item_idx < len(item_ids) else ""
-        if not item_id:
-            print(f"  ✗ item[{item_idx}] sem ID, pulando")
-            continue
+    for _ in range(LOAN_COUNT):
+        pos = random.choice(valid_positions)
+        owner_idx = ITEMS[pos]["owner_idx"]
+        candidates = [i for i in range(len(USERS)) if i != owner_idx]
+        requester_idx = random.choice(candidates)
 
-        owner_idx = item_idx % len(tokens)
-        requester_token = tokens[req_idx]
-        owner_token = tokens[owner_idx]
+        item_id = item_ids[pos]
+        item_title = ITEMS[pos]["title"]
+        duration = random.randint(1, 5)
+        days_ago -= random.randint(1, 3)
+        if days_ago < 2:
+            break
 
         pickup = past(days_ago)
         returndt = past(days_ago - duration)
@@ -393,50 +562,46 @@ def seed():
             "notes": "Solicitação gerada pelo seed de dados.",
         }
 
-        r = requests.post(f"{BASE}/requests", json=loan_payload, headers=auth_header(requester_token))
+        r = requests.post(f"{BASE}/requests", json=loan_payload, headers=auth_header(tokens[requester_idx]))
         if r.status_code not in (200, 201):
-            print(f"  ✗ loan para item[{item_idx}]: {r.status_code} {r.text[:80]}")
+            print(f"  ✗ loan para '{item_title[:40]}': {r.status_code} {r.text[:80]}")
             continue
 
         loan_id = r.json()["id"]
-        item_title = r.json()["item_title"]
 
-        if not advance_request(loan_id, owner_token):
+        if not advance_request(loan_id, tokens[owner_idx]):
             print(f"  ✗ não foi possível finalizar loan {loan_id}")
             continue
 
         loan_ok += 1
-        print(f"  ✓ {USERS[req_idx]['name'][:12]:12s} → {item_title[:40]}")
+        print(f"  ✓ {USERS[requester_idx]['name'][:20]:20s} → {item_title[:40]}")
 
-        # Review pelo solicitante
-        if rev_req:
-            rating, comment = rev_req
-            r = requests.post(
-                f"{BASE}/reviews/request/{loan_id}",
-                json={"rating": rating, "comment": comment},
-                headers=auth_header(requester_token),
-            )
-            if r.status_code == 201:
-                review_ok += 1
-                print(f"    ★ {rating}/5 (solicitante) — \"{comment[:50]}...\"")
-            else:
-                print(f"    ✗ review solicitante: {r.status_code} {r.text[:60]}")
+        req_text, req_rating = random.choice(REQ_COMMENTS)
+        r = requests.post(
+            f"{BASE}/reviews/request/{loan_id}",
+            json={"rating": req_rating, "comment": req_text.format(item=item_title)},
+            headers=auth_header(tokens[requester_idx]),
+        )
+        if r.status_code == 201:
+            review_ok += 1
+            print(f"    ★ {req_rating}/5 (solicitante)")
+        else:
+            print(f"    ✗ review solicitante: {r.status_code} {r.text[:60]}")
 
-        # Review pelo dono
-        if rev_owner:
-            rating, comment = rev_owner
-            r = requests.post(
-                f"{BASE}/reviews/request/{loan_id}",
-                json={"rating": rating, "comment": comment},
-                headers=auth_header(owner_token),
-            )
-            if r.status_code == 201:
-                review_ok += 1
-                print(f"    ★ {rating}/5 (dono)       — \"{comment[:50]}...\"")
-            else:
-                print(f"    ✗ review dono: {r.status_code} {r.text[:60]}")
+        owner_text, owner_rating = random.choice(OWNER_COMMENTS)
+        r = requests.post(
+            f"{BASE}/reviews/request/{loan_id}",
+            json={"rating": owner_rating, "comment": owner_text.format(item=item_title)},
+            headers=auth_header(tokens[owner_idx]),
+        )
+        if r.status_code == 201:
+            review_ok += 1
+            print(f"    ★ {owner_rating}/5 (dono)")
+        else:
+            print(f"    ✗ review dono: {r.status_code} {r.text[:60]}")
 
-    print(f"\nDone! {len(tokens)} usuários · {sum(1 for x in item_ids if x)} itens · {loan_ok} empréstimos finalizados · {review_ok} avaliações.")
+    print(f"\nDone! {len(tokens)} usuários (5 empresas) · {ok_items} itens · {len(GROUPS)} grupos · "
+          f"{loan_ok} empréstimos finalizados · {review_ok} avaliações.")
 
 
 if __name__ == "__main__":

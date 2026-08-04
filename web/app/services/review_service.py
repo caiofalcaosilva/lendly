@@ -27,9 +27,14 @@ def _to_response(review: Review) -> ReviewResponse:
     )
 
 
-def _recalculate_rating(user: User) -> None:
+def recalculate_rating(user: User) -> None:
+    """Also called from admin_review_service after a moderation deletion —
+    unlike the only previous caller (create_review), that path can bring
+    the review count down to zero, so it's handled explicitly here rather
+    than left at whatever average_rating happened to be before."""
     reviews = list(Review.objects(reviewed=user))
     if not reviews:
+        user.update(average_rating=0.0, rating_count=0)
         return
     avg = sum(r.rating for r in reviews) / len(reviews)
     user.update(average_rating=round(avg, 2), rating_count=len(reviews))
@@ -68,7 +73,7 @@ def create_review(request_id: str, data: ReviewCreate, current_user: User) -> Re
         comment=data.comment,
     )
     review.save()
-    _recalculate_rating(reviewed)
+    recalculate_rating(reviewed)
 
     return _to_response(review)
 

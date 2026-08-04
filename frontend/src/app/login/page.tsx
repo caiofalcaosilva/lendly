@@ -1,5 +1,5 @@
 'use client'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -9,6 +9,7 @@ import { Leaf } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+import Spinner from '@/components/ui/Spinner'
 import TwoFactorModal from '@/components/auth/TwoFactorModal'
 
 const schema = z.object({
@@ -18,13 +19,19 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 function LoginForm() {
-  const { login } = useAuth()
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/dashboard'
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [tempToken, setTempToken] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace(redirect)
+    }
+  }, [authLoading, isAuthenticated, redirect, router])
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -47,20 +54,28 @@ function LoginForm() {
     }
   }
 
+  if (authLoading || isAuthenticated) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
+        <Spinner className="w-8 h-8 text-green-600" />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl mb-4">
-            <Leaf className="w-6 h-6 text-green-600" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-xl mb-4">
+            <Leaf className="w-6 h-6 text-green-600 dark:text-green-400" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Entrar no Lendly</h1>
-          <p className="text-gray-500 mt-1 text-sm">Bem-vindo de volta!</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Entrar no Lendly</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Bem-vindo de volta!</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
           {error && (
-            <div className="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mb-5 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -90,9 +105,9 @@ function LoginForm() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
           Não tem conta?{' '}
-          <Link href="/register" className="text-green-600 font-medium hover:text-green-700">
+          <Link href="/register" className="text-green-600 dark:text-green-400 font-medium hover:text-green-700 dark:hover:text-green-300">
             Criar conta grátis
           </Link>
         </p>

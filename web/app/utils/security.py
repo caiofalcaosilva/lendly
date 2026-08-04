@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -28,3 +29,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 def decode_token(token: str) -> dict:
     return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+
+
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()

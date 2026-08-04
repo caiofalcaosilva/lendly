@@ -64,7 +64,7 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
         </div>
       ) : step === 'scan' ? (
         <div className="space-y-5">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Escaneie o QR code com seu aplicativo autenticador (Google Authenticator, Authy, 1Password, etc.).
           </p>
 
@@ -72,13 +72,13 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
             {uri && <QRCodeSVG value={uri} size={200} level="M" />}
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-1">Ou insira a chave manualmente:</p>
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ou insira a chave manualmente:</p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs font-mono text-gray-700 break-all">{secret}</code>
+              <code className="flex-1 text-xs font-mono text-gray-700 dark:text-gray-300 break-all">{secret}</code>
               <button
                 onClick={copySecret}
-                className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                className="flex-shrink-0 p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 title="Copiar"
               >
                 {copied ? (
@@ -90,7 +90,7 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
             </div>
           </div>
 
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             Após adicionar a conta no aplicativo, clique em <strong>Continuar</strong> para confirmar.
           </p>
 
@@ -103,7 +103,7 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
         <div className="space-y-5">
           <div className="flex flex-col items-center gap-2 py-2">
             <ShieldCheck className="w-10 h-10 text-green-500" />
-            <p className="text-sm text-gray-600 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
               Insira o código de 6 dígitos gerado pelo seu aplicativo para confirmar a configuração.
             </p>
           </div>
@@ -118,7 +118,7 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
             className="text-center text-2xl tracking-widest font-mono"
           />
 
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>}
 
           <div className="flex gap-3">
             <Button onClick={confirm} loading={confirming} disabled={code.length < 6} className="flex-1">

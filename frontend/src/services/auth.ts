@@ -13,6 +13,11 @@ interface RegisterData {
   neighborhood?: string
   city?: string
   state?: string
+  account_type?: 'individual' | 'business'
+  company_name?: string
+  trade_name?: string
+  cnpj?: string
+  business_category?: string
 }
 
 export const authService = {
@@ -48,4 +53,7 @@ export const authService = {
 
   disableTotp: (code: string) =>
     api.post<User>('/auth/2fa/disable', { code }).then((r) => r.data),
+
+  logout: (refreshToken: string | null) =>
+    api.post('/auth/logout', { refresh_token: refreshToken }).then((r) => r.data),
 }

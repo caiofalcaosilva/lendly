@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { User } from '@/types'
+import { BusinessSummary, OwnerAnalyticsSummary, User } from '@/types'
 
 export interface UpdateProfileData {
   name?: string
@@ -13,6 +13,13 @@ export interface UpdateProfileData {
   state?: string
   latitude?: number
   longitude?: number
+  company_name?: string
+  trade_name?: string
+  cnpj?: string
+  business_category?: string
+  business_phone?: string
+  business_hours?: string
+  website?: string
 }
 
 export const usersService = {
@@ -25,4 +32,13 @@ export const usersService = {
 
   getPublicItems: (id: string) =>
     api.get<import('@/types').Item[]>(`/users/${id}/items`).then((r) => r.data),
+
+  listBusinesses: () => api.get<BusinessSummary[]>('/users/businesses').then((r) => r.data),
+
+  getMyAnalytics: () => api.get<OwnerAnalyticsSummary>('/users/me/analytics').then((r) => r.data),
+
+  exportMyData: () => api.get<Record<string, unknown>>('/users/me/export').then((r) => r.data),
+
+  deleteAccount: (password: string) =>
+    api.delete('/users/me', { data: { password } }).then(() => undefined),
 }

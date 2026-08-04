@@ -10,9 +10,9 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants = {
   primary: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
-  secondary: 'bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500',
-  outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-400',
-  ghost: 'text-gray-600 hover:bg-gray-100 focus:ring-gray-400',
+  secondary: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/60 focus:ring-green-500',
+  outline: 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-gray-400',
+  ghost: 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:ring-gray-400',
   danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
 }
 

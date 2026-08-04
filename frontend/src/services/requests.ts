@@ -13,6 +13,11 @@ export const requestsService = {
   finish: (id: string) => api.patch<LoanRequest>(`/requests/${id}/finish`).then((r) => r.data),
   cancel: (id: string) => api.patch<LoanRequest>(`/requests/${id}/cancel`).then((r) => r.data),
 
+  requestExtension: (id: string, newExpectedReturnDate: string) =>
+    api.post<LoanRequest>(`/requests/${id}/extend`, { new_expected_return_date: newExpectedReturnDate }).then((r) => r.data),
+  approveExtension: (id: string) => api.patch<LoanRequest>(`/requests/${id}/extension/approve`).then((r) => r.data),
+  rejectExtension: (id: string) => api.patch<LoanRequest>(`/requests/${id}/extension/reject`).then((r) => r.data),
+
   sent: () => api.get<LoanRequest[]>('/users/me/requests/sent').then((r) => r.data),
   received: () => api.get<LoanRequest[]>('/users/me/requests/received').then((r) => r.data),
   history: () => api.get<LoanRequest[]>('/users/me/history').then((r) => r.data),

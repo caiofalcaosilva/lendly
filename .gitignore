@@ -223,3 +223,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Mobile app (Flutter) — not part of the tracked repo for now
+/mobile/

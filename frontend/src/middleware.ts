@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PROTECTED = ['/dashboard', '/items/new', '/profile']
+const PROTECTED = ['/dashboard', '/items/new', '/profile', '/requests', '/groups']
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('lendly_token')?.value

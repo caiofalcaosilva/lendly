@@ -66,14 +66,14 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
     <Modal open onClose={onClose} title="Verificação em duas etapas">
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-3 py-2">
-          <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center">
-            <ShieldCheck className="w-7 h-7 text-green-600" />
+          <div className="w-14 h-14 bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+            <ShieldCheck className="w-7 h-7 text-green-600 dark:text-green-400" />
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Abra seu aplicativo autenticador e insira o código de 6 dígitos.
             </p>
-            <p className="text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 flex items-center justify-center gap-1">
               <Smartphone className="w-3 h-3" /> Google Authenticator, Authy, etc.
             </p>
           </div>
@@ -90,23 +90,23 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
               value={d}
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
-              className={`w-11 h-13 text-center text-xl font-bold border-2 rounded-lg outline-none transition-colors
-                ${d ? 'border-green-500 bg-green-50' : 'border-gray-200'}
+              className={`w-11 h-13 text-center text-xl font-bold border-2 rounded-lg outline-none transition-colors text-gray-900 dark:text-gray-100
+                ${d ? 'border-green-500 bg-green-50 dark:bg-green-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'}
                 focus:border-green-500`}
             />
           ))}
         </div>
 
-        {error && <p className="text-center text-sm text-red-600">{error}</p>}
+        {error && <p className="text-center text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <label className="flex items-center gap-3 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={trustDevice}
             onChange={(e) => setTrustDevice(e.target.checked)}
-            className="w-4 h-4 text-green-600 rounded border-gray-300"
+            className="w-4 h-4 text-green-600 rounded border-gray-300 dark:border-gray-600"
           />
-          <span className="text-sm text-gray-600">Confiar neste dispositivo por 30 dias</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">Confiar neste dispositivo por 30 dias</span>
         </label>
 
         <div className="flex gap-3">

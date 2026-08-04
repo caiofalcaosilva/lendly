@@ -17,5 +17,9 @@ env/
 .ruff_cache/
 .mypy_cache/
 
+# Local file uploads (not in a docker volume, unlike uploads/) — CPF
+# documents and selfies must never be committed.
+verification_uploads/
+
 # Misc
 .DS_Store

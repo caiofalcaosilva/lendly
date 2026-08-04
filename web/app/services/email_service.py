@@ -43,3 +43,113 @@ async def send_verification_email(to: str, name: str, token: str) -> None:
     </div>
     """
     await send_email(to, "Verifique seu e-mail — Lendly", html)
+
+
+_STATUS_COPY = {
+    "accepted": (
+        "Seu pedido foi aceito!",
+        "sua solicitação para <strong>{item}</strong> foi aceita pelo dono do item. "
+        "Combine os detalhes da retirada pelo app.",
+    ),
+    "refused": (
+        "Seu pedido foi recusado",
+        "sua solicitação para <strong>{item}</strong> foi recusada pelo dono do item.",
+    ),
+    "finished": (
+        "Empréstimo finalizado",
+        "o empréstimo de <strong>{item}</strong> foi marcado como finalizado. "
+        "Que tal deixar uma avaliação?",
+    ),
+}
+
+
+async def send_request_status_email(
+    to: str, name: str, item_title: str, request_status: str, request_id: str
+) -> None:
+    copy = _STATUS_COPY.get(request_status)
+    if not copy:
+        return
+    title, body_template = copy
+    url = f"{settings.FRONTEND_URL}/requests/{request_id}"
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">{title}</h2>
+      <p>Olá, {name}! {body_template.format(item=item_title)}</p>
+      <a href="{url}"
+         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Ver solicitação
+      </a>
+    </div>
+    """
+    await send_email(to, f"{title} — Lendly", html)
+
+
+async def send_new_message_email(
+    to: str, name: str, sender_name: str, item_title: str, request_id: str
+) -> None:
+    url = f"{settings.FRONTEND_URL}/requests/{request_id}"
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">Nova mensagem de {sender_name}</h2>
+      <p>Olá, {name}! Você recebeu uma nova mensagem de {sender_name} sobre <strong>{item_title}</strong>.</p>
+      <a href="{url}"
+         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Ver conversa
+      </a>
+    </div>
+    """
+    await send_email(to, f"Nova mensagem de {sender_name} — Lendly", html)
+
+
+async def send_verification_approved_email(to: str, name: str) -> None:
+    url = f"{settings.FRONTEND_URL}/profile#identity-verification"
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">Sua identidade foi verificada!</h2>
+      <p>Olá, {name}! Sua verificação de identidade foi aprovada. Agora você pode solicitar
+      itens que exigem verificação.</p>
+      <a href="{url}"
+         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Ver status
+      </a>
+    </div>
+    """
+    await send_email(to, "Identidade verificada — Lendly", html)
+
+
+async def send_verification_rejected_email(to: str, name: str, reason: str = "") -> None:
+    url = f"{settings.FRONTEND_URL}/profile#identity-verification"
+    reason_html = f"<p><strong>Motivo:</strong> {reason}</p>" if reason else ""
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">Não foi possível verificar sua identidade</h2>
+      <p>Olá, {name}! Sua verificação de identidade não foi aprovada.</p>
+      {reason_html}
+      <p>Você pode enviar uma nova solicitação com documentos atualizados.</p>
+      <a href="{url}"
+         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Enviar novamente
+      </a>
+    </div>
+    """
+    await send_email(to, "Verificação de identidade não aprovada — Lendly", html)
+
+
+async def send_item_available_email(to: str, name: str, item_title: str, item_id: str) -> None:
+    url = f"{settings.FRONTEND_URL}/items/{item_id}"
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">{item_title} está disponível de novo!</h2>
+      <p>Olá, {name}! O item que você queria ficou disponível de novo no Lendly.</p>
+      <a href="{url}"
+         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Ver item
+      </a>
+    </div>
+    """
+    await send_email(to, f"{item_title} está disponível — Lendly", html)

@@ -27,6 +27,10 @@ class LoanRequestCreate(BaseModel):
         return self
 
 
+class LoanRequestExtend(BaseModel):
+    new_expected_return_date: datetime
+
+
 class LoanRequestResponse(BaseModel):
     id: str
     item_id: str
@@ -36,9 +40,12 @@ class LoanRequestResponse(BaseModel):
     owner_id: str
     owner_name: str
     status: str
+    payment_status: str
     pickup_date: datetime
     expected_return_date: datetime
     actual_return_date: Optional[datetime] = None
     notes: Optional[str] = None
+    requested_extension_date: Optional[datetime] = None
+    extension_status: str = "none"
     created_at: datetime
     updated_at: datetime
