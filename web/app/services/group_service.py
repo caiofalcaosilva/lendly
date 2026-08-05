@@ -109,7 +109,7 @@ def get_group(group_id: str, current_user: User) -> GroupResponse:
 
 def list_all_groups() -> list[GroupSummary]:
     """Admin-only — every group on the platform, not just ones the caller
-    belongs to. See routers/admin.py."""
+    belongs to. See routers/admin/groups.py."""
     return [_to_summary(g) for g in Group.objects().order_by("name")]
 
 

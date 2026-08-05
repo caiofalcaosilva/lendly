@@ -54,8 +54,8 @@ def update_settings(
 
 def get_announcement() -> AnnouncementResponse:
     """Public, unauthenticated — every visitor sees this, not just logged-in
-    users. See routers/admin.py for editing and GET /announcement in
-    main.py for where this is exposed."""
+    users. See routers/admin/settings.py for editing and GET /announcement
+    in main.py for where this is exposed."""
     doc = get_settings()
     return AnnouncementResponse(
         message=doc.announcement_message, active=doc.announcement_active or False

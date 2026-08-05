@@ -1,19 +1,16 @@
-import io
 import os
 import uuid
 
 from fastapi import BackgroundTasks, HTTPException, UploadFile, status
-from PIL import Image
 
 from app.models.user import User
 from app.models.verification import VerificationSubmission
 from app.schemas.verification import VerificationResponse
 from app.services import email_service
+from app.utils.images import load_and_resize
 from app.utils.time import utcnow
 from app.utils.validators import is_valid_cpf
 
-ALLOWED_PHOTO_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
-MAX_PHOTO_DIMENSION = 1600
 # Deliberately outside app/main.py's public "uploads/" StaticFiles mount —
 # these are CPF documents + selfies, served only via an admin-authenticated
 # endpoint, never as a plain static URL.
@@ -35,21 +32,7 @@ def _to_response(sub: VerificationSubmission) -> VerificationResponse:
 
 
 async def _save_photo(file: UploadFile, user_id: str, kind: str) -> str:
-    if file.content_type not in ALLOWED_PHOTO_CONTENT_TYPES:
-        raise HTTPException(status_code=400, detail="Formato de imagem não suportado")
-
-    raw = await file.read()
-    try:
-        Image.open(io.BytesIO(raw)).verify()
-        # Re-open after verify() and convert to RGB — also strips EXIF
-        # (including GPS), same reasoning as item photo uploads.
-        img = Image.open(io.BytesIO(raw)).convert("RGB")
-    except Exception as err:
-        raise HTTPException(
-            status_code=400, detail="Arquivo de imagem inválido"
-        ) from err
-
-    img.thumbnail((MAX_PHOTO_DIMENSION, MAX_PHOTO_DIMENSION))
+    img = await load_and_resize(file)
 
     user_dir = os.path.join(UPLOAD_ROOT, user_id)
     os.makedirs(user_dir, exist_ok=True)
