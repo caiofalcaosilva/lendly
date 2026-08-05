@@ -10,7 +10,9 @@ export const requestsService = {
   accept: (id: string) => api.patch<LoanRequest>(`/requests/${id}/accept`).then((r) => r.data),
   refuse: (id: string) => api.patch<LoanRequest>(`/requests/${id}/refuse`).then((r) => r.data),
   start: (id: string) => api.patch<LoanRequest>(`/requests/${id}/start`).then((r) => r.data),
+  startForce: (id: string) => api.patch<LoanRequest>(`/requests/${id}/start/force`).then((r) => r.data),
   finish: (id: string) => api.patch<LoanRequest>(`/requests/${id}/finish`).then((r) => r.data),
+  finishForce: (id: string) => api.patch<LoanRequest>(`/requests/${id}/finish/force`).then((r) => r.data),
   cancel: (id: string) => api.patch<LoanRequest>(`/requests/${id}/cancel`).then((r) => r.data),
 
   requestExtension: (id: string, newExpectedReturnDate: string) =>

@@ -294,6 +294,7 @@ export interface PlatformSettings {
   resend_verification_rate_limit_per_minute: number
   chat_message_rate_limit_per_minute: number
   password_reset_rate_limit_per_minute: number
+  handoff_confirmation_grace_hours: number
   announcement_message?: string | null
   announcement_active: boolean
   updated_by_name?: string | null
@@ -465,6 +466,12 @@ export interface LoanRequest {
   notes?: string
   requested_extension_date?: string
   extension_status: 'none' | 'pending' | 'approved' | 'rejected'
+  pickup_confirmed_by_owner_at?: string | null
+  pickup_confirmed_by_requester_at?: string | null
+  pickup_forced: boolean
+  return_confirmed_by_owner_at?: string | null
+  return_confirmed_by_requester_at?: string | null
+  return_forced: boolean
   created_at: string
   updated_at: string
 }

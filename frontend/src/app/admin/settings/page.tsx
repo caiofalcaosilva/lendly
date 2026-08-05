@@ -21,6 +21,7 @@ const FIELDS: { key: keyof PlatformSettings; label: string; helper: string }[] =
   { key: 'resend_verification_rate_limit_per_minute', label: 'Limite de reenvio de verificação por minuto', helper: 'Por IP — protege contra spam de e-mails de verificação.' },
   { key: 'chat_message_rate_limit_per_minute', label: 'Limite de mensagens de chat por minuto', helper: 'Por usuário — protege o chat de empréstimos contra flood.' },
   { key: 'password_reset_rate_limit_per_minute', label: 'Limite de pedidos de redefinição de senha por minuto', helper: 'Por IP — protege "esqueci minha senha" contra abuso.' },
+  { key: 'handoff_confirmation_grace_hours', label: 'Prazo pra forçar confirmação de retirada/devolução (horas)', helper: 'Depois desse prazo desde a confirmação do dono, ele pode forçar mesmo sem o solicitante confirmar.' },
 ]
 
 export default function AdminSettingsPage() {
@@ -65,6 +66,7 @@ export default function AdminSettingsPage() {
           settings.resend_verification_rate_limit_per_minute,
         chat_message_rate_limit_per_minute: settings.chat_message_rate_limit_per_minute,
         password_reset_rate_limit_per_minute: settings.password_reset_rate_limit_per_minute,
+        handoff_confirmation_grace_hours: settings.handoff_confirmation_grace_hours,
         announcement_message: settings.announcement_message ?? '',
         announcement_active: settings.announcement_active,
       })

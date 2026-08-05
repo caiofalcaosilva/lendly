@@ -1,8 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
-import { Calendar, MessageCircle, Package, CalendarClock, Check, X as XIcon, QrCode, Phone } from 'lucide-react'
+import { Calendar, MessageCircle, Package, CalendarClock, Check, X as XIcon, Phone } from 'lucide-react'
 import { LoanRequest, PaymentStatus, REQUEST_STATUS_LABELS } from '@/types'
 import { requestsService } from '@/services/requests'
 import { formatDate } from '@/lib/utils'
@@ -11,9 +10,6 @@ import Button from '@/components/ui/Button'
 import ReviewModal from '@/components/reviews/ReviewModal'
 import ExtensionModal from '@/components/requests/ExtensionModal'
 import PixCheckout from '@/components/requests/PixCheckout'
-
-const QRCodeSVG = dynamic(() => import('qrcode.react').then((m) => m.QRCodeSVG), { ssr: false })
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 const PAYMENT_STATUS_LABELS: Partial<Record<PaymentStatus, string>> = {
   processing: 'Aguardando pagamento',
@@ -41,13 +37,19 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
   const [loading, setLoading] = useState<string | null>(null)
   const [showReview, setShowReview] = useState(false)
   const [showExtension, setShowExtension] = useState(false)
-  const [showQr, setShowQr] = useState<'start' | 'finish' | null>(null)
+  const [actionError, setActionError] = useState('')
+
+  const myPickupConfirmedAt = role === 'owner' ? req.pickup_confirmed_by_owner_at : req.pickup_confirmed_by_requester_at
+  const myReturnConfirmedAt = role === 'owner' ? req.return_confirmed_by_owner_at : req.return_confirmed_by_requester_at
 
   const act = async (action: () => Promise<unknown>, key: string) => {
     setLoading(key)
+    setActionError('')
     try {
       await action()
       onUpdate()
+    } catch (e: any) {
+      setActionError(e.response?.data?.detail || 'Erro ao confirmar')
     } finally {
       setLoading(null)
     }
@@ -56,10 +58,10 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Package className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-            <span className="font-medium text-gray-900 dark:text-gray-100">{req.item_title}</span>
+            <Package className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+            <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{req.item_title}</span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {role === 'requester' ? `Dono: ${req.owner_name}` : `Solicitante: ${req.requester_name}`}
@@ -130,45 +132,59 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
       )}
 
       <div className="flex flex-wrap gap-2">
-        {role === 'owner' && (
+        {role === 'owner' && req.status === 'pending' && (
           <>
-            {req.status === 'pending' && (
-              <>
-                <Button size="sm" loading={loading === 'accept'} onClick={() => act(() => requestsService.accept(req.id), 'accept')}>
-                  Aceitar
-                </Button>
-                <Button size="sm" variant="danger" loading={loading === 'refuse'} onClick={() => act(() => requestsService.refuse(req.id), 'refuse')}>
-                  Recusar
-                </Button>
-              </>
-            )}
-            {req.status === 'accepted' && (
-              req.payment_status === 'processing' ? (
-                <span className="text-xs text-amber-600 dark:text-amber-400 self-center">
-                  Aguardando o solicitante pagar pra liberar a retirada
-                </span>
-              ) : (
-                <>
-                  <Button size="sm" variant="secondary" loading={loading === 'start'} onClick={() => act(() => requestsService.start(req.id), 'start')}>
-                    Marcar retirada
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setShowQr(showQr === 'start' ? null : 'start')}>
-                    <QrCode className="w-3.5 h-3.5" /> QR code
-                  </Button>
-                </>
-              )
-            )}
-            {req.status === 'in_progress' && (
-              <>
-                <Button size="sm" loading={loading === 'finish'} onClick={() => act(() => requestsService.finish(req.id), 'finish')}>
-                  Finalizar
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setShowQr(showQr === 'finish' ? null : 'finish')}>
-                  <QrCode className="w-3.5 h-3.5" /> QR code
-                </Button>
-              </>
-            )}
+            <Button size="sm" loading={loading === 'accept'} onClick={() => act(() => requestsService.accept(req.id), 'accept')}>
+              Aceitar
+            </Button>
+            <Button size="sm" variant="danger" loading={loading === 'refuse'} onClick={() => act(() => requestsService.refuse(req.id), 'refuse')}>
+              Recusar
+            </Button>
           </>
+        )}
+
+        {req.status === 'accepted' && (
+          req.payment_status === 'processing' ? (
+            role === 'owner' && (
+              <span className="text-xs text-amber-600 dark:text-amber-400 self-center">
+                Aguardando o solicitante pagar pra liberar a retirada
+              </span>
+            )
+          ) : myPickupConfirmedAt ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-green-600 dark:text-green-400 self-center">
+                Você confirmou a retirada — aguardando {role === 'owner' ? 'o solicitante' : 'o dono'} confirmar
+              </span>
+              {role === 'owner' && (
+                <Button size="sm" variant="outline" loading={loading === 'forceStart'} onClick={() => act(() => requestsService.startForce(req.id), 'forceStart')}>
+                  Forçar retirada
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Button size="sm" variant="secondary" loading={loading === 'start'} onClick={() => act(() => requestsService.start(req.id), 'start')}>
+              Confirmar retirada
+            </Button>
+          )
+        )}
+
+        {req.status === 'in_progress' && (
+          myReturnConfirmedAt ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-green-600 dark:text-green-400 self-center">
+                Você confirmou a devolução — aguardando {role === 'owner' ? 'o solicitante' : 'o dono'} confirmar
+              </span>
+              {role === 'owner' && (
+                <Button size="sm" variant="outline" loading={loading === 'forceFinish'} onClick={() => act(() => requestsService.finishForce(req.id), 'forceFinish')}>
+                  Forçar devolução
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Button size="sm" loading={loading === 'finish'} onClick={() => act(() => requestsService.finish(req.id), 'finish')}>
+              Confirmar devolução
+            </Button>
+          )
         )}
 
         {(req.status === 'pending' || req.status === 'accepted') && (
@@ -197,13 +213,8 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
         </Link>
       </div>
 
-      {showQr && (
-        <div className="flex flex-col items-center gap-2 mt-4 p-4 bg-gray-50 dark:bg-gray-900/40 rounded-lg">
-          <QRCodeSVG value={`${SITE_URL}/checkin/${req.id}/${showQr}`} size={160} level="M" />
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center max-w-[220px]">
-            Escaneie com seu celular na hora da {showQr === 'start' ? 'retirada' : 'devolução'} pra confirmar rapidinho, sem precisar navegar até aqui
-          </p>
-        </div>
+      {actionError && (
+        <p className="text-xs text-red-600 dark:text-red-400 mt-2">{actionError}</p>
       )}
 
       {showReview && (
