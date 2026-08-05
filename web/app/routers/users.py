@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, UploadFile
 
 from app.dependencies import get_current_user, get_current_user_optional
 from app.models.user import User
@@ -19,6 +19,7 @@ from app.schemas.user import (
 )
 from app.services import (
     analytics_service,
+    avatar_service,
     export_service,
     item_service,
     loan_request_service,
@@ -52,6 +53,22 @@ def update_profile(data: UserUpdate, current_user: User = Depends(get_current_us
         current_user.update(**updates)
         current_user.reload()
     return user_to_response(current_user)
+
+
+@router.post("/me/avatar", response_model=UserResponse, status_code=201)
+async def upload_avatar(
+    file: UploadFile, current_user: User = Depends(get_current_user)
+):
+    """Uploads a profile photo for the logged-in user — resized and
+    replaces any existing avatar."""
+    return await avatar_service.upload_avatar(file, current_user)
+
+
+@router.delete("/me/avatar", response_model=UserResponse)
+def remove_avatar(current_user: User = Depends(get_current_user)):
+    """Removes the logged-in user's profile photo — falls back to initials
+    in the UI."""
+    return avatar_service.remove_avatar(current_user)
 
 
 @router.get("/me/items", response_model=list[ItemResponse])
@@ -146,6 +163,7 @@ def list_businesses():
         BusinessSummary(
             id=str(u.id),
             name=u.name,
+            avatar_url=u.avatar_url,
             company_name=u.company_name,
             trade_name=u.trade_name,
             business_category=u.business_category,

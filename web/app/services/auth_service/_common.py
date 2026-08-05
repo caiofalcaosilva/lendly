@@ -12,6 +12,7 @@ def user_to_public_response(user: User) -> PublicUserResponse:
     return PublicUserResponse(
         id=str(user.id),
         name=user.name,
+        avatar_url=user.avatar_url,
         neighborhood=user.neighborhood,
         city=user.city,
         state=user.state,
@@ -36,6 +37,7 @@ def user_to_response(user: User) -> UserResponse:
         id=str(user.id),
         name=user.name,
         email=user.email,
+        avatar_url=user.avatar_url,
         phone=user.phone,
         zip_code=user.zip_code,
         street=user.street,

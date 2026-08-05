@@ -79,6 +79,7 @@ class UserResponse(BaseModel):
     id: str
     name: str
     email: str
+    avatar_url: str | None = None
     phone: str | None = None
     zip_code: str | None = None
     street: str | None = None
@@ -120,6 +121,7 @@ class PublicUserResponse(BaseModel):
 
     id: str
     name: str
+    avatar_url: str | None = None
     neighborhood: str | None = None
     city: str | None = None
     state: str | None = None
@@ -141,6 +143,7 @@ class PublicUserResponse(BaseModel):
 class BusinessSummary(BaseModel):
     id: str
     name: str
+    avatar_url: str | None = None
     company_name: str | None = None
     trade_name: str | None = None
     business_category: str | None = None

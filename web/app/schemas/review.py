@@ -15,6 +15,7 @@ class ReviewResponse(BaseModel):
     item_title: str
     reviewer_id: str
     reviewer_name: str
+    reviewer_avatar_url: str | None = None
     reviewed_id: str
     reviewed_name: str
     # role of the person being reviewed: 'owner' = lent the item, 'requester' = borrowed

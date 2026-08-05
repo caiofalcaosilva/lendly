@@ -26,6 +26,7 @@ class User(Document):
     name = StringField(required=True, max_length=100)
     email = EmailField(required=True, unique=True)
     phone = StringField(max_length=20)
+    avatar_url = StringField(max_length=300)
     zip_code = StringField(max_length=10)
     latitude = FloatField()
     longitude = FloatField()

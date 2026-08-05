@@ -15,6 +15,7 @@ import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
 import BusinessBadge from '@/components/ui/BusinessBadge'
 import ReputationBadges from '@/components/ui/ReputationBadges'
 import ReportModal from '@/components/reports/ReportModal'
+import Avatar from '@/components/ui/Avatar'
 
 export default function UserPublicPage() {
   const { id } = useParams<{ id: string }>()
@@ -92,11 +93,7 @@ export default function UserPublicPage() {
       {/* Profile header */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 mb-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-              {user.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
+          <Avatar name={user.name} avatarUrl={user.avatar_url} size="lg" />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">

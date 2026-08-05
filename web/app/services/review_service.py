@@ -19,6 +19,7 @@ def _to_response(review: Review) -> ReviewResponse:
         item_title=req.item.title,
         reviewer_id=str(review.reviewer.id),
         reviewer_name=review.reviewer.name,
+        reviewer_avatar_url=review.reviewer.avatar_url,
         reviewed_id=str(review.reviewed.id),
         reviewed_name=review.reviewed.name,
         reviewed_role=reviewed_role,

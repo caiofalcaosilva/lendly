@@ -2,6 +2,7 @@ export interface User {
   id: string
   name: string
   email: string
+  avatar_url?: string | null
   phone?: string
   zip_code?: string
   street?: string
@@ -40,6 +41,7 @@ export interface User {
 export interface PublicUser {
   id: string
   name: string
+  avatar_url?: string | null
   neighborhood?: string
   city?: string
   state?: string
@@ -239,6 +241,7 @@ export interface Announcement {
 export interface BusinessSummary {
   id: string
   name: string
+  avatar_url?: string | null
   company_name?: string
   trade_name?: string
   business_category?: string
@@ -428,6 +431,7 @@ export interface Review {
   item_title: string
   reviewer_id: string
   reviewer_name: string
+  reviewer_avatar_url?: string | null
   reviewed_id: string
   reviewed_name: string
   /** 'owner' = reviewed person lent the item | 'requester' = reviewed person borrowed it */

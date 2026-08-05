@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Star, HandHelping, PackageCheck, Trash2 } from 'lucide-react'
 import { Review } from '@/types'
 import { formatDate } from '@/lib/utils'
+import Avatar from '@/components/ui/Avatar'
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -82,7 +83,10 @@ export default function ReviewCard({ review, linkItem = true, onDelete }: Props)
       )}
 
       {/* Reviewer */}
-      <p className="text-xs text-gray-400 dark:text-gray-500">— {review.reviewer_name}</p>
+      <div className="flex items-center gap-1.5">
+        <Avatar name={review.reviewer_name} avatarUrl={review.reviewer_avatar_url} size="sm" />
+        <p className="text-xs text-gray-400 dark:text-gray-500">{review.reviewer_name}</p>
+      </div>
     </div>
   )
 }

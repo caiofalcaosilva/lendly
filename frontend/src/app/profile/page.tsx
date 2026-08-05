@@ -15,6 +15,7 @@ import Spinner from '@/components/ui/Spinner'
 import AddressFields from '@/components/ui/AddressFields'
 import TotpSetupModal from '@/components/auth/TotpSetupModal'
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal'
+import AvatarUploader from '@/components/profile/AvatarUploader'
 import BusinessBadge from '@/components/ui/BusinessBadge'
 import ReputationBadges from '@/components/ui/ReputationBadges'
 import IdentityVerificationSection from '@/components/profile/IdentityVerificationSection'
@@ -229,11 +230,13 @@ export default function ProfilePage() {
         {/* Sidebar */}
         <div className="space-y-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 text-center">
-            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {user?.name?.charAt(0).toUpperCase()}
-              </span>
-            </div>
+            {user && (
+              <AvatarUploader
+                name={user.name}
+                avatarUrl={user.avatar_url}
+                onChange={(avatar_url) => updateUser({ ...user, avatar_url })}
+              />
+            )}
             <p className="font-semibold text-gray-900 dark:text-gray-100">{user?.trade_name || user?.name}</p>
             <div className="flex items-center justify-center mt-1">
               <BusinessBadge accountType={user?.account_type} />

@@ -28,6 +28,14 @@ export const usersService = {
   updateMe: (data: UpdateProfileData) =>
     api.put<User>('/users/me', data).then((r) => r.data),
 
+  uploadAvatar: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post<User>('/users/me/avatar', formData).then((r) => r.data)
+  },
+
+  removeAvatar: () => api.delete<User>('/users/me/avatar').then((r) => r.data),
+
   getPublic: (id: string) => api.get<PublicUser>(`/users/${id}`).then((r) => r.data),
 
   getPublicItems: (id: string) =>
