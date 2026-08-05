@@ -9,6 +9,7 @@ const OPTIONS: { key: keyof NotificationPreferences; label: string }[] = [
   { key: 'new_message', label: 'Novas mensagens no chat' },
   { key: 'verification_result', label: 'Resultado da verificação de identidade' },
   { key: 'item_available', label: 'Item da lista de espera ficou disponível' },
+  { key: 'review_reminder', label: 'Lembrete pra avaliar um empréstimo finalizado' },
 ]
 
 export default function NotificationPreferencesSection({

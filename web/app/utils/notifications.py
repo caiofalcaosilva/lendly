@@ -5,6 +5,7 @@ _TOGGLEABLE_CATEGORIES = (
     "new_message",
     "verification_result",
     "item_available",
+    "review_reminder",
 )
 
 

@@ -90,6 +90,27 @@ async def send_new_login_email(
     await send_email(to, "Novo login detectado — Lendly", html)
 
 
+async def send_review_reminder_email(
+    to: str, name: str, item_title: str, request_id: str
+) -> None:
+    url = f"{settings.FRONTEND_URL}/requests/{request_id}"
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">Que tal avaliar esse empréstimo?</h2>
+      <p>Olá, {name}! O empréstimo de <strong>{item_title}</strong> foi
+      finalizado há alguns dias e você ainda não deixou uma avaliação.
+      Leva menos de um minuto e ajuda outros vizinhos a saber com quem
+      estão lidando.</p>
+      <a href="{url}"
+         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Avaliar agora
+      </a>
+    </div>
+    """
+    await send_email(to, "Que tal avaliar esse empréstimo? — Lendly", html)
+
+
 _STATUS_COPY = {
     "accepted": (
         "Seu pedido foi aceito!",

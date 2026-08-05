@@ -34,6 +34,9 @@ class LoanRequest(Document):
     # (in_progress, finished...) don't touch it, so it stays a clean
     # "how long did the owner take to decide" signal.
     responded_at = DateTimeField()
+    # One-shot flag — set the first time the review-reminder job checks this
+    # request, whether or not it actually had anything to remind about.
+    review_reminder_sent_at = DateTimeField()
     created_at = DateTimeField(default=utcnow)
     updated_at = DateTimeField(default=utcnow)
 
@@ -45,5 +48,6 @@ class LoanRequest(Document):
             {"fields": ["owner", "status"]},
             {"fields": ["cancelled_by", "status"]},
             {"fields": ["item", "status"]},
+            {"fields": ["status", "review_reminder_sent_at"]},
         ],
     }

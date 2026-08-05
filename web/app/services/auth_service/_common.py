@@ -98,6 +98,7 @@ def user_to_response(user: User) -> UserResponse:
             new_message=user.notification_prefs.new_message,
             verification_result=user.notification_prefs.verification_result,
             item_available=user.notification_prefs.item_available,
+            review_reminder=user.notification_prefs.review_reminder,
         ),
         created_at=user.created_at,
     )

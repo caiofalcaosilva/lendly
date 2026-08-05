@@ -33,6 +33,7 @@ class NotificationPreferences(EmbeddedDocument):
     new_message = BooleanField(default=True)
     verification_result = BooleanField(default=True)
     item_available = BooleanField(default=True)
+    review_reminder = BooleanField(default=True)
 
 
 class User(Document):

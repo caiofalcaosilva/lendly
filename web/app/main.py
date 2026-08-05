@@ -1,6 +1,8 @@
 import os
 from contextlib import asynccontextmanager
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -28,6 +30,7 @@ from app.routers import (
 from app.schemas.category import CategoryResponse
 from app.schemas.platform_settings import AnnouncementResponse
 from app.services import category_service, platform_settings_service
+from app.services.review_reminder_service import send_pending_review_reminders
 from app.utils.security import decode_token
 
 configure_logging()
@@ -39,7 +42,22 @@ _SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 async def lifespan(app: FastAPI):
     assert_secrets_configured()
     connect_db()
+
+    # In-process scheduler — fine for the current single-worker deployment.
+    # Would need to move to a dedicated worker (or add a distributed lock)
+    # if this ever runs with more than one uvicorn process, to avoid every
+    # worker sending the same reminder.
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        send_pending_review_reminders,
+        CronTrigger(hour=9, minute=0),
+        id="review_reminders",
+    )
+    scheduler.start()
+
     yield
+
+    scheduler.shutdown(wait=False)
     disconnect_db()
 
 

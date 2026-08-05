@@ -47,6 +47,7 @@ export interface NotificationPreferences {
   new_message: boolean
   verification_result: boolean
   item_available: boolean
+  review_reminder: boolean
 }
 
 // What GET /users/{id} returns — no email, cpf, phone, address detail,

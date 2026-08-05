@@ -95,6 +95,7 @@ class NotificationPreferencesSchema(BaseModel):
     new_message: bool = True
     verification_result: bool = True
     item_available: bool = True
+    review_reminder: bool = True
 
 
 class NotificationPreferencesUpdate(BaseModel):
@@ -102,6 +103,7 @@ class NotificationPreferencesUpdate(BaseModel):
     new_message: bool | None = None
     verification_result: bool | None = None
     item_available: bool | None = None
+    review_reminder: bool | None = None
 
 
 class UserResponse(BaseModel):

@@ -16,6 +16,7 @@ def update_notification_prefs(
             "verification_result", current.verification_result
         ),
         item_available=updates.get("item_available", current.item_available),
+        review_reminder=updates.get("review_reminder", current.review_reminder),
     )
     current_user.update(notification_prefs=merged, updated_at=utcnow())
     current_user.reload()
