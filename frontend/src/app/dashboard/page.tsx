@@ -356,9 +356,9 @@ export default function DashboardPage() {
                   return (
                     <div key={req.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
                       <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{req.item_title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{req.item_title}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                             {isOwner ? `Solicitante: ${req.requester_name}` : `Dono: ${req.owner_name}`}
                           </p>
                           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -517,7 +517,8 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <table className="w-full text-sm">
+                    <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[480px]">
                       <thead>
                         <tr className="border-b border-gray-100 dark:border-gray-700 text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
                           <th className="px-4 py-3 font-medium">Item</th>
@@ -554,6 +555,7 @@ export default function DashboardPage() {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 </div>
               )}

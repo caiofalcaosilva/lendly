@@ -171,7 +171,7 @@ export default function AdminItemsPage() {
       )}
 
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
           <span className="text-sm text-blue-800 dark:text-blue-300 font-medium">{selected.size} selecionado(s)</span>
           <Button size="sm" variant="outline" loading={bulkLoading} onClick={() => runBulkAction('activate')}>
             <CheckCircle2 className="w-3.5 h-3.5" /> Ativar selecionados
@@ -195,7 +195,8 @@ export default function AdminItemsPage() {
       ) : (
         <>
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
                   <th className="px-4 py-3 font-medium w-8">
@@ -258,6 +259,7 @@ export default function AdminItemsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {hasMore && (

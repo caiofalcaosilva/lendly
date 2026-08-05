@@ -103,14 +103,14 @@ export default function ModerationPage() {
           {visible.map((report) => (
             <div key={report.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex items-center gap-2">
-                  {report.item_id ? <Package className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : <UserIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
+                <div className="flex items-center gap-2 min-w-0">
+                  {report.item_id ? <Package className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" /> : <UserIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />}
                   {report.item_id ? (
-                    <Link href={`/items/${report.item_id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+                    <Link href={`/items/${report.item_id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate">
                       {report.item_title}
                     </Link>
                   ) : (
-                    <Link href={`/users/${report.reported_user_id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+                    <Link href={`/users/${report.reported_user_id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate">
                       {report.reported_user_name}
                     </Link>
                   )}

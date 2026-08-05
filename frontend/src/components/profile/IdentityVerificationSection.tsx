@@ -99,8 +99,8 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
             <div>
               <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Selfie</label>
               <label className="flex items-center gap-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:border-green-400 dark:hover:border-green-600">
-                <Upload className="w-4 h-4" />
-                {selfie ? selfie.name : 'Escolher foto do rosto'}
+                <Upload className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate min-w-0">{selfie ? selfie.name : 'Escolher foto do rosto'}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -113,8 +113,8 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
             <div>
               <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Documento com foto</label>
               <label className="flex items-center gap-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:border-green-400 dark:hover:border-green-600">
-                <Upload className="w-4 h-4" />
-                {document ? document.name : 'Escolher foto do RG/CNH'}
+                <Upload className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate min-w-0">{document ? document.name : 'Escolher foto do RG/CNH'}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"

@@ -149,8 +149,8 @@ export default function AdminVerificationPage() {
           {visible.map((sub) => (
             <div key={sub.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
               <div className="flex items-start justify-between gap-4 mb-3">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{sub.user_name}</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{sub.user_name}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">CPF: {sub.cpf}</p>
                 </div>
                 <Badge variant={sub.status === 'pending' ? 'yellow' : sub.status === 'approved' ? 'green' : 'red'}>

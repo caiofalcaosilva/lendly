@@ -51,13 +51,13 @@ export default function GroupsPage() {
               href={`/groups/${group.id}`}
               className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-green-300 dark:hover:border-green-700 transition-colors"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
+              <div className="flex items-center gap-3 min-w-0 mr-3">
+                <div className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                   <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{group.name}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{group.name}</span>
               </div>
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
                 {group.member_count} {group.member_count === 1 ? 'membro' : 'membros'}
               </span>
             </Link>

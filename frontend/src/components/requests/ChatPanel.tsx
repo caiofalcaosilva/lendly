@@ -110,7 +110,7 @@ export default function ChatPanel({
               <div className={`max-w-[75%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
                 {!mine && <span className="text-xs text-gray-400 dark:text-gray-500 mb-0.5 px-1">{m.sender_name}</span>}
                 <div
-                  className={`px-3 py-2 rounded-2xl text-sm ${
+                  className={`px-3 py-2 rounded-2xl text-sm break-words ${
                     mine ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                   }`}
                 >

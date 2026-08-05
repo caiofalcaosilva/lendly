@@ -52,8 +52,8 @@ export default function AdminGroupsPage() {
               href={`/groups/${g.id}`}
               className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-green-300 dark:hover:border-green-700 transition-colors"
             >
-              <span className="font-medium text-gray-900 dark:text-gray-100">{g.name}</span>
-              <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <span className="font-medium text-gray-900 dark:text-gray-100 truncate min-w-0 mr-3">{g.name}</span>
+              <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">
                 <Users className="w-3.5 h-3.5" /> {g.member_count}
               </span>
             </Link>

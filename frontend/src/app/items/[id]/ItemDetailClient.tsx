@@ -246,11 +246,11 @@ export default function ItemDetailClient() {
 
           {/* Owner */}
           <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Anunciado por</p>
-                <div className="flex items-center gap-1.5">
-                  <Link href={`/users/${item.owner.id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Link href={`/users/${item.owner.id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate">
                     {item.owner.trade_name || item.owner.name}
                   </Link>
                   <BusinessBadge accountType={item.owner.account_type} />
@@ -262,7 +262,7 @@ export default function ItemDetailClient() {
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-lg">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.owner.average_rating.toFixed(1)}</span>

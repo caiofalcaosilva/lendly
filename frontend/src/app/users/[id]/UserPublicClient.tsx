@@ -156,8 +156,8 @@ export default function UserPublicClient() {
                   <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{user.business_phone}</span>
                 )}
                 {user.website && (
-                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors">
-                    <Globe className="w-3.5 h-3.5" />{user.website}
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors min-w-0">
+                    <Globe className="w-3.5 h-3.5 flex-shrink-0" /><span className="break-all">{user.website}</span>
                   </a>
                 )}
                 {user.instagram && (
