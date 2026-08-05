@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Response, UploadFile
 
 from app.dependencies import get_current_user, get_current_user_optional
 from app.models.user import User
-from app.schemas.analytics import OwnerAnalyticsSummary
+from app.schemas.analytics import OwnerAnalyticsSummary, RequesterSpendingSummary
 from app.schemas.item import ItemResponse
 from app.schemas.loan_request import LoanRequestResponse
 from app.schemas.payment import (
@@ -121,6 +121,13 @@ def my_analytics(current_user: User = Depends(get_current_user)):
     """Per-item and aggregate stats (times borrowed, revenue, occupancy
     rate) for everything the logged-in user owns."""
     return analytics_service.get_owner_analytics(current_user)
+
+
+@router.get("/me/spending", response_model=RequesterSpendingSummary)
+def my_spending(current_user: User = Depends(get_current_user)):
+    """How much the logged-in user has spent renting other people's items —
+    the requester-side counterpart to /me/analytics."""
+    return analytics_service.get_requester_spending(current_user)
 
 
 @router.get("/me/export")

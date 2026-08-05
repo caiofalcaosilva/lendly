@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { BusinessSummary, FavoriteUserSummary, OwnerAnalyticsSummary, PublicUser, User } from '@/types'
+import { BusinessSummary, FavoriteUserSummary, OwnerAnalyticsSummary, PublicUser, RequesterSpendingSummary, User } from '@/types'
 
 export interface UpdateProfileData {
   name?: string
@@ -59,6 +59,8 @@ export const usersService = {
   listBusinesses: () => api.get<BusinessSummary[]>('/users/businesses').then((r) => r.data),
 
   getMyAnalytics: () => api.get<OwnerAnalyticsSummary>('/users/me/analytics').then((r) => r.data),
+
+  getMySpending: () => api.get<RequesterSpendingSummary>('/users/me/spending').then((r) => r.data),
 
   exportMyData: () => api.get<Record<string, unknown>>('/users/me/export').then((r) => r.data),
 

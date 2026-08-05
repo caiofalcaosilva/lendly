@@ -1,8 +1,18 @@
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
+from app.models.payment import Payment
 from app.models.user import User
-from app.schemas.analytics import ItemAnalytics, OwnerAnalyticsSummary
+from app.schemas.analytics import (
+    ItemAnalytics,
+    OwnerAnalyticsSummary,
+    RequesterSpendingSummary,
+    SpendingEntry,
+)
 from app.utils.time import utcnow
+
+# What actually left the requester's account — "pending"/"failed" never
+# charged, "refunded" charged then came back.
+_CHARGED_STATUSES = ("held", "released")
 
 
 def _duration_days(req: LoanRequest) -> int:
@@ -63,4 +73,35 @@ def get_owner_analytics(current_user: User) -> OwnerAnalyticsSummary:
         average_occupancy_rate=average_occupancy_rate,
         most_popular_item=most_popular_item,
         items=item_analytics,
+    )
+
+
+def get_requester_spending(current_user: User) -> RequesterSpendingSummary:
+    # max_depth=2 so loan_request.item is eager-loaded too, not just
+    # loan_request itself — otherwise every entry below re-hits the DB for
+    # item.title.
+    payments = (
+        Payment.objects(payer=current_user)
+        .order_by("-created_at")
+        .select_related(max_depth=2)
+    )
+
+    entries = [
+        SpendingEntry(
+            loan_request_id=str(p.loan_request.id),
+            item_title=p.loan_request.item.title,
+            amount=p.gross_amount,
+            status=p.status,
+            created_at=p.created_at,
+        )
+        for p in payments
+    ]
+    total_spent = round(
+        sum(e.amount for e in entries if e.status in _CHARGED_STATUSES), 2
+    )
+
+    return RequesterSpendingSummary(
+        total_spent=total_spent,
+        payments_count=len(entries),
+        payments=entries,
     )

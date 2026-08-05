@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import ReviewCard from '@/components/reviews/ReviewCard'
 import ItemCard from '@/components/items/ItemCard'
-import { Category, FavoriteUserSummary, Item, LoanRequest, OwnerAnalyticsSummary, Review } from '@/types'
+import { Category, FavoriteUserSummary, Item, LoanRequest, OwnerAnalyticsSummary, RequesterSpendingSummary, Review } from '@/types'
 import { itemsService } from '@/services/items'
 import { requestsService } from '@/services/requests'
 import { reviewsService } from '@/services/reviews'
@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<LoanRequest[]>([])
   const [favorites, setFavorites] = useState<Item[]>([])
   const [favoriteUsers, setFavoriteUsers] = useState<FavoriteUserSummary[]>([])
+  const [spending, setSpending] = useState<RequesterSpendingSummary | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [analytics, setAnalytics] = useState<OwnerAnalyticsSummary | null>(null)
   const [loading, setLoading] = useState(false)
@@ -70,7 +71,7 @@ export default function DashboardPage() {
     setLoading(true)
     setLoadError(null)
     try {
-      const [myItems, recv, snt, hist, favs, favUsers, stats] = await Promise.all([
+      const [myItems, recv, snt, hist, favs, favUsers, stats, spend] = await Promise.all([
         itemsService.myItems(),
         requestsService.received(),
         requestsService.sent(),
@@ -78,6 +79,7 @@ export default function DashboardPage() {
         itemsService.myFavorites(),
         usersService.getFavoriteUsers(),
         usersService.getMyAnalytics(),
+        usersService.getMySpending(),
       ])
       setItems(myItems)
       setReceived(recv)
@@ -86,6 +88,7 @@ export default function DashboardPage() {
       setFavorites(favs)
       setFavoriteUsers(favUsers)
       setAnalytics(stats)
+      setSpending(spend)
       if (user) {
         reviewsService.forUser(user.id).then(setReviews).catch(() => {})
       }
@@ -309,6 +312,17 @@ export default function DashboardPage() {
           {/* Sent */}
           {tab === 'sent' && (
             <div className="space-y-4">
+              {spending && spending.total_spent > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total gasto alugando itens</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(spending.total_spent)}</p>
+                  </div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    {spending.payments_count} {spending.payments_count === 1 ? 'pagamento' : 'pagamentos'}
+                  </p>
+                </div>
+              )}
               {sent.length === 0 ? (
                 <EmptyState
                   icon={Send}

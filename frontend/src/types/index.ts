@@ -147,6 +147,20 @@ export interface OwnerAnalyticsSummary {
   items: ItemAnalytics[]
 }
 
+export interface SpendingEntry {
+  loan_request_id: string
+  item_title: string
+  amount: number
+  status: string
+  created_at: string
+}
+
+export interface RequesterSpendingSummary {
+  total_spent: number
+  payments_count: number
+  payments: SpendingEntry[]
+}
+
 export interface WeeklySignups {
   week_start: string
   count: number

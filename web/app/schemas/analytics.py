@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -17,3 +19,17 @@ class OwnerAnalyticsSummary(BaseModel):
     average_occupancy_rate: float
     most_popular_item: str | None = None
     items: list[ItemAnalytics]
+
+
+class SpendingEntry(BaseModel):
+    loan_request_id: str
+    item_title: str
+    amount: float
+    status: str
+    created_at: datetime
+
+
+class RequesterSpendingSummary(BaseModel):
+    total_spent: float
+    payments_count: int
+    payments: list[SpendingEntry]
