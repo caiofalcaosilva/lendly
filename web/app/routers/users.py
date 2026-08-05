@@ -17,6 +17,7 @@ from app.schemas.user import (
     FavoriteUserSummary,
     FeaturedItemsUpdate,
     LoginHistoryEntry,
+    NotificationPreferencesUpdate,
     PasswordChangeRequest,
     PublicUserResponse,
     SessionSummary,
@@ -31,6 +32,7 @@ from app.services import (
     item_service,
     loan_request_service,
     mp_connect_service,
+    notification_prefs_service,
     user_favorites_service,
 )
 from app.services.auth_service import (
@@ -100,6 +102,16 @@ def revoke_my_session(session_id: str, current_user: User = Depends(get_current_
     """Revokes one session by id — that device gets logged out next time its
     access token expires and it tries to refresh."""
     return revoke_session(session_id, current_user)
+
+
+@router.put("/me/notification-preferences", response_model=UserResponse)
+def update_notification_preferences(
+    data: NotificationPreferencesUpdate, current_user: User = Depends(get_current_user)
+):
+    """Toggles which convenience emails the logged-in user gets (status
+    changes, chat messages, verification results, item back in stock).
+    Security emails aren't covered — those never stop."""
+    return notification_prefs_service.update_notification_prefs(data, current_user)
 
 
 @router.get("/me/login-history", response_model=list[LoginHistoryEntry])

@@ -4,7 +4,11 @@ from datetime import timedelta
 from fastapi import Request
 
 from app.models.user import RefreshSession, User
-from app.schemas.user import PublicUserResponse, UserResponse
+from app.schemas.user import (
+    NotificationPreferencesSchema,
+    PublicUserResponse,
+    UserResponse,
+)
 from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils.security import create_access_token, hash_refresh_token
 from app.utils.time import utcnow
@@ -85,6 +89,12 @@ def user_to_response(user: User) -> UserResponse:
         instagram=user.instagram,
         whatsapp=user.whatsapp,
         featured_item_ids=[str(i.id) for i in (user.featured_items or [])],
+        notification_prefs=NotificationPreferencesSchema(
+            request_status=user.notification_prefs.request_status,
+            new_message=user.notification_prefs.new_message,
+            verification_result=user.notification_prefs.verification_result,
+            item_available=user.notification_prefs.item_available,
+        ),
         created_at=user.created_at,
     )
 

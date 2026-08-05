@@ -4,6 +4,7 @@ from app.models.message import Message
 from app.models.user import User
 from app.schemas.message import MessageResponse
 from app.services import email_service, loan_request_service
+from app.utils.notifications import should_notify
 from app.ws_manager import manager
 
 PAGE_SIZE = 50
@@ -36,14 +37,15 @@ def send_message(
     recipient = (
         req.owner if str(req.requester.id) == str(current_user.id) else req.requester
     )
-    background_tasks.add_task(
-        email_service.send_new_message_email,
-        recipient.email,
-        recipient.name,
-        current_user.name,
-        req.item.title,
-        request_id,
-    )
+    if should_notify(recipient, "new_message"):
+        background_tasks.add_task(
+            email_service.send_new_message_email,
+            recipient.email,
+            recipient.name,
+            current_user.name,
+            req.item.title,
+            request_id,
+        )
 
     return response
 

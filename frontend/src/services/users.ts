@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { BusinessSummary, FavoriteUserSummary, LoginHistoryEntry, OwnerAnalyticsSummary, PublicUser, RequesterSpendingSummary, SessionSummary, User } from '@/types'
+import { BusinessSummary, FavoriteUserSummary, LoginHistoryEntry, NotificationPreferences, OwnerAnalyticsSummary, PublicUser, RequesterSpendingSummary, SessionSummary, User } from '@/types'
 
 export interface UpdateProfileData {
   name?: string
@@ -56,6 +56,9 @@ export const usersService = {
 
   getLoginHistory: () =>
     api.get<LoginHistoryEntry[]>('/users/me/login-history').then((r) => r.data),
+
+  updateNotificationPreferences: (data: Partial<NotificationPreferences>) =>
+    api.put<User>('/users/me/notification-preferences', data).then((r) => r.data),
 
   getFavoriteUsers: () =>
     api.get<FavoriteUserSummary[]>('/users/me/favorite-users').then((r) => r.data),

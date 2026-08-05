@@ -14,10 +14,13 @@ from app.services.loan_request_service._common import (
 )
 from app.services.loan_request_service.reliability import recalculate_reliability
 from app.utils import errors
+from app.utils.notifications import should_notify
 from app.utils.time import utcnow
 
 
 def _notify_status_change(req: LoanRequest, background_tasks: BackgroundTasks) -> None:
+    if not should_notify(req.requester, "request_status"):
+        return
     background_tasks.add_task(
         email_service.send_request_status_email,
         req.requester.email,

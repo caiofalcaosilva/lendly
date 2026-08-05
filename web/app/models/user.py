@@ -24,6 +24,17 @@ class RefreshSession(EmbeddedDocument):
     user_agent = StringField(max_length=300)
 
 
+class NotificationPreferences(EmbeddedDocument):
+    """Only the convenience emails are toggleable — security-relevant ones
+    (verification links, password reset, new-login alerts) always send,
+    same reasoning as why 2FA can't be turned off without a valid code."""
+
+    request_status = BooleanField(default=True)
+    new_message = BooleanField(default=True)
+    verification_result = BooleanField(default=True)
+    item_available = BooleanField(default=True)
+
+
 class User(Document):
     name = StringField(required=True, max_length=100)
     email = EmailField(required=True, unique=True)
@@ -80,6 +91,9 @@ class User(Document):
     totp_enabled = BooleanField(default=False)
     trusted_devices = ListField(StringField(), default=list)
     refresh_sessions = ListField(EmbeddedDocumentField(RefreshSession), default=list)
+    notification_prefs = EmbeddedDocumentField(
+        NotificationPreferences, default=NotificationPreferences
+    )
     favorites = ListField(ReferenceField("Item"), default=list)
     average_rating = FloatField(default=0.0)
     rating_count = IntField(default=0)

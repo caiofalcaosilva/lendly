@@ -25,6 +25,7 @@ import IdentityVerificationSection from '@/components/profile/IdentityVerificati
 import MercadoPagoConnectSection from '@/components/profile/MercadoPagoConnectSection'
 import SessionsSection from '@/components/profile/SessionsSection'
 import LoginHistorySection from '@/components/profile/LoginHistorySection'
+import NotificationPreferencesSection from '@/components/profile/NotificationPreferencesSection'
 
 const opt = z.string().optional().or(z.literal(''))
 
@@ -500,6 +501,9 @@ export default function ProfilePage() {
 
           {/* Passive login history */}
           <LoginHistorySection />
+
+          {/* Email notification toggles */}
+          {user && <NotificationPreferencesSection user={user} updateUser={updateUser} />}
 
           {/* TOTP 2FA */}
           <div className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">

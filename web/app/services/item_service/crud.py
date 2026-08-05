@@ -10,6 +10,7 @@ from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
 from app.services import category_service, email_service
 from app.services.item_service._common import get_owned_item, to_response
 from app.utils import errors
+from app.utils.notifications import should_notify
 from app.utils.time import utcnow
 
 
@@ -249,13 +250,14 @@ def set_availability(
 
     if became_available and waiting and background_tasks:
         for user in waiting:
-            background_tasks.add_task(
-                email_service.send_item_available_email,
-                user.email,
-                user.name,
-                item.title,
-                str(item.id),
-            )
+            if should_notify(user, "item_available"):
+                background_tasks.add_task(
+                    email_service.send_item_available_email,
+                    user.email,
+                    user.name,
+                    item.title,
+                    str(item.id),
+                )
 
     return to_response(item)
 

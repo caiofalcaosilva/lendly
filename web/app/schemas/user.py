@@ -90,6 +90,20 @@ class UserUpdate(BaseModel):
         return self
 
 
+class NotificationPreferencesSchema(BaseModel):
+    request_status: bool = True
+    new_message: bool = True
+    verification_result: bool = True
+    item_available: bool = True
+
+
+class NotificationPreferencesUpdate(BaseModel):
+    request_status: bool | None = None
+    new_message: bool | None = None
+    verification_result: bool | None = None
+    item_available: bool | None = None
+
+
 class UserResponse(BaseModel):
     id: str
     name: str
@@ -128,6 +142,7 @@ class UserResponse(BaseModel):
     instagram: str | None = None
     whatsapp: str | None = None
     featured_item_ids: list[str] = []
+    notification_prefs: NotificationPreferencesSchema = NotificationPreferencesSchema()
     created_at: datetime
 
 

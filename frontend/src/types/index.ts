@@ -36,7 +36,15 @@ export interface User {
   instagram?: string
   whatsapp?: string
   featured_item_ids: string[]
+  notification_prefs: NotificationPreferences
   created_at: string
+}
+
+export interface NotificationPreferences {
+  request_status: boolean
+  new_message: boolean
+  verification_result: boolean
+  item_available: boolean
 }
 
 // What GET /users/{id} returns — no email, cpf, phone, address detail,
