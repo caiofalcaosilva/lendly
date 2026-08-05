@@ -1,7 +1,7 @@
 import secrets
 from typing import Any
 
-from app.models.group import Group
+from app.models.group import Group, Vouch
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.group import (
@@ -13,20 +13,32 @@ from app.schemas.group import (
 from app.utils import errors
 
 
-def _member_response(user: User) -> GroupMemberResponse:
+def _member_response(
+    user: User, group: Group, viewer: User | None
+) -> GroupMemberResponse:
+    vouches_for_user = [
+        v for v in group.vouches if str(v.vouched_for.id) == str(user.id)
+    ]
+    vouched_by_me = bool(
+        viewer and any(str(v.voucher.id) == str(viewer.id) for v in vouches_for_user)
+    )
     return GroupMemberResponse(
-        id=str(user.id), name=user.name, average_rating=user.average_rating
+        id=str(user.id),
+        name=user.name,
+        average_rating=user.average_rating,
+        vouch_count=len(vouches_for_user),
+        vouched_by_me=vouched_by_me,
     )
 
 
-def _to_response(group: Group) -> GroupResponse:
+def _to_response(group: Group, viewer: User | None = None) -> GroupResponse:
     return GroupResponse(
         id=str(group.id),
         name=group.name,
         description=group.description,
         invite_code=group.invite_code,
         member_count=len(group.members),
-        members=[_member_response(m) for m in group.members],
+        members=[_member_response(m, group, viewer) for m in group.members],
         created_by=str(group.created_by.id),
         created_at=group.created_at,
     )
@@ -61,6 +73,19 @@ def _strip_group_from_items(group: Group, user: User) -> None:
         item.update(**updates)
 
 
+def _strip_vouches(group: Group, user: User) -> None:
+    """Drops any vouch involving `user` (given or received) — called when
+    they leave or get removed, so a stale vouch can't reference a
+    non-member."""
+    remaining = [
+        v
+        for v in group.vouches
+        if str(v.voucher.id) != str(user.id) and str(v.vouched_for.id) != str(user.id)
+    ]
+    if len(remaining) != len(group.vouches):
+        group.update(vouches=remaining)
+
+
 def create_group(data: GroupCreate, current_user: User) -> GroupResponse:
     group = Group(
         name=data.name,
@@ -70,7 +95,7 @@ def create_group(data: GroupCreate, current_user: User) -> GroupResponse:
         members=[current_user],
     )
     group.save()
-    return _to_response(group)
+    return _to_response(group, viewer=current_user)
 
 
 def get_my_groups(current_user: User) -> list[GroupSummary]:
@@ -95,7 +120,7 @@ def _get_group_readable(group_id: str, current_user: User) -> Group:
 
 def get_group(group_id: str, current_user: User) -> GroupResponse:
     group = _get_group_readable(group_id, current_user)
-    return _to_response(group)
+    return _to_response(group, viewer=current_user)
 
 
 def list_all_groups() -> list[GroupSummary]:
@@ -113,7 +138,7 @@ def join_group(invite_code: str, current_user: User) -> GroupResponse:
     if not is_member and not current_user.is_admin:
         group.update(push__members=current_user)
         group.reload()
-    return _to_response(group)
+    return _to_response(group, viewer=current_user)
 
 
 def leave_group(group_id: str, current_user: User) -> dict:
@@ -123,6 +148,7 @@ def leave_group(group_id: str, current_user: User) -> dict:
             "The creator can't leave — delete the group instead",
         )
     _strip_group_from_items(group, current_user)
+    _strip_vouches(group, current_user)
     group.update(pull__members=current_user)
     return {"detail": "Left the group"}
 
@@ -162,6 +188,45 @@ def admin_remove_member(group_id: str, user_id: str) -> GroupResponse:
             "Não é possível remover o criador — exclua o grupo em vez disso",
         )
     _strip_group_from_items(group, member)
+    _strip_vouches(group, member)
     group.update(pull__members=member)
     group.reload()
     return _to_response(group)
+
+
+def vouch_for_member(group_id: str, user_id: str, current_user: User) -> GroupResponse:
+    """Confirms `current_user` personally knows the member at `user_id`,
+    within this group. Idempotent — re-vouching is a no-op, not an error."""
+    group = _get_as_member(group_id, current_user)
+    if user_id == str(current_user.id):
+        raise errors.bad_request("Cannot vouch for yourself")
+    target = next((m for m in group.members if str(m.id) == user_id), None)
+    if not target:
+        raise errors.not_found("Member not found in this group")
+
+    already = any(
+        str(v.voucher.id) == str(current_user.id) and str(v.vouched_for.id) == user_id
+        for v in group.vouches
+    )
+    if not already:
+        group.update(push__vouches=Vouch(voucher=current_user, vouched_for=target))
+        group.reload()
+    return _to_response(group, viewer=current_user)
+
+
+def unvouch_for_member(
+    group_id: str, user_id: str, current_user: User
+) -> GroupResponse:
+    group = _get_as_member(group_id, current_user)
+    remaining = [
+        v
+        for v in group.vouches
+        if not (
+            str(v.voucher.id) == str(current_user.id)
+            and str(v.vouched_for.id) == user_id
+        )
+    ]
+    if len(remaining) != len(group.vouches):
+        group.update(vouches=remaining)
+        group.reload()
+    return _to_response(group, viewer=current_user)

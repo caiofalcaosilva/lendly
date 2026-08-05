@@ -18,6 +18,12 @@ export const groupsService = {
 
   items: (id: string) => api.get<Item[]>(`/groups/${id}/items`).then((r) => r.data),
 
+  vouch: (id: string, userId: string) =>
+    api.post<Group>(`/groups/${id}/members/${userId}/vouch`).then((r) => r.data),
+
+  unvouch: (id: string, userId: string) =>
+    api.delete<Group>(`/groups/${id}/members/${userId}/vouch`).then((r) => r.data),
+
   // Admin-only — every group on the platform, not just ones the admin
   // belongs to. GET /groups/{id} itself already lets an admin view any
   // group's detail, so this only needs a listing endpoint.

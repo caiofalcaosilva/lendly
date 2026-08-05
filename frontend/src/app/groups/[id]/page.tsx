@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Users, Copy, Check, LogOut, Trash2, Package, X } from 'lucide-react'
+import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck } from 'lucide-react'
 import { Group, Item } from '@/types'
 import { groupsService } from '@/services/groups'
 import { useAuth } from '@/contexts/AuthContext'
@@ -86,6 +86,13 @@ export default function GroupDetailPage() {
     }
   }
 
+  const handleToggleVouch = async (member: { id: string; vouched_by_me: boolean }) => {
+    const updated = member.vouched_by_me
+      ? await groupsService.unvouch(id, member.id)
+      : await groupsService.vouch(id, member.id)
+    setGroup(updated)
+  }
+
   if (loading) return (
     <div className="flex justify-center items-center min-h-[50vh]">
       <Spinner className="w-8 h-8 text-green-600" />
@@ -156,6 +163,20 @@ export default function GroupDetailPage() {
                 >
                   {m.name}
                 </Link>
+                {user && m.id !== user.id && (
+                  <button
+                    onClick={() => handleToggleVouch(m)}
+                    title={m.vouched_by_me ? 'Você confirma conhecer essa pessoa' : 'Confirmar que conhece essa pessoa'}
+                    className={`flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[10px] transition-colors ${
+                      m.vouched_by_me
+                        ? 'text-green-700 dark:text-green-400'
+                        : 'text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400'
+                    }`}
+                  >
+                    <ShieldCheck className={`w-3 h-3 ${m.vouched_by_me ? 'fill-green-100 dark:fill-green-900' : ''}`} />
+                    {m.vouch_count > 0 && m.vouch_count}
+                  </button>
+                )}
                 {user?.is_admin && m.id !== group.created_by && (
                   <button
                     onClick={() => handleRemoveMember(m.id, m.name)}

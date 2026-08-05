@@ -16,6 +16,8 @@ class GroupMemberResponse(BaseModel):
     id: str
     name: str
     average_rating: float
+    vouch_count: int = 0
+    vouched_by_me: bool = False
 
 
 class GroupSummary(BaseModel):

@@ -406,6 +406,8 @@ export interface GroupMember {
   id: string
   name: string
   average_rating: number
+  vouch_count: number
+  vouched_by_me: boolean
 }
 
 export interface GroupSummary {

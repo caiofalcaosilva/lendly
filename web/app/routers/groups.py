@@ -52,3 +52,21 @@ def delete_group(group_id: str, current_user: User = Depends(get_current_user)):
 def group_items(group_id: str, current_user: User = Depends(get_current_user)):
     """Items shared with a group — members only."""
     return item_service.list_group_items(group_id, current_user)
+
+
+@router.post("/{group_id}/members/{user_id}/vouch", response_model=GroupResponse)
+def vouch_for_member(
+    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+):
+    """Confirms the logged-in user personally knows this fellow group
+    member — a light trust signal scoped to people who already share a
+    private, invite-only group."""
+    return group_service.vouch_for_member(group_id, user_id, current_user)
+
+
+@router.delete("/{group_id}/members/{user_id}/vouch", response_model=GroupResponse)
+def unvouch_for_member(
+    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+):
+    """Withdraws a vouch given earlier."""
+    return group_service.unvouch_for_member(group_id, user_id, current_user)
