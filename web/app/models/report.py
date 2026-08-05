@@ -20,5 +20,12 @@ class Report(Document):
 
     meta = {
         "collection": "reports",
-        "indexes": ["reporter", "item", "reported_user", "status"],
+        "indexes": [
+            "reporter",
+            "item",
+            "reported_user",
+            "status",
+            # Admin action history, queried with a $ne: None filter.
+            "reviewed_by",
+        ],
     }

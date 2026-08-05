@@ -13,9 +13,11 @@ class Group(Document):
 
     meta = {
         "collection": "groups",
+        # created_by used to be indexed here too, but it's only ever read
+        # off an already-fetched group (str(group.created_by.id) == ...),
+        # never used to filter a query — dropped as dead weight.
         "indexes": [
             "members",
-            "created_by",
             {"fields": ["invite_code"], "unique": True},
         ],
     }

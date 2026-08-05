@@ -42,5 +42,20 @@ class LoanRequest(Document):
 
     meta = {
         "collection": "loan_requests",
-        "indexes": ["requester", "owner", "item", "status"],
+        "indexes": [
+            # Standalone — the 4 admin-dashboard status counts filter on
+            # this alone, which none of the compounds below can serve
+            # (status isn't the leftmost field in any of them).
+            "status",
+            # reliability_service.recalculate_reliability runs one of these
+            # three on every accept/refuse/finish/cancel transition. Each
+            # compound's leftmost field also covers get_sent_requests /
+            # get_received_requests, which filter on requester/owner alone.
+            {"fields": ["requester", "status"]},
+            {"fields": ["owner", "status"]},
+            {"fields": ["cancelled_by", "status"]},
+            # create_request's active-loan conflict check and
+            # analytics_service's per-item finished count.
+            {"fields": ["item", "status"]},
+        ],
     }

@@ -112,9 +112,21 @@ class User(Document):
         "strict": False,
         "indexes": [
             {"fields": ["email"], "unique": True},
-            "city",
-            "state",
-            "neighborhood",
+            # Looked up by token on every email-verification click — same
+            # spirit as refresh_sessions.token_hash below.
+            "email_verification_token",
+            # Weekly signup counts on the admin dashboard, and the sort on
+            # the full user CSV export.
+            "created_at",
+            # The public business directory (GET /users/businesses) filters
+            # on this.
+            "account_type",
+            # Admin action history — both queried with a $ne: None filter.
+            "status_changed_by",
+            "admin_status_changed_by",
             "refresh_sessions.token_hash",
+            # city/state/neighborhood used to be indexed here, but nothing
+            # ever filters a User by them (they're display-only fields on
+            # this model) — dropped as dead weight.
         ],
     }

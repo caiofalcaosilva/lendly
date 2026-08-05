@@ -58,14 +58,17 @@ class Item(Document):
             "owner",
             "category",
             "subcategory",
-            "city",
-            "neighborhood",
             "availability_type",
-            "is_available",
-            "is_active",
-            "state",
             "groups",
-            "is_public",
+            # is_active + is_available + is_public are always filtered together
+            # in list_items (the public browse/search endpoint) and sorted by
+            # created_at — one compound index covers the filter and the sort
+            # in a single pass, and (being a prefix) still serves the handful
+            # of call sites that only filter on is_active alone. city/
+            # neighborhood/state used to have their own indexes here, but the
+            # only queries against them use icontains (unanchored substring),
+            # which can't use a plain index anyway — dropped as dead weight.
+            {"fields": ["is_active", "is_available", "is_public", "-created_at"]},
             # Full-text search over title + description (see item_service.list_items).
             {"fields": ["$title", "$description"], "default_language": "portuguese"},
         ],

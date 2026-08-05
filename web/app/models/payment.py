@@ -41,5 +41,8 @@ class Payment(Document):
 
     meta = {
         "collection": "payments",
-        "indexes": ["loan_request", "payer", "payee", "mp_payment_id"],
+        # loan_request already has its own unique index from `unique=True`
+        # above. payer/payee used to be indexed here too, but nothing
+        # queries a Payment by either today — dropped as dead weight.
+        "indexes": ["mp_payment_id"],
     }

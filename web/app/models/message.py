@@ -13,5 +13,7 @@ class Message(Document):
         "collection": "messages",
         "indexes": [
             {"fields": ["request", "created_at"]},
+            # export_service's per-user data export (LGPD request).
+            "sender",
         ],
     }

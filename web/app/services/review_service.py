@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from mongoengine import NotUniqueError
 
 from app.models.loan_request import LoanRequest
 from app.models.review import Review
@@ -78,7 +79,15 @@ def create_review(
         rating=data.rating,
         comment=data.comment,
     )
-    review.save()
+    try:
+        review.save()
+    except NotUniqueError as err:
+        # Belt-and-suspenders against the check above: two near-simultaneous
+        # requests can both pass it, but only one can win the unique index.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You already reviewed this request",
+        ) from err
     recalculate_rating(reviewed)
 
     return _to_response(review)
