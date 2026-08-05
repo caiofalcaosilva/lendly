@@ -1,9 +1,8 @@
-from fastapi import HTTPException, status
-
 from app.models.item import Item
 from app.models.report import Report
 from app.models.user import User
 from app.schemas.report import ReportCreate, ReportResponse
+from app.utils import errors
 from app.utils.time import utcnow
 
 
@@ -32,19 +31,13 @@ def create_report(data: ReportCreate, current_user: User) -> ReportResponse:
     if data.item_id:
         item = Item.objects(id=data.item_id, is_active=True).first()
         if not item:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
-            )
+            raise errors.not_found("Item not found")
     else:
         reported_user = User.objects(id=data.reported_user_id, is_active=True).first()
         if not reported_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-            )
+            raise errors.not_found("User not found")
         if str(reported_user.id) == str(current_user.id):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot report yourself"
-            )
+            raise errors.bad_request("Cannot report yourself")
 
     report = Report(
         reporter=current_user,
@@ -67,13 +60,9 @@ def list_reports(status_filter: str | None) -> list[ReportResponse]:
 def _get_pending_report(report_id: str) -> Report:
     report = Report.objects(id=report_id).first()
     if not report:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"
-        )
+        raise errors.not_found("Report not found")
     if report.status != "pending":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Report already reviewed"
-        )
+        raise errors.bad_request("Report already reviewed")
     return report
 
 

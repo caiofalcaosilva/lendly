@@ -1,10 +1,10 @@
-from fastapi import HTTPException, status
 from mongoengine import NotUniqueError
 
 from app.models.loan_request import LoanRequest
 from app.models.review import Review
 from app.models.user import User
 from app.schemas.review import ReviewCreate, ReviewResponse
+from app.utils import errors
 
 
 def _to_response(review: Review) -> ReviewResponse:
@@ -46,29 +46,19 @@ def create_review(
 ) -> ReviewResponse:
     req = LoanRequest.objects(id=request_id).first()
     if not req:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
-        )
+        raise errors.not_found("Request not found")
 
     is_requester = str(req.requester.id) == str(current_user.id)
     is_owner = str(req.owner.id) == str(current_user.id)
 
     if not is_requester and not is_owner:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
+        raise errors.forbidden("Access denied")
 
     if req.status != "finished":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Reviews are only allowed for finished requests",
-        )
+        raise errors.bad_request("Reviews are only allowed for finished requests")
 
     if Review.objects(loan_request=req, reviewer=current_user).first():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="You already reviewed this request",
-        )
+        raise errors.conflict("You already reviewed this request")
 
     reviewed = req.owner if is_requester else req.requester
 
@@ -84,10 +74,7 @@ def create_review(
     except NotUniqueError as err:
         # Belt-and-suspenders against the check above: two near-simultaneous
         # requests can both pass it, but only one can win the unique index.
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="You already reviewed this request",
-        ) from err
+        raise errors.conflict("You already reviewed this request") from err
     recalculate_rating(reviewed)
 
     return _to_response(review)
@@ -96,9 +83,7 @@ def create_review(
 def get_user_reviews(user_id: str) -> list[ReviewResponse]:
     user = User.objects(id=user_id, is_active=True).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        raise errors.not_found("User not found")
     return [
         _to_response(r) for r in Review.objects(reviewed=user).order_by("-created_at")
     ]

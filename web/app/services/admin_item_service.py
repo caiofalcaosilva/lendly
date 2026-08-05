@@ -1,9 +1,8 @@
-from fastapi import HTTPException, status
-
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.admin_items import AdminItemSummary
 from app.schemas.bulk import BulkActionResult
+from app.utils import errors
 from app.utils.bulk import run_bulk
 from app.utils.time import utcnow
 
@@ -39,9 +38,7 @@ def list_items(search: str | None, skip: int, limit: int) -> list[AdminItemSumma
 def _get_item(item_id: str) -> Item:
     item = Item.objects(id=item_id).first()
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
-        )
+        raise errors.not_found("Item not found")
     return item
 
 

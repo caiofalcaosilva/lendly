@@ -1,7 +1,9 @@
 import io
 
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 from PIL import Image
+
+from app.utils import errors
 
 ALLOWED_PHOTO_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_PHOTO_DIMENSION = 1600
@@ -15,16 +17,14 @@ async def load_and_resize(file: UploadFile) -> Image.Image:
     HTTPException(400) for anything that doesn't look like a real image
     of an allowed type."""
     if file.content_type not in ALLOWED_PHOTO_CONTENT_TYPES:
-        raise HTTPException(status_code=400, detail="Formato de imagem não suportado")
+        raise errors.bad_request("Formato de imagem não suportado")
 
     raw = await file.read()
     try:
         Image.open(io.BytesIO(raw)).verify()
         img = Image.open(io.BytesIO(raw)).convert("RGB")
     except Exception as err:
-        raise HTTPException(
-            status_code=400, detail="Arquivo de imagem inválido"
-        ) from err
+        raise errors.bad_request("Arquivo de imagem inválido") from err
 
     img.thumbnail((MAX_PHOTO_DIMENSION, MAX_PHOTO_DIMENSION))
     return img

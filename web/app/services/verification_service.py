@@ -1,12 +1,13 @@
 import os
 import uuid
 
-from fastapi import BackgroundTasks, HTTPException, UploadFile, status
+from fastapi import BackgroundTasks, UploadFile
 
 from app.models.user import User
 from app.models.verification import VerificationSubmission
 from app.schemas.verification import VerificationResponse
 from app.services import email_service
+from app.utils import errors
 from app.utils.images import load_and_resize
 from app.utils.time import utcnow
 from app.utils.validators import is_valid_cpf
@@ -44,21 +45,16 @@ async def submit_verification(
     cpf: str, selfie: UploadFile, document: UploadFile, current_user: User
 ) -> VerificationResponse:
     if not is_valid_cpf(cpf):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="CPF inválido"
-        )
+        raise errors.bad_request("CPF inválido")
 
     if current_user.identity_status in ("pending", "approved"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Você já tem uma verificação pendente ou aprovada",
+        raise errors.bad_request(
+            "Você já tem uma verificação pendente ou aprovada",
         )
 
     existing_owner = User.objects(cpf=cpf, id__ne=current_user.id).first()
     if existing_owner:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Este CPF já está em uso"
-        )
+        raise errors.conflict("Este CPF já está em uso")
 
     selfie_path = await _save_photo(selfie, str(current_user.id), "selfie")
     document_path = await _save_photo(document, str(current_user.id), "document")
@@ -90,24 +86,18 @@ def list_submissions(status_filter: str | None) -> list[VerificationResponse]:
 def _get_pending_submission(submission_id: str) -> VerificationSubmission:
     sub = VerificationSubmission.objects(id=submission_id).first()
     if not sub:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found"
-        )
+        raise errors.not_found("Submission not found")
     if sub.status != "pending":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Already reviewed"
-        )
+        raise errors.bad_request("Already reviewed")
     return sub
 
 
 def get_photo_path(submission_id: str, kind: str) -> str:
     if kind not in ("selfie", "document"):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        raise errors.not_found("Not found")
     sub = VerificationSubmission.objects(id=submission_id).first()
     if not sub:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found"
-        )
+        raise errors.not_found("Submission not found")
     return sub.selfie_path if kind == "selfie" else sub.document_path
 
 

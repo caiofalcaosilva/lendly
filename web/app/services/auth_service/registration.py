@@ -1,7 +1,7 @@
 import secrets
 from datetime import timedelta
 
-from fastapi import BackgroundTasks, HTTPException, status
+from fastapi import BackgroundTasks
 
 from app.models.user import User
 from app.schemas.user import TokenResponse, UserCreate, UserResponse
@@ -13,24 +13,21 @@ from app.services.auth_service._common import (
     user_to_response,
 )
 from app.services.platform_settings_service import get_settings as get_platform_settings
+from app.utils import errors
 from app.utils.security import hash_password
 from app.utils.time import utcnow
 
 
 def register_user(data: UserCreate, background_tasks: BackgroundTasks) -> TokenResponse:
     if User.objects(email=data.email).first():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
-        )
+        raise errors.conflict("Email already registered")
 
     cnpj_digits = None
     if data.account_type == "business":
         assert data.cnpj is not None  # enforced by UserCreate's model_validator
         cnpj_digits = "".join(c for c in data.cnpj if c.isdigit())
         if User.objects(cnpj=cnpj_digits).first():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="CNPJ already registered"
-            )
+            raise errors.conflict("CNPJ already registered")
 
     verification_token = secrets.token_urlsafe(32)
     device_token = new_device_token()
@@ -86,9 +83,7 @@ def verify_email_token(token: str) -> UserResponse:
         email_verification_expires__gt=utcnow(),
     ).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Link inválido ou expirado"
-        )
+        raise errors.bad_request("Link inválido ou expirado")
 
     user.update(
         is_verified=True, email_verification_token=None, email_verification_expires=None
@@ -99,9 +94,7 @@ def verify_email_token(token: str) -> UserResponse:
 
 def resend_verification(current_user: User, background_tasks: BackgroundTasks) -> dict:
     if current_user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="E-mail já verificado"
-        )
+        raise errors.bad_request("E-mail já verificado")
 
     token = secrets.token_urlsafe(32)
     current_user.update(

@@ -1,8 +1,7 @@
-from fastapi import HTTPException, status
-
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestResponse
+from app.utils import errors
 
 WEEKDAY_LABELS = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
 
@@ -32,50 +31,33 @@ def to_response(req: LoanRequest) -> LoanRequestResponse:
 def get_as_owner(request_id: str, current_user: User) -> LoanRequest:
     req = LoanRequest.objects(id=request_id).first()
     if not req:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
-        )
+        raise errors.not_found("Request not found")
     if str(req.owner.id) != str(current_user.id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the owner can perform this action",
-        )
+        raise errors.forbidden("Only the owner can perform this action")
     return req
 
 
 def get_as_requester(request_id: str, current_user: User) -> LoanRequest:
     req = LoanRequest.objects(id=request_id).first()
     if not req:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
-        )
+        raise errors.not_found("Request not found")
     if str(req.requester.id) != str(current_user.id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the requester can perform this action",
-        )
+        raise errors.forbidden("Only the requester can perform this action")
     return req
 
 
 def get_as_participant(request_id: str, current_user: User) -> LoanRequest:
     req = LoanRequest.objects(id=request_id).first()
     if not req:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
-        )
+        raise errors.not_found("Request not found")
     is_participant = str(req.requester.id) == str(current_user.id) or str(
         req.owner.id
     ) == str(current_user.id)
     if not is_participant:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
+        raise errors.forbidden("Access denied")
     return req
 
 
 def assert_status(req: LoanRequest, expected: str) -> None:
     if req.status != expected:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Expected status '{expected}', got '{req.status}'",
-        )
+        raise errors.conflict(f"Expected status '{expected}', got '{req.status}'")

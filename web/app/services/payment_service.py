@@ -1,7 +1,5 @@
 import logging
 
-from fastapi import HTTPException, status
-
 from app.config import settings
 from app.models.loan_request import LoanRequest
 from app.models.payment import Payment
@@ -9,6 +7,7 @@ from app.models.user import User
 from app.schemas.payment import PaymentResponse
 from app.services import mercadopago_gateway
 from app.services.mercadopago_gateway import MercadoPagoError
+from app.utils import errors
 from app.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
@@ -53,12 +52,9 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
             seller_mp_user_id=req.owner.mp_user_id,
         )
     except MercadoPagoError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=(
-                f"Não foi possível gerar a cobrança Pix agora ({e}). "
-                "Tente novamente em instantes."
-            ),
+        raise errors.bad_gateway(
+            f"Não foi possível gerar a cobrança Pix agora ({e}). "
+            "Tente novamente em instantes."
         ) from e
 
     payment = Payment(
@@ -81,25 +77,19 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
 def _get_payment(req: LoanRequest) -> Payment:
     payment = Payment.objects(loan_request=req).first()
     if not payment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found"
-        )
+        raise errors.not_found("Payment not found")
     return payment
 
 
 def get_payment_for_request(request_id: str, current_user: User) -> PaymentResponse:
     req = LoanRequest.objects(id=request_id).first()
     if not req:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
-        )
+        raise errors.not_found("Request not found")
     is_participant = str(req.requester.id) == str(current_user.id) or str(
         req.owner.id
     ) == str(current_user.id)
     if not is_participant:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
+        raise errors.forbidden("Access denied")
 
     payment = Payment.objects(loan_request=req).first()
     if (
@@ -112,9 +102,7 @@ def get_payment_for_request(request_id: str, current_user: User) -> PaymentRespo
         payment = create_payment_for_request(req)
 
     if not payment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found"
-        )
+        raise errors.not_found("Payment not found")
     return _to_response(payment)
 
 
@@ -125,12 +113,9 @@ def release_payment(req: LoanRequest) -> None:
     try:
         mercadopago_gateway.release_payment(payment.mp_payment_id)
     except MercadoPagoError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=(
-                f"Não foi possível liberar o pagamento agora ({e}). "
-                "Tente novamente em instantes."
-            ),
+        raise errors.bad_gateway(
+            f"Não foi possível liberar o pagamento agora ({e}). "
+            "Tente novamente em instantes."
         ) from e
     payment.update(status="released", released_at=utcnow())
     req.update(payment_status="released", updated_at=utcnow())
@@ -142,12 +127,9 @@ def refund_payment(req: LoanRequest) -> None:
     try:
         mercadopago_gateway.refund_payment(payment.mp_payment_id)
     except MercadoPagoError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=(
-                f"Não foi possível estornar o pagamento agora ({e}). "
-                "Tente novamente em instantes."
-            ),
+        raise errors.bad_gateway(
+            f"Não foi possível estornar o pagamento agora ({e}). "
+            "Tente novamente em instantes."
         ) from e
     payment.update(status="refunded", refunded_at=utcnow())
     req.update(payment_status="refunded", updated_at=utcnow())
@@ -170,16 +152,20 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
             "webhook signature verification failed",
             extra={"mp_payment_id": data_id, "x_request_id": x_request_id},
         )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook signature"
-        )
+        raise errors.unauthorized("Invalid webhook signature")
 
     payment = Payment.objects(mp_payment_id=data_id).first()
     if not payment or payment.status != "pending":
         # Not ours, or already processed — webhooks can be redelivered.
         return
 
-    remote_status = mercadopago_gateway.get_payment_status(data_id)
+    try:
+        remote_status = mercadopago_gateway.get_payment_status(data_id)
+    except MercadoPagoError as e:
+        raise errors.bad_gateway(
+            f"Não foi possível confirmar o status do pagamento agora ({e})."
+        ) from e
+
     if remote_status == "approved":
         payment.update(status="held", held_at=utcnow())
         payment.loan_request.update(payment_status="held", updated_at=utcnow())

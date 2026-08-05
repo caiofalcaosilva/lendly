@@ -1,4 +1,4 @@
-from fastapi import BackgroundTasks, HTTPException, status
+from fastapi import BackgroundTasks
 
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
@@ -13,6 +13,7 @@ from app.services.loan_request_service._common import (
     to_response,
 )
 from app.services.loan_request_service.reliability import recalculate_reliability
+from app.utils import errors
 from app.utils.time import utcnow
 
 
@@ -29,34 +30,24 @@ def _notify_status_change(req: LoanRequest, background_tasks: BackgroundTasks) -
 
 def create_request(data: LoanRequestCreate, current_user: User) -> LoanRequestResponse:
     if current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Contas administrativas não podem solicitar itens",
+        raise errors.bad_request(
+            "Contas administrativas não podem solicitar itens",
         )
 
     item = Item.objects(id=data.item_id, is_active=True, is_available=True).first()
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Item not found or unavailable",
-        )
+        raise errors.not_found("Item not found or unavailable")
 
     if str(item.owner.id) == str(current_user.id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot request your own item",
-        )
+        raise errors.bad_request("Cannot request your own item")
 
     if (
         item.requires_identity_verification
         and current_user.identity_status != "approved"
     ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=(
-                "Este item exige verificação de identidade aprovada. "
-                "Complete sua verificação em /profile."
-            ),
+        raise errors.forbidden(
+            "Este item exige verificação de identidade aprovada. "
+            "Complete sua verificação em /profile."
         )
 
     if item.available_days:
@@ -66,11 +57,8 @@ def create_request(data: LoanRequestCreate, current_user: User) -> LoanRequestRe
             or data.expected_return_date.weekday() not in allowed
         ):
             days = ", ".join(WEEKDAY_LABELS[d] for d in item.available_days)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    f"Este item só está disponível para retirada/devolução em: {days}"
-                ),
+            raise errors.bad_request(
+                f"Este item só está disponível para retirada/devolução em: {days}"
             )
 
     # Block if another accepted/in_progress request already exists for this item
@@ -78,10 +66,7 @@ def create_request(data: LoanRequestCreate, current_user: User) -> LoanRequestRe
         item=item, status__in=["accepted", "in_progress"]
     ).first()
     if conflict:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Item already has an active loan in progress",
-        )
+        raise errors.conflict("Item already has an active loan in progress")
 
     req = LoanRequest(
         item=item,
@@ -133,12 +118,9 @@ def start_request(request_id: str, current_user: User) -> LoanRequestResponse:
     assert_status(req, "accepted")
 
     if req.item.availability_type == "paid" and req.payment_status != "held":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "Aguardando confirmação do pagamento — a retirada só pode ser "
-                "confirmada depois que o Pix for aprovado"
-            ),
+        raise errors.conflict(
+            "Aguardando confirmação do pagamento — a retirada só pode ser "
+            "confirmada depois que o Pix for aprovado"
         )
 
     req.update(status="in_progress", updated_at=utcnow())
@@ -171,10 +153,7 @@ def cancel_request(request_id: str, current_user: User) -> LoanRequestResponse:
     req = get_as_participant(request_id, current_user)
 
     if req.status not in ("pending", "accepted"):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Cannot cancel a request with status '{req.status}'",
-        )
+        raise errors.conflict(f"Cannot cancel a request with status '{req.status}'")
 
     # Only reachable before pickup, so a held payment always gets a full refund.
     if req.payment_status == "held":

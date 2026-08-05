@@ -1,7 +1,6 @@
 import logging
 import secrets
 
-from fastapi import HTTPException, status
 from mongoengine import Q
 
 from app.models.group import Group
@@ -10,6 +9,7 @@ from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.schemas.user import AccountDeleteRequest
 from app.services import group_service
+from app.utils import errors
 from app.utils.security import hash_password, verify_password
 from app.utils.time import utcnow
 
@@ -25,21 +25,15 @@ def delete_account(data: AccountDeleteRequest, current_user: User) -> None:
     if not verify_password(data.password, current_user.password_hash):
         # 400, not 401 — a 401 would trip the frontend's session-expired
         # interceptor instead of showing a plain form error.
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Senha incorreta"
-        )
+        raise errors.bad_request("Senha incorreta")
 
     has_active_loan = LoanRequest.objects(
         Q(requester=current_user) | Q(owner=current_user),
         status__in=_ACTIVE_LOAN_STATUSES,
     ).first()
     if has_active_loan:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "Finalize ou cancele seus empréstimos em andamento antes de "
-                "excluir a conta"
-            ),
+        raise errors.conflict(
+            "Finalize ou cancele seus empréstimos em andamento antes de excluir a conta"
         )
 
     Item.objects(owner=current_user).update(is_active=False, updated_at=utcnow())

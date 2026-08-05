@@ -1,7 +1,8 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 
+from app.utils import errors
 from app.utils.security import decode_token
 
 security = HTTPBearer()
@@ -13,10 +14,8 @@ def get_current_user(
 ):
     from app.models.user import User
 
-    exc = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+    exc = errors.unauthorized(
+        "Could not validate credentials", headers={"WWW-Authenticate": "Bearer"}
     )
     try:
         payload = decode_token(credentials.credentials)
@@ -37,9 +36,7 @@ def get_current_admin(
 ):
     user = get_current_user(credentials)
     if not user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
-        )
+        raise errors.forbidden("Admin access required")
     return user
 
 

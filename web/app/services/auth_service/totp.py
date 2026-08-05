@@ -1,10 +1,9 @@
-from fastapi import HTTPException, status
-
 from app.models.user import User
 from app.schemas.auth import TotpSetupResponse
 from app.schemas.user import UserResponse
 from app.services import totp_service
 from app.services.auth_service._common import user_to_response
+from app.utils import errors
 
 
 def setup_totp(current_user: User) -> TotpSetupResponse:
@@ -18,14 +17,9 @@ def setup_totp(current_user: User) -> TotpSetupResponse:
 
 def enable_totp(code: str, current_user: User) -> UserResponse:
     if not current_user.totp_secret:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inicie o setup primeiro em /auth/2fa/setup",
-        )
+        raise errors.bad_request("Inicie o setup primeiro em /auth/2fa/setup")
     if not totp_service.verify_code(current_user.totp_secret, code):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Código inválido"
-        )
+        raise errors.bad_request("Código inválido")
 
     current_user.update(totp_enabled=True)
     current_user.reload()
@@ -34,13 +28,9 @@ def enable_totp(code: str, current_user: User) -> UserResponse:
 
 def disable_totp(code: str, current_user: User) -> UserResponse:
     if not current_user.totp_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="2FA não está ativado"
-        )
+        raise errors.bad_request("2FA não está ativado")
     if not totp_service.verify_code(current_user.totp_secret, code):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Código inválido"
-        )
+        raise errors.bad_request("Código inválido")
 
     current_user.update(totp_enabled=False, totp_secret=None)
     current_user.reload()

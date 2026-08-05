@@ -1,8 +1,7 @@
-from fastapi import HTTPException, status
-
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.item import ItemOwnerResponse, ItemResponse
+from app.utils import errors
 
 
 def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
@@ -55,11 +54,7 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
 def get_owned_item(item_id: str, current_user: User) -> Item:
     item = Item.objects(id=item_id, is_active=True).first()
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
-        )
+        raise errors.not_found("Item not found")
     if str(item.owner.id) != str(current_user.id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not the owner"
-        )
+        raise errors.forbidden("Not the owner")
     return item

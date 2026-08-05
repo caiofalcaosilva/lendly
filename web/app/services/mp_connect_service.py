@@ -1,12 +1,11 @@
 from datetime import timedelta
 
-from fastapi import HTTPException, status
-
 from app.config import settings
 from app.models.user import User
 from app.schemas.payment import MercadoPagoConnectResponse, MercadoPagoConnectStatus
 from app.services import mercadopago_gateway
 from app.services.mercadopago_gateway import MercadoPagoError
+from app.utils import errors
 from app.utils.crypto import encrypt
 from app.utils.time import utcnow
 
@@ -25,9 +24,8 @@ def handle_callback(
     code: str, state: str, current_user: User
 ) -> MercadoPagoConnectStatus:
     if not state or state != current_user.mp_oauth_state:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Sessão de conexão inválida ou expirada — tente conectar novamente",
+        raise errors.bad_request(
+            "Sessão de conexão inválida ou expirada — tente conectar novamente",
         )
     current_user.update(unset__mp_oauth_state=1)
 
@@ -35,9 +33,8 @@ def handle_callback(
     try:
         token_data = mercadopago_gateway.exchange_oauth_code(code, redirect_uri)
     except MercadoPagoError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Não foi possível conectar sua conta Mercado Pago ({e}).",
+        raise errors.bad_gateway(
+            f"Não foi possível conectar sua conta Mercado Pago ({e}).",
         ) from e
 
     expires_in = token_data.get("expires_in", 15552000)  # MP default ~6 months

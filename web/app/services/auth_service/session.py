@@ -1,4 +1,3 @@
-from fastapi import HTTPException, status
 from jose import JWTError
 
 from app.models.user import User
@@ -12,6 +11,7 @@ from app.services.auth_service._common import (
     new_refresh_session,
     user_to_response,
 )
+from app.utils import errors
 from app.utils.security import decode_token, hash_refresh_token, verify_password
 from app.utils.time import utcnow
 
@@ -19,17 +19,12 @@ from app.utils.time import utcnow
 def login_user(data: UserLogin) -> LoginResponse:
     user = User.objects(email=data.email, is_active=True).first()
     if not user or not verify_password(data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
-        )
+        raise errors.unauthorized("Invalid credentials")
 
     if not user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=(
-                "E-mail não verificado. Verifique sua caixa de entrada e clique no "
-                "link de ativação."
-            ),
+        raise errors.forbidden(
+            "E-mail não verificado. Verifique sua caixa de entrada e clique no "
+            "link de ativação."
         )
 
     device_trusted = bool(
@@ -58,26 +53,19 @@ def complete_2fa(temp_token: str, code: str, trust_device: bool) -> TokenRespons
     try:
         payload = decode_token(temp_token)
     except JWTError as err:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido ou expirado",
+        raise errors.unauthorized(
+            "Token inválido ou expirado",
         ) from err
 
     if payload.get("type") != "2fa_pending":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tipo de token inválido"
-        )
+        raise errors.unauthorized("Tipo de token inválido")
 
     user = User.objects(id=payload["sub"], is_active=True).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado"
-        )
+        raise errors.unauthorized("Usuário não encontrado")
 
     if not totp_service.verify_code(user.totp_secret, code):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Código 2FA inválido"
-        )
+        raise errors.bad_request("Código 2FA inválido")
 
     device_token = new_device_token()
     if trust_device:
@@ -103,22 +91,16 @@ def refresh_tokens(refresh_token: str) -> RefreshResponse:
         None,
     )
     if not user or not session:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token inválido"
-        )
+        raise errors.unauthorized("Refresh token inválido")
 
     if session.revoked_at is not None:
         # Reuse of an already-rotated token — treat as a theft signal and nuke
         # every session for this user, forcing re-login on all devices.
         user.update(refresh_sessions=[])
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token inválido"
-        )
+        raise errors.unauthorized("Refresh token inválido")
 
     if session.expires_at < utcnow():
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expirado"
-        )
+        raise errors.unauthorized("Refresh token expirado")
 
     session.revoked_at = utcnow()
     new_refresh = new_refresh_session(user)

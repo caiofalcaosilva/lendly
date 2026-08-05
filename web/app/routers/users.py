@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Response
 
 from app.dependencies import get_current_user, get_current_user_optional
 from app.models.user import User
@@ -24,6 +24,7 @@ from app.services import (
     mp_connect_service,
 )
 from app.services.auth_service import delete_account, user_to_response
+from app.utils import errors
 from app.utils.time import utcnow
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -163,9 +164,7 @@ def get_user_items_public(
     # 404, not 403, so their existence isn't leaked either.
     user = User.objects(id=user_id, is_active=True, is_admin__ne=True).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        raise errors.not_found("User not found")
     return item_service.get_user_items(user_id, current_user)
 
 
@@ -174,7 +173,5 @@ def get_user(user_id: str):
     """Public profile of any active, non-admin user — no auth required."""
     user = User.objects(id=user_id, is_active=True, is_admin__ne=True).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        raise errors.not_found("User not found")
     return user_to_response(user)

@@ -1,6 +1,6 @@
 import math
 
-from fastapi import BackgroundTasks, HTTPException, status
+from fastapi import BackgroundTasks
 from mongoengine import Q
 
 from app.models.group import Group
@@ -9,6 +9,7 @@ from app.models.user import User
 from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
 from app.services import category_service, email_service
 from app.services.item_service._common import get_owned_item, to_response
+from app.utils import errors
 from app.utils.time import utcnow
 
 
@@ -34,55 +35,38 @@ def _resolve_member_groups(group_ids: list[str], current_user: User) -> list[Gro
         if not group or not any(
             str(m.id) == str(current_user.id) for m in group.members
         ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Not a member of group '{group_id}'",
-            )
+            raise errors.forbidden(f"Not a member of group '{group_id}'")
         groups.append(group)
     return groups
 
 
 def _assert_visible(is_public: bool, groups: list) -> None:
     if not is_public and not groups:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Item must be public or belong to at least one group",
-        )
+        raise errors.bad_request("Item must be public or belong to at least one group")
 
 
 def _validate_category(category: str, subcategory: str | None) -> None:
     if not category_service.is_valid_category(category):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid category '{category}'",
-        )
+        raise errors.bad_request(f"Invalid category '{category}'")
     if subcategory and not category_service.is_valid_subcategory(category, subcategory):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid subcategory '{subcategory}' for category '{category}'",
+        raise errors.bad_request(
+            f"Invalid subcategory '{subcategory}' for category '{category}'"
         )
 
 
 def create_item(data: ItemCreate, current_user: User) -> ItemResponse:
     if current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Contas administrativas não podem cadastrar itens",
+        raise errors.bad_request(
+            "Contas administrativas não podem cadastrar itens",
         )
 
     if data.availability_type.value == "paid" and not data.daily_rate:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Paid items must have a daily_rate greater than 0",
-        )
+        raise errors.bad_request("Paid items must have a daily_rate greater than 0")
 
     if data.availability_type.value == "paid" and not current_user.mp_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Conecte sua conta Mercado Pago antes de anunciar um item pago. "
-                "Faça isso em /profile."
-            ),
+        raise errors.bad_request(
+            "Conecte sua conta Mercado Pago antes de anunciar um item pago. "
+            "Faça isso em /profile."
         )
 
     _validate_category(data.category, data.subcategory)
@@ -130,9 +114,7 @@ def create_item(data: ItemCreate, current_user: User) -> ItemResponse:
 def get_item(item_id: str, current_user: User | None = None) -> ItemResponse:
     item = Item.objects(id=item_id, is_active=True).first()
     if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
-        )
+        raise errors.not_found("Item not found")
     return to_response(item, current_user)
 
 
@@ -223,12 +205,9 @@ def update_item(item_id: str, data: ItemUpdate, current_user: User) -> ItemRespo
 
     effective_availability = updates.get("availability_type", item.availability_type)
     if effective_availability == "paid" and not current_user.mp_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Conecte sua conta Mercado Pago antes de tornar este item pago. "
-                "Faça isso em /profile."
-            ),
+        raise errors.bad_request(
+            "Conecte sua conta Mercado Pago antes de tornar este item pago. "
+            "Faça isso em /profile."
         )
 
     if "group_ids" in updates:
@@ -296,9 +275,7 @@ def list_group_items(group_id: str, current_user: User) -> list[ItemResponse]:
     group = Group.objects(id=group_id).first()
     is_member = group and any(str(m.id) == str(current_user.id) for m in group.members)
     if not group or not (is_member or current_user.is_admin):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Group not found"
-        )
+        raise errors.not_found("Group not found")
     items = Item.objects(groups=group, is_active=True, is_available=True).order_by(
         "-created_at"
     )

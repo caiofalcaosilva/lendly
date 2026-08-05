@@ -1,12 +1,12 @@
 import logging
 
-from fastapi import HTTPException, status
 from mongoengine import Q
 
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.schemas.admin_users import AdminUserSummary
 from app.schemas.bulk import BulkActionResult
+from app.utils import errors
 from app.utils.bulk import run_bulk
 from app.utils.time import utcnow
 
@@ -51,9 +51,7 @@ def list_users(search: str | None, skip: int, limit: int) -> list[AdminUserSumma
 def _get_user(user_id: str) -> User:
     user = User.objects(id=user_id).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        raise errors.not_found("User not found")
     return user
 
 
@@ -64,21 +62,16 @@ def get_user(user_id: str) -> AdminUserSummary:
 def deactivate_user(user_id: str, admin: User) -> AdminUserSummary:
     user = _get_user(user_id)
     if str(user.id) == str(admin.id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível desativar sua própria conta",
+        raise errors.bad_request(
+            "Não é possível desativar sua própria conta",
         )
 
     has_active_loan = LoanRequest.objects(
         Q(requester=user) | Q(owner=user), status__in=_ACTIVE_LOAN_STATUSES
     ).first()
     if has_active_loan:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "Usuário tem empréstimo em andamento — resolva antes de "
-                "desativar a conta"
-            ),
+        raise errors.conflict(
+            "Usuário tem empréstimo em andamento — resolva antes de desativar a conta"
         )
 
     user.update(is_active=False, status_changed_by=admin, status_changed_at=utcnow())
@@ -104,9 +97,8 @@ def bulk_deactivate_users(user_ids: list[str], admin: User) -> BulkActionResult:
 def promote_user(user_id: str, admin: User) -> AdminUserSummary:
     user = _get_user(user_id)
     if str(user.id) == str(admin.id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível alterar seu próprio nível de admin",
+        raise errors.bad_request(
+            "Não é possível alterar seu próprio nível de admin",
         )
     user.update(
         is_admin=True,
@@ -124,9 +116,8 @@ def promote_user(user_id: str, admin: User) -> AdminUserSummary:
 def demote_user(user_id: str, admin: User) -> AdminUserSummary:
     user = _get_user(user_id)
     if str(user.id) == str(admin.id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível alterar seu próprio nível de admin",
+        raise errors.bad_request(
+            "Não é possível alterar seu próprio nível de admin",
         )
     user.update(
         is_admin=False,

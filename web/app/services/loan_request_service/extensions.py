@@ -4,8 +4,6 @@ time — the requester can ask again after a rejection."""
 
 from datetime import UTC
 
-from fastapi import HTTPException, status
-
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestExtend, LoanRequestResponse
 from app.services.loan_request_service._common import (
@@ -14,6 +12,7 @@ from app.services.loan_request_service._common import (
     get_as_requester,
     to_response,
 )
+from app.utils import errors
 from app.utils.time import utcnow
 
 
@@ -24,10 +23,7 @@ def request_extension(
     assert_status(req, "in_progress")
 
     if req.extension_status == "pending":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="An extension request is already pending",
-        )
+        raise errors.conflict("An extension request is already pending")
 
     # Normalize to naive UTC to match expected_return_date before comparing.
     new_date = data.new_expected_return_date
@@ -35,12 +31,8 @@ def request_extension(
         new_date = new_date.astimezone(UTC).replace(tzinfo=None)
 
     if new_date <= req.expected_return_date:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "new_expected_return_date must be after the current expected "
-                "return date"
-            ),
+        raise errors.bad_request(
+            "new_expected_return_date must be after the current expected return date"
         )
 
     req.update(
@@ -55,9 +47,7 @@ def request_extension(
 def approve_extension(request_id: str, current_user: User) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
     if req.extension_status != "pending":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="No pending extension request"
-        )
+        raise errors.conflict("No pending extension request")
 
     req.update(
         expected_return_date=req.requested_extension_date,
@@ -72,9 +62,7 @@ def approve_extension(request_id: str, current_user: User) -> LoanRequestRespons
 def reject_extension(request_id: str, current_user: User) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
     if req.extension_status != "pending":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="No pending extension request"
-        )
+        raise errors.conflict("No pending extension request")
 
     req.update(extension_status="rejected", updated_at=utcnow())
     req.reload()
