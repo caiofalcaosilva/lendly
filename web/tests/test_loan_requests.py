@@ -97,16 +97,132 @@ def test_full_free_item_loan_lifecycle(client, register_user):
     assert accept.status_code == 200
     assert accept.json()["status"] == "accepted"
 
-    start = client.patch(
+    # Pickup only advances once BOTH sides have confirmed.
+    owner_start = client.patch(
         f"/requests/{request_id}/start",
         headers={"Authorization": f"Bearer {owner_token}"},
     )
-    assert start.status_code == 200
-    assert start.json()["status"] == "in_progress"
+    assert owner_start.status_code == 200
+    assert owner_start.json()["status"] == "accepted"
 
-    finish = client.patch(
+    requester_start = client.patch(
+        f"/requests/{request_id}/start",
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    assert requester_start.status_code == 200
+    assert requester_start.json()["status"] == "in_progress"
+
+    # Same both-sides rule for the return.
+    owner_finish = client.patch(
         f"/requests/{request_id}/finish",
         headers={"Authorization": f"Bearer {owner_token}"},
     )
-    assert finish.status_code == 200
-    assert finish.json()["status"] == "finished"
+    assert owner_finish.status_code == 200
+    assert owner_finish.json()["status"] == "in_progress"
+
+    requester_finish = client.patch(
+        f"/requests/{request_id}/finish",
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    assert requester_finish.status_code == 200
+    assert requester_finish.json()["status"] == "finished"
+
+
+def test_confirming_pickup_twice_conflicts(client, register_user):
+    _, owner_token = register_user("dono.duplaconf@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("solicitante.duplaconf@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    first = client.patch(
+        f"/requests/{request_id}/start",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert first.status_code == 200
+
+    second = client.patch(
+        f"/requests/{request_id}/start",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert second.status_code == 409
+
+
+def test_non_participant_cannot_confirm_pickup(client, register_user):
+    _, owner_token = register_user("dono.naoparticip@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("solicitante.naoparticip@example.com")
+    _, stranger_token = register_user("estranho.naoparticip@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    resp = client.patch(
+        f"/requests/{request_id}/start",
+        headers={"Authorization": f"Bearer {stranger_token}"},
+    )
+    assert resp.status_code == 403
+
+
+def test_force_pickup_blocked_before_grace_period(client, register_user):
+    _, owner_token = register_user("dono.forcacedo@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("solicitante.forcacedo@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{request_id}/start",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    force = client.patch(
+        f"/requests/{request_id}/start/force",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert force.status_code == 409
+
+
+def test_force_pickup_allowed_after_grace_period(client, register_user):
+    from datetime import timedelta
+
+    from app.models.loan_request import LoanRequest
+    from app.utils.time import utcnow
+
+    _, owner_token = register_user("dono.forcaok@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("solicitante.forcaok@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{request_id}/start",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    # Backdate the owner's own confirmation past the grace period instead
+    # of waiting for it in real time.
+    req = LoanRequest.objects(id=request_id).first()
+    req.update(pickup_confirmed_by_owner_at=utcnow() - timedelta(hours=3))
+
+    force = client.patch(
+        f"/requests/{request_id}/start/force",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert force.status_code == 200
+    body = force.json()
+    assert body["status"] == "in_progress"
+    assert body["pickup_forced"] is True

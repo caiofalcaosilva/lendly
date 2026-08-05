@@ -48,5 +48,11 @@ class LoanRequestResponse(BaseModel):
     notes: str | None = None
     requested_extension_date: datetime | None = None
     extension_status: str = "none"
+    pickup_confirmed_by_owner_at: datetime | None = None
+    pickup_confirmed_by_requester_at: datetime | None = None
+    pickup_forced: bool = False
+    return_confirmed_by_owner_at: datetime | None = None
+    return_confirmed_by_requester_at: datetime | None = None
+    return_forced: bool = False
     created_at: datetime
     updated_at: datetime

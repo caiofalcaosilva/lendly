@@ -23,6 +23,7 @@ def _to_response(doc: PlatformSettings) -> PlatformSettingsResponse:
         ),
         chat_message_rate_limit_per_minute=doc.chat_message_rate_limit_per_minute,
         password_reset_rate_limit_per_minute=doc.password_reset_rate_limit_per_minute,
+        handoff_confirmation_grace_hours=doc.handoff_confirmation_grace_hours,
         announcement_message=doc.announcement_message,
         announcement_active=doc.announcement_active or False,
         updated_by_name=doc.updated_by.name if doc.updated_by else None,

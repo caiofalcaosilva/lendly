@@ -1,4 +1,10 @@
-from mongoengine import DateTimeField, Document, ReferenceField, StringField
+from mongoengine import (
+    BooleanField,
+    DateTimeField,
+    Document,
+    ReferenceField,
+    StringField,
+)
 
 from app.utils.time import utcnow
 
@@ -34,6 +40,16 @@ class LoanRequest(Document):
     # (in_progress, finished...) don't touch it, so it stays a clean
     # "how long did the owner take to decide" signal.
     responded_at = DateTimeField()
+    # Pickup/return each require both sides to confirm before the status
+    # actually advances — an owner acting alone can't fabricate a handoff
+    # that never happened. `*_forced` marks the owner-only escape hatch used
+    # when the other side never confirms (see loan_request_service.lifecycle).
+    pickup_confirmed_by_owner_at = DateTimeField()
+    pickup_confirmed_by_requester_at = DateTimeField()
+    pickup_forced = BooleanField(default=False)
+    return_confirmed_by_owner_at = DateTimeField()
+    return_confirmed_by_requester_at = DateTimeField()
+    return_forced = BooleanField(default=False)
     # One-shot flag — set the first time the review-reminder job checks this
     # request, whether or not it actually had anything to remind about.
     review_reminder_sent_at = DateTimeField()

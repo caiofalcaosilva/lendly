@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from fastapi import BackgroundTasks
 
 from app.models.item import Item
@@ -16,6 +18,7 @@ from app.services.loan_request_service.reliability import (
     recalculate_reliability,
     recalculate_response_time,
 )
+from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils import errors
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
@@ -121,8 +124,20 @@ def refuse_request(
     return to_response(req)
 
 
-def start_request(request_id: str, current_user: User) -> LoanRequestResponse:
-    req = get_as_owner(request_id, current_user)
+def _complete_pickup(req: LoanRequest) -> None:
+    req.update(status="in_progress", updated_at=utcnow())
+    req.reload()
+    if req.item.availability_type == "paid":
+        payment_service.release_payment(req)
+        req.reload()
+
+
+def confirm_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
+    """Either side confirms the item changed hands. Only once BOTH the
+    owner and the requester have confirmed does the request actually move
+    to 'in_progress' — an owner acting alone can no longer claim a pickup
+    that never happened (see force_pickup for the deliberate escape hatch)."""
+    req = get_as_participant(request_id, current_user)
     assert_status(req, "accepted")
 
     if req.item.availability_type == "paid" and req.payment_status != "held":
@@ -131,21 +146,49 @@ def start_request(request_id: str, current_user: User) -> LoanRequestResponse:
             "confirmada depois que o Pix for aprovado"
         )
 
-    req.update(status="in_progress", updated_at=utcnow())
+    is_owner = str(req.owner.id) == str(current_user.id)
+    field = (
+        "pickup_confirmed_by_owner_at"
+        if is_owner
+        else "pickup_confirmed_by_requester_at"
+    )
+    if getattr(req, field):
+        raise errors.conflict("Você já confirmou a retirada")
+
+    req.update(**{field: utcnow(), "updated_at": utcnow()})
     req.reload()
 
-    if req.item.availability_type == "paid":
-        payment_service.release_payment(req)
-        req.reload()
+    if req.pickup_confirmed_by_owner_at and req.pickup_confirmed_by_requester_at:
+        _complete_pickup(req)
 
     return to_response(req)
 
 
-def finish_request(
-    request_id: str, current_user: User, background_tasks: BackgroundTasks
-) -> LoanRequestResponse:
+def force_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
+    """Owner-only escape hatch: moves the request to 'in_progress' without
+    the requester's confirmation, once the owner has waited out the grace
+    period since confirming their own side. Flagged via pickup_forced so
+    it stays visible on the request going forward."""
     req = get_as_owner(request_id, current_user)
-    assert_status(req, "in_progress")
+    assert_status(req, "accepted")
+
+    if not req.pickup_confirmed_by_owner_at:
+        raise errors.conflict("Confirme sua própria retirada antes de forçar")
+
+    grace_hours = get_platform_settings().handoff_confirmation_grace_hours
+    elapsed = utcnow() - req.pickup_confirmed_by_owner_at
+    if elapsed < timedelta(hours=grace_hours):
+        raise errors.conflict(
+            f"Aguarde {grace_hours}h desde sua confirmação antes de forçar a retirada"
+        )
+
+    req.update(pickup_forced=True, updated_at=utcnow())
+    req.reload()
+    _complete_pickup(req)
+    return to_response(req)
+
+
+def _complete_return(req: LoanRequest, background_tasks: BackgroundTasks) -> None:
     req.update(
         status="finished",
         actual_return_date=utcnow(),
@@ -154,6 +197,55 @@ def finish_request(
     req.reload()
     recalculate_reliability(req.requester)
     _notify_status_change(req, background_tasks)
+
+
+def confirm_return(
+    request_id: str, current_user: User, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
+    """Either side confirms the item was returned. Same both-sides-required
+    rule as confirm_pickup — see force_return for the owner's escape hatch."""
+    req = get_as_participant(request_id, current_user)
+    assert_status(req, "in_progress")
+
+    is_owner = str(req.owner.id) == str(current_user.id)
+    field = (
+        "return_confirmed_by_owner_at"
+        if is_owner
+        else "return_confirmed_by_requester_at"
+    )
+    if getattr(req, field):
+        raise errors.conflict("Você já confirmou a devolução")
+
+    req.update(**{field: utcnow(), "updated_at": utcnow()})
+    req.reload()
+
+    if req.return_confirmed_by_owner_at and req.return_confirmed_by_requester_at:
+        _complete_return(req, background_tasks)
+
+    return to_response(req)
+
+
+def force_return(
+    request_id: str, current_user: User, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
+    """Owner-only escape hatch for the return side — same grace-period rule
+    as force_pickup. Flags return_forced."""
+    req = get_as_owner(request_id, current_user)
+    assert_status(req, "in_progress")
+
+    if not req.return_confirmed_by_owner_at:
+        raise errors.conflict("Confirme sua própria devolução antes de forçar")
+
+    grace_hours = get_platform_settings().handoff_confirmation_grace_hours
+    elapsed = utcnow() - req.return_confirmed_by_owner_at
+    if elapsed < timedelta(hours=grace_hours):
+        raise errors.conflict(
+            f"Aguarde {grace_hours}h desde sua confirmação antes de forçar a devolução"
+        )
+
+    req.update(return_forced=True, updated_at=utcnow())
+    req.reload()
+    _complete_return(req, background_tasks)
     return to_response(req)
 
 

@@ -24,6 +24,10 @@ class PlatformSettings(Document):
     resend_verification_rate_limit_per_minute = IntField(default=3, min_value=1)
     chat_message_rate_limit_per_minute = IntField(default=20, min_value=1)
     password_reset_rate_limit_per_minute = IntField(default=3, min_value=1)
+    # How long an owner must wait, after confirming pickup/return on their
+    # own side, before forcing the transition through without the other
+    # party's confirmation (see loan_request_service.lifecycle).
+    handoff_confirmation_grace_hours = IntField(default=2, min_value=1)
     announcement_message = StringField(max_length=280)
     announcement_active = BooleanField(default=False)
     updated_by = ReferenceField("User")

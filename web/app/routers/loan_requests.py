@@ -70,9 +70,18 @@ def refuse(
 
 @router.patch("/{request_id}/start", response_model=LoanRequestResponse)
 def start(request_id: str, current_user: User = Depends(get_current_user)):
-    """Owner confirms pickup, moving the request to 'in_progress'. For paid
-    items, blocked until the Pix payment has been confirmed."""
-    return loan_request_service.start_request(request_id, current_user)
+    """Either side confirms pickup. Only moves to 'in_progress' once BOTH
+    the owner and the requester have confirmed — for paid items, also
+    blocked until the Pix payment has been confirmed."""
+    return loan_request_service.confirm_pickup(request_id, current_user)
+
+
+@router.patch("/{request_id}/start/force", response_model=LoanRequestResponse)
+def force_start(request_id: str, current_user: User = Depends(get_current_user)):
+    """Owner-only escape hatch: forces the pickup through without the
+    requester's confirmation, once the grace period since the owner's own
+    confirmation has elapsed. Flags the request as pickup_forced."""
+    return loan_request_service.force_pickup(request_id, current_user)
 
 
 @router.patch("/{request_id}/finish", response_model=LoanRequestResponse)
@@ -81,10 +90,22 @@ def finish(
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
-    """Owner confirms the item's return, closing out the loan."""
-    return loan_request_service.finish_request(
+    """Either side confirms the item's return. Only closes out the loan
+    once BOTH the owner and the requester have confirmed."""
+    return loan_request_service.confirm_return(
         request_id, current_user, background_tasks
     )
+
+
+@router.patch("/{request_id}/finish/force", response_model=LoanRequestResponse)
+def force_finish(
+    request_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Owner-only escape hatch for the return side — same grace-period
+    rule as /start/force. Flags the request as return_forced."""
+    return loan_request_service.force_return(request_id, current_user, background_tasks)
 
 
 @router.patch("/{request_id}/cancel", response_model=LoanRequestResponse)

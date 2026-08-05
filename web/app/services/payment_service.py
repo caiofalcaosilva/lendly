@@ -31,7 +31,8 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
     """Called right after the owner accepts a paid item's request (and,
     as a self-healing retry, from get_payment_for_request if that first
     attempt failed). Charges the requester now, holds the owner's share
-    until release_payment() is called at pickup check-in (start_request).
+    until release_payment() is called once both sides confirm pickup
+    (confirm_pickup/force_pickup).
 
     Nothing is written to LoanRequest/Payment until the gateway call
     itself succeeds — if Mercado Pago rejects it, payment_status stays
@@ -107,8 +108,9 @@ def get_payment_for_request(request_id: str, current_user: User) -> PaymentRespo
 
 
 def release_payment(req: LoanRequest) -> None:
-    """Called from start_request (pickup check-in) once payment_status is
-    already 'held' — moves the owner's share out of hold."""
+    """Called once both sides have confirmed pickup (confirm_pickup/
+    force_pickup) and payment_status is already 'held' — moves the owner's
+    share out of hold."""
     payment = _get_payment(req)
     try:
         mercadopago_gateway.release_payment(payment.mp_payment_id)

@@ -30,6 +30,12 @@ def to_response(req: LoanRequest) -> LoanRequestResponse:
         notes=req.notes,
         requested_extension_date=req.requested_extension_date,
         extension_status=req.extension_status or "none",
+        pickup_confirmed_by_owner_at=req.pickup_confirmed_by_owner_at,
+        pickup_confirmed_by_requester_at=req.pickup_confirmed_by_requester_at,
+        pickup_forced=req.pickup_forced or False,
+        return_confirmed_by_owner_at=req.return_confirmed_by_owner_at,
+        return_confirmed_by_requester_at=req.return_confirmed_by_requester_at,
+        return_forced=req.return_forced or False,
         created_at=req.created_at,
         updated_at=req.updated_at,
     )
