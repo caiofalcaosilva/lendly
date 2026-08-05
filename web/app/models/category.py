@@ -30,4 +30,4 @@ class Category(Document):
     subcategories = ListField(EmbeddedDocumentField(Subcategory), default=list)
     created_at = DateTimeField(default=utcnow)
 
-    meta = {"collection": "categories"}
+    meta = {"collection": "categories", "indexes": ["is_active"]}

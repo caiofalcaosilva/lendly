@@ -31,4 +31,8 @@ class PlatformSettings(Document):
     updated_by = ReferenceField("User")
     updated_at = DateTimeField(default=utcnow)
 
+    # No extra index here on purpose — every read is `.objects().first()`
+    # with no filter at all (see get_settings()), so there's nothing an
+    # index could speed up; the only document ever queried is found via
+    # the default _id index regardless.
     meta = {"collection": "platform_settings"}

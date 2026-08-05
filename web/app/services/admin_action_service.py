@@ -17,6 +17,7 @@ def get_admin_actions(limit: int = 50) -> list[AdminActionEntry]:
         Report.objects(status__in=["dismissed", "actioned"], reviewed_by__ne=None)
         .order_by("-reviewed_at")
         .limit(_SOURCE_LIMIT)
+        .select_related(max_depth=1)
     )
     for r in reports:
         target_label = (
@@ -49,6 +50,7 @@ def get_admin_actions(limit: int = 50) -> list[AdminActionEntry]:
         )
         .order_by("-reviewed_at")
         .limit(_SOURCE_LIMIT)
+        .select_related(max_depth=1)
     )
     for v in verifications:
         entries.append(
@@ -69,6 +71,7 @@ def get_admin_actions(limit: int = 50) -> list[AdminActionEntry]:
         User.objects(status_changed_by__ne=None)
         .order_by("-status_changed_at")
         .limit(_SOURCE_LIMIT)
+        .select_related(max_depth=1)
     )
     for u in changed_users:
         entries.append(
@@ -86,6 +89,7 @@ def get_admin_actions(limit: int = 50) -> list[AdminActionEntry]:
         Item.objects(status_changed_by__ne=None)
         .order_by("-status_changed_at")
         .limit(_SOURCE_LIMIT)
+        .select_related(max_depth=1)
     )
     for i in changed_items:
         entries.append(
@@ -103,6 +107,7 @@ def get_admin_actions(limit: int = 50) -> list[AdminActionEntry]:
         User.objects(admin_status_changed_by__ne=None)
         .order_by("-admin_status_changed_at")
         .limit(_SOURCE_LIMIT)
+        .select_related(max_depth=1)
     )
     for u in admin_changed_users:
         entries.append(

@@ -75,7 +75,7 @@ def export_items_csv() -> str:
             i.daily_rate if i.availability_type == "paid" else "",
             i.created_at.isoformat(),
         ]
-        for i in Item.objects().order_by("created_at")
+        for i in Item.objects().order_by("created_at").select_related(max_depth=1)
     ]
     return _write_csv(header, rows)
 
@@ -104,6 +104,8 @@ def export_loan_requests_csv() -> str:
             r.actual_return_date.isoformat() if r.actual_return_date else "",
             r.created_at.isoformat(),
         ]
-        for r in LoanRequest.objects().order_by("created_at")
+        for r in LoanRequest.objects()
+        .order_by("created_at")
+        .select_related(max_depth=1)
     ]
     return _write_csv(header, rows)
