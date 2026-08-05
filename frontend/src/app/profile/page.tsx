@@ -16,6 +16,7 @@ import AddressFields from '@/components/ui/AddressFields'
 import TotpSetupModal from '@/components/auth/TotpSetupModal'
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal'
 import AvatarUploader from '@/components/profile/AvatarUploader'
+import ProfileCompleteness from '@/components/profile/ProfileCompleteness'
 import BusinessBadge from '@/components/ui/BusinessBadge'
 import ReputationBadges from '@/components/ui/ReputationBadges'
 import IdentityVerificationSection from '@/components/profile/IdentityVerificationSection'
@@ -234,6 +235,8 @@ export default function ProfilePage() {
           Mantenha suas informações atualizadas para facilitar o contato com vizinhos
         </p>
       </div>
+
+      {user && <ProfileCompleteness user={user} />}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Sidebar */}
