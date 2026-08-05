@@ -1,4 +1,4 @@
-import { HeartHandshake, Timer, Award } from 'lucide-react'
+import { HeartHandshake, Timer, Award, Sparkles } from 'lucide-react'
 
 /// Qualitative reputation badges, distinct from the numeric ReliabilityBadge —
 /// each one recognizes a specific pattern of good behavior. Renders nothing
@@ -22,6 +22,20 @@ export default function ReputationBadges({
   size?: 'sm' | 'md'
 }) {
   const badges: { key: string; label: string; title: string; icon: typeof HeartHandshake; tone: string }[] = []
+
+  // Makes newness visible instead of leaving it to be inferred from empty
+  // stats — an empty rating is indistinguishable from "just never reviewed"
+  // otherwise. Mutually exclusive with the badges below in practice, since
+  // those all require a track record this account doesn't have yet.
+  if (finishedLoansCount === 0 && ratingCount === 0) {
+    badges.push({
+      key: 'new',
+      label: 'Novo por aqui',
+      title: 'Ainda não completou nenhum empréstimo na plataforma',
+      icon: Sparkles,
+      tone: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800',
+    })
+  }
 
   if (reliabilityScore != null && reliabilityScore >= 85 && reliabilityCount >= 5) {
     badges.push({
