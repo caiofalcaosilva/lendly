@@ -84,4 +84,8 @@ export const usersService = {
 
   deleteAccount: (password: string) =>
     api.delete('/users/me', { data: { password } }).then(() => undefined),
+
+  pauseAccount: () => api.post<User>('/users/me/pause').then((r) => r.data),
+
+  resumeAccount: () => api.post<User>('/users/me/resume').then((r) => r.data),
 }

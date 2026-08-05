@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { UserCog, Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download } from 'lucide-react'
+import { UserCog, Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { usersService } from '@/services/users'
 import { authService } from '@/services/auth'
@@ -80,6 +80,7 @@ export default function ProfilePage() {
   const [emailResent, setEmailResent] = useState(false)
   const [exportingData, setExportingData] = useState(false)
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [pausing, setPausing] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [showChangeEmail, setShowChangeEmail] = useState(false)
   const [passwordChanged, setPasswordChanged] = useState(false)
@@ -208,6 +209,20 @@ export default function ProfilePage() {
       URL.revokeObjectURL(url)
     } finally {
       setExportingData(false)
+    }
+  }
+
+  const handleTogglePause = async () => {
+    if (!user) return
+    if (!user.is_paused && !confirm('Pausar sua conta? Seus itens somem da busca e não recebem novas solicitações até você reativar.')) return
+    setPausing(true)
+    try {
+      const updated = user.is_paused
+        ? await usersService.resumeAccount()
+        : await usersService.pauseAccount()
+      updateUser(updated)
+    } finally {
+      setPausing(false)
     }
   }
 
@@ -563,6 +578,31 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Pause account — reversible, unlike deletion below */}
+      {user && (
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl border border-amber-200 dark:border-amber-900 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <PauseCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+              {user.is_paused ? 'Conta pausada' : 'Pausar conta'}
+            </h2>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            {user.is_paused
+              ? 'Seus itens estão escondidos da busca e não recebem novas solicitações. Reative quando quiser voltar.'
+              : 'Vai viajar ou dar uma pausa? Seus itens somem da busca e param de receber solicitações, mas seu login e seus dados continuam intactos — reversível a qualquer momento.'}
+          </p>
+          <Button
+            variant={user.is_paused ? 'secondary' : 'outline'}
+            size="sm"
+            loading={pausing}
+            onClick={handleTogglePause}
+          >
+            {user.is_paused ? 'Reativar conta' : 'Pausar conta'}
+          </Button>
+        </div>
+      )}
 
       {/* Danger zone */}
       <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl border border-red-200 dark:border-red-900 shadow-sm p-6">

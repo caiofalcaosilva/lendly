@@ -125,6 +125,7 @@ class UserResponse(BaseModel):
     is_verified: bool = False
     totp_enabled: bool = False
     is_admin: bool = False
+    is_paused: bool = False
     cpf: str | None = None
     identity_status: str = "none"
     average_rating: float

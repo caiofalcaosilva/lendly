@@ -56,6 +56,10 @@ class User(Document):
     state = StringField(max_length=2)
     password_hash = StringField(required=True)
     is_active = BooleanField(default=True)
+    # Self-service, reversible — unlike is_active=False, which is only ever
+    # reached via account deletion. Hides items and blocks new requests
+    # without touching login or any other data.
+    is_paused = BooleanField(default=False)
     is_admin = BooleanField(default=False)
     status_changed_by = ReferenceField("User")
     status_changed_at = DateTimeField()

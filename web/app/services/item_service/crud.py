@@ -61,6 +61,11 @@ def create_item(data: ItemCreate, current_user: User) -> ItemResponse:
             "Contas administrativas não podem cadastrar itens",
         )
 
+    if current_user.is_paused:
+        raise errors.bad_request(
+            "Reative sua conta antes de cadastrar um novo item",
+        )
+
     if data.availability_type.value == "paid" and not data.daily_rate:
         raise errors.bad_request("Paid items must have a daily_rate greater than 0")
 

@@ -86,6 +86,37 @@ def delete_account(data: AccountDeleteRequest, current_user: User) -> None:
     logger.info("account deleted", extra={"user_id": str(current_user.id)})
 
 
+def pause_account(current_user: User) -> UserResponse:
+    """Hides every active item from search and blocks new requests on them,
+    without touching login or any other data — reversible any time via
+    resume_account. Only items active *before* pausing get the
+    paused_by_owner flag, so resume doesn't reactivate something the owner
+    had already turned off themselves."""
+    if current_user.is_paused:
+        raise errors.bad_request("Conta já está pausada")
+
+    Item.objects(owner=current_user, is_active=True).update(
+        is_active=False, paused_by_owner=True, updated_at=utcnow()
+    )
+    current_user.update(is_paused=True, updated_at=utcnow())
+    current_user.reload()
+    logger.info("account paused", extra={"user_id": str(current_user.id)})
+    return user_to_response(current_user)
+
+
+def resume_account(current_user: User) -> UserResponse:
+    if not current_user.is_paused:
+        raise errors.bad_request("Conta não está pausada")
+
+    Item.objects(owner=current_user, paused_by_owner=True).update(
+        is_active=True, paused_by_owner=False, updated_at=utcnow()
+    )
+    current_user.update(is_paused=False, updated_at=utcnow())
+    current_user.reload()
+    logger.info("account resumed", extra={"user_id": str(current_user.id)})
+    return user_to_response(current_user)
+
+
 def change_password(data: PasswordChangeRequest, current_user: User) -> UserResponse:
     if not verify_password(data.current_password, current_user.password_hash):
         raise errors.bad_request("Senha atual incorreta")

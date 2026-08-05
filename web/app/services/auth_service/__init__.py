@@ -8,6 +8,8 @@ from app.services.auth_service.account import (
     change_email,
     change_password,
     delete_account,
+    pause_account,
+    resume_account,
 )
 from app.services.auth_service.password_reset import (
     request_password_reset,
@@ -39,11 +41,13 @@ __all__ = [
     "get_login_history",
     "get_sessions",
     "login_user",
+    "pause_account",
     "refresh_tokens",
     "register_user",
     "request_password_reset",
     "resend_verification",
     "reset_password",
+    "resume_account",
     "revoke_refresh_token",
     "revoke_session",
     "setup_totp",

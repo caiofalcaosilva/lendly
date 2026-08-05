@@ -33,6 +33,10 @@ class Item(Document):
     available_days = ListField(IntField(min_value=0, max_value=6), default=list)
     requires_identity_verification = BooleanField(default=False)
     is_active = BooleanField(default=True)
+    # True only for items this specific pause cycle deactivated — lets resume
+    # restore exactly those, without reactivating something the owner had
+    # already deactivated on their own before pausing.
+    paused_by_owner = BooleanField(default=False)
     status_changed_by = ReferenceField("User")
     status_changed_at = DateTimeField()
     groups = ListField(ReferenceField("Group"), default=list)

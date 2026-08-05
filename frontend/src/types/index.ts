@@ -17,6 +17,7 @@ export interface User {
   is_verified: boolean
   totp_enabled: boolean
   is_admin: boolean
+  is_paused: boolean
   cpf?: string | null
   identity_status: 'none' | 'pending' | 'approved' | 'rejected'
   average_rating: number

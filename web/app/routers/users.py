@@ -41,6 +41,8 @@ from app.services.auth_service import (
     delete_account,
     get_login_history,
     get_sessions,
+    pause_account,
+    resume_account,
     revoke_session,
     user_to_public_response,
     user_to_response,
@@ -209,6 +211,21 @@ def delete_my_account(
     """Anonymizes and deactivates the logged-in user's account — requires
     the current password as confirmation."""
     delete_account(data, current_user)
+
+
+@router.post("/me/pause", response_model=UserResponse)
+def pause_my_account(current_user: User = Depends(get_current_user)):
+    """Hides all of the logged-in user's active items from search and blocks
+    new requests on them — reversible any time via /me/resume, unlike
+    account deletion."""
+    return pause_account(current_user)
+
+
+@router.post("/me/resume", response_model=UserResponse)
+def resume_my_account(current_user: User = Depends(get_current_user)):
+    """Reverses /me/pause — reactivates exactly the items that pausing had
+    turned off."""
+    return resume_account(current_user)
 
 
 @router.get("/me/mercadopago/connect", response_model=MercadoPagoConnectResponse)
