@@ -50,6 +50,7 @@ class AccountDeleteRequest(BaseModel):
 
 class UserUpdate(BaseModel):
     name: str | None = Field(None, min_length=2, max_length=100)
+    bio: str | None = Field(None, max_length=500)
     phone: str | None = Field(None, max_length=20)
     zip_code: str | None = Field(None, max_length=10)
     street: str | None = Field(None, max_length=200)
@@ -80,6 +81,7 @@ class UserResponse(BaseModel):
     name: str
     email: str
     avatar_url: str | None = None
+    bio: str | None = None
     phone: str | None = None
     zip_code: str | None = None
     street: str | None = None
@@ -122,6 +124,7 @@ class PublicUserResponse(BaseModel):
     id: str
     name: str
     avatar_url: str | None = None
+    bio: str | None = None
     neighborhood: str | None = None
     city: str | None = None
     state: str | None = None

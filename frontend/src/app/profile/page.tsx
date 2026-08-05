@@ -25,6 +25,7 @@ const opt = z.string().optional().or(z.literal(''))
 
 const schema = z.object({
   name: z.string().min(2, 'Mínimo 2 caracteres').max(100),
+  bio: z.string().max(500, 'Máximo 500 caracteres').optional().or(z.literal('')),
   phone: opt,
   zip_code: z.string().max(9).optional().or(z.literal('')),
   street: opt,
@@ -82,7 +83,7 @@ export default function ProfilePage() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: '', phone: '', zip_code: '', street: '',
+      name: '', bio: '', phone: '', zip_code: '', street: '',
       number: '', complement: '', neighborhood: '', city: '', state: '',
       latitude: undefined, longitude: undefined,
       company_name: '', trade_name: '', cnpj: '', business_category: '',
@@ -98,6 +99,7 @@ export default function ProfilePage() {
     if (user) {
       reset({
         name: user.name ?? '',
+        bio: user.bio ?? '',
         phone: user.phone ?? '',
         zip_code: user.zip_code ?? '',
         street: user.street ?? '',
@@ -132,6 +134,7 @@ export default function ProfilePage() {
       updateUser(updated)
       reset({
         name: updated.name ?? '',
+        bio: updated.bio ?? '',
         phone: updated.phone ?? '',
         zip_code: updated.zip_code ?? '',
         street: updated.street ?? '',
@@ -341,6 +344,26 @@ export default function ProfilePage() {
                 placeholder="(11) 99999-0000"
                 helper="Visível apenas para a outra parte numa solicitação aceita"
               />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  {user?.account_type === 'business' ? 'Sobre o negócio' : 'Sobre você'}
+                </label>
+                <textarea
+                  {...register('bio')}
+                  rows={3}
+                  maxLength={500}
+                  placeholder={
+                    user?.account_type === 'business'
+                      ? 'Conte um pouco sobre o que sua empresa oferece...'
+                      : 'Uma breve apresentação, visível no seu perfil público...'
+                  }
+                  className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-none"
+                />
+                {errors.bio?.message && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.bio.message}</p>
+                )}
+              </div>
 
               <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-4">

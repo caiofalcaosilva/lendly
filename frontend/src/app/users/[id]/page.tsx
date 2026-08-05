@@ -116,6 +116,10 @@ export default function UserPublicPage() {
               Membro desde {formatDate(user.created_at)}
             </p>
 
+            {user.bio && (
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">{user.bio}</p>
+            )}
+
             <div className="mt-3">
               <ReputationBadges
                 reliabilityScore={user.reliability_score}

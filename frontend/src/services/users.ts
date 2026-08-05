@@ -3,6 +3,7 @@ import { BusinessSummary, OwnerAnalyticsSummary, PublicUser, User } from '@/type
 
 export interface UpdateProfileData {
   name?: string
+  bio?: string
   phone?: string
   zip_code?: string
   street?: string

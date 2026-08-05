@@ -3,6 +3,7 @@ export interface User {
   name: string
   email: string
   avatar_url?: string | null
+  bio?: string | null
   phone?: string
   zip_code?: string
   street?: string
@@ -42,6 +43,7 @@ export interface PublicUser {
   id: string
   name: string
   avatar_url?: string | null
+  bio?: string | null
   neighborhood?: string
   city?: string
   state?: string
