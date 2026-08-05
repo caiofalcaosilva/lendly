@@ -35,6 +35,7 @@ export interface User {
   website?: string
   instagram?: string
   whatsapp?: string
+  featured_item_ids: string[]
   created_at: string
 }
 
@@ -63,6 +64,7 @@ export interface PublicUser {
   website?: string
   instagram?: string
   whatsapp?: string
+  featured_item_ids: string[]
   created_at: string
 }
 

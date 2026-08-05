@@ -117,7 +117,12 @@ class UserResponse(BaseModel):
     website: str | None = None
     instagram: str | None = None
     whatsapp: str | None = None
+    featured_item_ids: list[str] = []
     created_at: datetime
+
+
+class FeaturedItemsUpdate(BaseModel):
+    item_ids: list[str] = Field(..., max_length=3)
 
 
 class PublicUserResponse(BaseModel):
@@ -148,6 +153,7 @@ class PublicUserResponse(BaseModel):
     website: str | None = None
     instagram: str | None = None
     whatsapp: str | None = None
+    featured_item_ids: list[str] = []
     created_at: datetime
 
 

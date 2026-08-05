@@ -31,6 +31,7 @@ def user_to_public_response(user: User) -> PublicUserResponse:
         website=user.website,
         instagram=user.instagram,
         whatsapp=user.whatsapp,
+        featured_item_ids=[str(i.id) for i in (user.featured_items or [])],
         created_at=user.created_at,
     )
 
@@ -73,6 +74,7 @@ def user_to_response(user: User) -> UserResponse:
         website=user.website,
         instagram=user.instagram,
         whatsapp=user.whatsapp,
+        featured_item_ids=[str(i.id) for i in (user.featured_items or [])],
         created_at=user.created_at,
     )
 

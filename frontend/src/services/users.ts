@@ -39,6 +39,9 @@ export const usersService = {
 
   removeAvatar: () => api.delete<User>('/users/me/avatar').then((r) => r.data),
 
+  setFeaturedItems: (itemIds: string[]) =>
+    api.put<User>('/users/me/featured-items', { item_ids: itemIds }).then((r) => r.data),
+
   getPublic: (id: string) => api.get<PublicUser>(`/users/${id}`).then((r) => r.data),
 
   getPublicItems: (id: string) =>

@@ -206,9 +206,25 @@ export default function UserPublicPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {items.map((item) => (
-                <ItemCard key={item.id} item={item} />
-              ))}
+              {[...items]
+                .sort((a, b) => {
+                  const fa = user.featured_item_ids.indexOf(a.id)
+                  const fb = user.featured_item_ids.indexOf(b.id)
+                  if (fa === -1 && fb === -1) return 0
+                  if (fa === -1) return 1
+                  if (fb === -1) return -1
+                  return fa - fb
+                })
+                .map((item) => (
+                  <div key={item.id} className="relative">
+                    {user.featured_item_ids.includes(item.id) && (
+                      <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-yellow-400 text-yellow-900 shadow-sm">
+                        <Star className="w-2.5 h-2.5 fill-yellow-900" /> Destaque
+                      </span>
+                    )}
+                    <ItemCard item={item} />
+                  </div>
+                ))}
             </div>
           )}
         </div>

@@ -38,7 +38,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ]
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, updateUser } = useAuth()
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('items')
   const [items, setItems] = useState<Item[]>([])
@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [featuring, setFeaturing] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
 
   useEffect(() => {
@@ -104,6 +105,24 @@ export default function DashboardPage() {
       loadAll()
     } finally {
       setToggling(null)
+    }
+  }
+
+  const MAX_FEATURED = 3
+
+  const toggleFeatured = async (item: Item) => {
+    if (!user) return
+    const current = user.featured_item_ids ?? []
+    const isFeatured = current.includes(item.id)
+    if (!isFeatured && current.length >= MAX_FEATURED) return
+
+    const next = isFeatured ? current.filter((id) => id !== item.id) : [...current, item.id]
+    setFeaturing(item.id)
+    try {
+      const updated = await usersService.setFeaturedItems(next)
+      updateUser(updated)
+    } finally {
+      setFeaturing(null)
     }
   }
 
@@ -233,6 +252,16 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          loading={featuring === item.id}
+                          disabled={!(user?.featured_item_ids ?? []).includes(item.id) && (user?.featured_item_ids?.length ?? 0) >= MAX_FEATURED}
+                          onClick={() => toggleFeatured(item)}
+                          title={(user?.featured_item_ids ?? []).includes(item.id) ? 'Remover dos destaques' : `Destacar no perfil (máx. ${MAX_FEATURED})`}
+                        >
+                          <Star className={`w-4 h-4 ${(user?.featured_item_ids ?? []).includes(item.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                        </Button>
                         <Button
                           size="sm"
                           variant="ghost"

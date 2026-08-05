@@ -13,6 +13,7 @@ from app.schemas.payment import (
 from app.schemas.user import (
     AccountDeleteRequest,
     BusinessSummary,
+    FeaturedItemsUpdate,
     PublicUserResponse,
     UserResponse,
     UserUpdate,
@@ -21,6 +22,7 @@ from app.services import (
     analytics_service,
     avatar_service,
     export_service,
+    featured_items_service,
     item_service,
     loan_request_service,
     mp_connect_service,
@@ -69,6 +71,15 @@ def remove_avatar(current_user: User = Depends(get_current_user)):
     """Removes the logged-in user's profile photo — falls back to initials
     in the UI."""
     return avatar_service.remove_avatar(current_user)
+
+
+@router.put("/me/featured-items", response_model=UserResponse)
+def set_featured_items(
+    data: FeaturedItemsUpdate, current_user: User = Depends(get_current_user)
+):
+    """Sets up to 3 of the logged-in user's own active items to pin at the
+    top of their public profile — replaces the previous selection."""
+    return featured_items_service.set_featured_items(data.item_ids, current_user)
 
 
 @router.get("/me/items", response_model=list[ItemResponse])
