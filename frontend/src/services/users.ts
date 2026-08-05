@@ -21,6 +21,8 @@ export interface UpdateProfileData {
   business_phone?: string
   business_hours?: string
   website?: string
+  instagram?: string
+  whatsapp?: string
 }
 
 export const usersService = {

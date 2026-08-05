@@ -27,6 +27,8 @@ class UserCreate(BaseModel):
     business_phone: str | None = Field(None, max_length=20)
     business_hours: str | None = Field(None, max_length=200)
     website: str | None = Field(None, max_length=200)
+    instagram: str | None = Field(None, max_length=100)
+    whatsapp: str | None = Field(None, max_length=20)
 
     @model_validator(mode="after")
     def _validate_business_fields(self):
@@ -68,6 +70,8 @@ class UserUpdate(BaseModel):
     business_phone: str | None = Field(None, max_length=20)
     business_hours: str | None = Field(None, max_length=200)
     website: str | None = Field(None, max_length=200)
+    instagram: str | None = Field(None, max_length=100)
+    whatsapp: str | None = Field(None, max_length=20)
 
     @model_validator(mode="after")
     def _validate_cnpj(self):
@@ -111,6 +115,8 @@ class UserResponse(BaseModel):
     business_phone: str | None = None
     business_hours: str | None = None
     website: str | None = None
+    instagram: str | None = None
+    whatsapp: str | None = None
     created_at: datetime
 
 
@@ -140,6 +146,8 @@ class PublicUserResponse(BaseModel):
     business_phone: str | None = None
     business_hours: str | None = None
     website: str | None = None
+    instagram: str | None = None
+    whatsapp: str | None = None
     created_at: datetime
 
 

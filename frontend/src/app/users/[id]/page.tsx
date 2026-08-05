@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { MapPin, Star, Package, ArrowLeft, Calendar, Clock, Phone, Globe, Flag } from 'lucide-react'
+import { MapPin, Star, Package, ArrowLeft, Calendar, Clock, Phone, Globe, Flag, Instagram, MessageCircle } from 'lucide-react'
 import { PublicUser, Item, Review } from '@/types'
 import { usersService } from '@/services/users'
 import { reviewsService } from '@/services/reviews'
@@ -131,7 +131,7 @@ export default function UserPublicPage() {
               />
             </div>
 
-            {user.account_type === 'business' && (user.business_hours || user.business_phone || user.website) && (
+            {user.account_type === 'business' && (user.business_hours || user.business_phone || user.website || user.instagram || user.whatsapp) && (
               <div className="flex flex-col gap-1 mt-3 text-xs text-gray-500 dark:text-gray-400">
                 {user.business_hours && (
                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{user.business_hours}</span>
@@ -142,6 +142,26 @@ export default function UserPublicPage() {
                 {user.website && (
                   <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors">
                     <Globe className="w-3.5 h-3.5" />{user.website}
+                  </a>
+                )}
+                {user.instagram && (
+                  <a
+                    href={`https://instagram.com/${user.instagram.replace(/^@/, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                  >
+                    <Instagram className="w-3.5 h-3.5" />{user.instagram}
+                  </a>
+                )}
+                {user.whatsapp && (
+                  <a
+                    href={`https://wa.me/55${user.whatsapp.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />{user.whatsapp}
                   </a>
                 )}
               </div>

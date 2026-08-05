@@ -52,6 +52,8 @@ class User(Document):
     business_phone = StringField(max_length=20)
     business_hours = StringField(max_length=200)
     website = StringField(max_length=200)
+    instagram = StringField(max_length=100)
+    whatsapp = StringField(max_length=20)
     cpf = StringField(max_length=14, sparse=True, unique=True)
     identity_status = StringField(
         default="none", choices=["none", "pending", "approved", "rejected"]

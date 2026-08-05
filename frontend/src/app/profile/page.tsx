@@ -43,6 +43,8 @@ const schema = z.object({
   business_phone: opt,
   business_hours: opt,
   website: opt,
+  instagram: opt,
+  whatsapp: opt,
 }).refine((d) => !d.cnpj || isValidCnpj(d.cnpj), { message: 'CNPJ inválido', path: ['cnpj'] })
 
 type FormData = z.infer<typeof schema>
@@ -87,7 +89,7 @@ export default function ProfilePage() {
       number: '', complement: '', neighborhood: '', city: '', state: '',
       latitude: undefined, longitude: undefined,
       company_name: '', trade_name: '', cnpj: '', business_category: '',
-      business_phone: '', business_hours: '', website: '',
+      business_phone: '', business_hours: '', website: '', instagram: '', whatsapp: '',
     },
   })
 
@@ -117,6 +119,8 @@ export default function ProfilePage() {
         business_phone: user.business_phone ?? '',
         business_hours: user.business_hours ?? '',
         website: user.website ?? '',
+        instagram: user.instagram ?? '',
+        whatsapp: user.whatsapp ?? '',
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,6 +156,8 @@ export default function ProfilePage() {
         business_phone: updated.business_phone ?? '',
         business_hours: updated.business_hours ?? '',
         website: updated.website ?? '',
+        instagram: updated.instagram ?? '',
+        whatsapp: updated.whatsapp ?? '',
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -400,6 +406,8 @@ export default function ProfilePage() {
                     <Input label="Telefone comercial" type="tel" {...register('business_phone')} />
                     <Input label="Horário de funcionamento" {...register('business_hours')} placeholder="Ex: Seg-Sex 9h-18h" />
                     <Input label="Site" type="url" {...register('website')} placeholder="https://" />
+                    <Input label="Instagram" {...register('instagram')} placeholder="@sua_empresa" />
+                    <Input label="WhatsApp" type="tel" {...register('whatsapp')} placeholder="(11) 99999-0000" />
                   </div>
                 </div>
               )}

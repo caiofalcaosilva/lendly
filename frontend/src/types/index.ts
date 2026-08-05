@@ -33,6 +33,8 @@ export interface User {
   business_phone?: string
   business_hours?: string
   website?: string
+  instagram?: string
+  whatsapp?: string
   created_at: string
 }
 
@@ -59,6 +61,8 @@ export interface PublicUser {
   business_phone?: string
   business_hours?: string
   website?: string
+  instagram?: string
+  whatsapp?: string
   created_at: string
 }
 

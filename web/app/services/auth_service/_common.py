@@ -29,6 +29,8 @@ def user_to_public_response(user: User) -> PublicUserResponse:
         business_phone=user.business_phone,
         business_hours=user.business_hours,
         website=user.website,
+        instagram=user.instagram,
+        whatsapp=user.whatsapp,
         created_at=user.created_at,
     )
 
@@ -69,6 +71,8 @@ def user_to_response(user: User) -> UserResponse:
         business_phone=user.business_phone,
         business_hours=user.business_hours,
         website=user.website,
+        instagram=user.instagram,
+        whatsapp=user.whatsapp,
         created_at=user.created_at,
     )
 
