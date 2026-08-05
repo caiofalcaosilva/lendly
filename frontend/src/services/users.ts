@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { BusinessSummary, OwnerAnalyticsSummary, User } from '@/types'
+import { BusinessSummary, OwnerAnalyticsSummary, PublicUser, User } from '@/types'
 
 export interface UpdateProfileData {
   name?: string
@@ -28,7 +28,7 @@ export const usersService = {
   updateMe: (data: UpdateProfileData) =>
     api.put<User>('/users/me', data).then((r) => r.data),
 
-  getPublic: (id: string) => api.get<User>(`/users/${id}`).then((r) => r.data),
+  getPublic: (id: string) => api.get<PublicUser>(`/users/${id}`).then((r) => r.data),
 
   getPublicItems: (id: string) =>
     api.get<import('@/types').Item[]>(`/users/${id}/items`).then((r) => r.data),

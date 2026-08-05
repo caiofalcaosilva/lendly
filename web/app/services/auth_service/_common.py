@@ -2,10 +2,33 @@ import secrets
 from datetime import timedelta
 
 from app.models.user import RefreshSession, User
-from app.schemas.user import UserResponse
+from app.schemas.user import PublicUserResponse, UserResponse
 from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils.security import create_access_token, hash_refresh_token
 from app.utils.time import utcnow
+
+
+def user_to_public_response(user: User) -> PublicUserResponse:
+    return PublicUserResponse(
+        id=str(user.id),
+        name=user.name,
+        neighborhood=user.neighborhood,
+        city=user.city,
+        state=user.state,
+        average_rating=user.average_rating,
+        rating_count=user.rating_count,
+        reliability_score=user.reliability_score,
+        reliability_count=user.reliability_count or 0,
+        on_time_rate=user.on_time_rate,
+        finished_loans_count=user.finished_loans_count or 0,
+        account_type=user.account_type or "individual",
+        trade_name=user.trade_name,
+        business_category=user.business_category,
+        business_phone=user.business_phone,
+        business_hours=user.business_hours,
+        website=user.website,
+        created_at=user.created_at,
+    )
 
 
 def user_to_response(user: User) -> UserResponse:

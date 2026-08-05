@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { MapPin, Star, Package, ArrowLeft, Calendar, Clock, Phone, Globe, Flag } from 'lucide-react'
-import { User, Item, Review } from '@/types'
+import { PublicUser, Item, Review } from '@/types'
 import { usersService } from '@/services/users'
 import { reviewsService } from '@/services/reviews'
 import { formatDate } from '@/lib/utils'
@@ -19,7 +19,7 @@ import ReportModal from '@/components/reports/ReportModal'
 export default function UserPublicPage() {
   const { id } = useParams<{ id: string }>()
   const { user: currentUser, isAuthenticated } = useAuth()
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<PublicUser | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)

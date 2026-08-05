@@ -3,7 +3,7 @@ session, totp, account) — re-exported here so callers keep using
 `auth_service.login_user` / `from app.services.auth_service import X`
 exactly as before the split."""
 
-from app.services.auth_service._common import user_to_response
+from app.services.auth_service._common import user_to_public_response, user_to_response
 from app.services.auth_service.account import delete_account
 from app.services.auth_service.registration import (
     register_user,
@@ -29,6 +29,7 @@ __all__ = [
     "resend_verification",
     "revoke_refresh_token",
     "setup_totp",
+    "user_to_public_response",
     "user_to_response",
     "verify_email_token",
 ]

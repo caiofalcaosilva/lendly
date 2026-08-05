@@ -13,6 +13,7 @@ from app.schemas.payment import (
 from app.schemas.user import (
     AccountDeleteRequest,
     BusinessSummary,
+    PublicUserResponse,
     UserResponse,
     UserUpdate,
 )
@@ -23,7 +24,11 @@ from app.services import (
     loan_request_service,
     mp_connect_service,
 )
-from app.services.auth_service import delete_account, user_to_response
+from app.services.auth_service import (
+    delete_account,
+    user_to_public_response,
+    user_to_response,
+)
 from app.utils import errors
 from app.utils.time import utcnow
 
@@ -168,10 +173,10 @@ def get_user_items_public(
     return item_service.get_user_items(user_id, current_user)
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}", response_model=PublicUserResponse)
 def get_user(user_id: str):
     """Public profile of any active, non-admin user — no auth required."""
     user = User.objects(id=user_id, is_active=True, is_admin__ne=True).first()
     if not user:
         raise errors.not_found("User not found")
-    return user_to_response(user)
+    return user_to_public_response(user)

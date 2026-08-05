@@ -34,6 +34,30 @@ export interface User {
   created_at: string
 }
 
+// What GET /users/{id} returns — no email, cpf, phone, address detail,
+// is_admin, totp_enabled or identity_status. See PublicUserResponse on the
+// backend for why this is deliberately narrower than User.
+export interface PublicUser {
+  id: string
+  name: string
+  neighborhood?: string
+  city?: string
+  state?: string
+  average_rating: number
+  rating_count: number
+  reliability_score?: number | null
+  reliability_count: number
+  on_time_rate?: number | null
+  finished_loans_count: number
+  account_type: 'individual' | 'business'
+  trade_name?: string
+  business_category?: string
+  business_phone?: string
+  business_hours?: string
+  website?: string
+  created_at: string
+}
+
 export type ReportReason = 'spam' | 'fake_item' | 'inappropriate' | 'fraud' | 'other'
 export type ReportStatus = 'pending' | 'dismissed' | 'actioned'
 

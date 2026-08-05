@@ -111,6 +111,33 @@ class UserResponse(BaseModel):
     created_at: datetime
 
 
+class PublicUserResponse(BaseModel):
+    """What `GET /users/{user_id}` returns — deliberately narrower than
+    UserResponse. No email, cpf, phone, address detail, is_admin,
+    totp_enabled or identity_status: none of that is rendered by the public
+    profile page, and returning it just because UserResponse already had the
+    field was a real PII leak (see roadmap)."""
+
+    id: str
+    name: str
+    neighborhood: str | None = None
+    city: str | None = None
+    state: str | None = None
+    average_rating: float
+    rating_count: int
+    reliability_score: float | None = None
+    reliability_count: int = 0
+    on_time_rate: float | None = None
+    finished_loans_count: int = 0
+    account_type: str = "individual"
+    trade_name: str | None = None
+    business_category: str | None = None
+    business_phone: str | None = None
+    business_hours: str | None = None
+    website: str | None = None
+    created_at: datetime
+
+
 class BusinessSummary(BaseModel):
     id: str
     name: str
