@@ -22,6 +22,7 @@ def _to_response(doc: PlatformSettings) -> PlatformSettingsResponse:
             doc.resend_verification_rate_limit_per_minute
         ),
         chat_message_rate_limit_per_minute=doc.chat_message_rate_limit_per_minute,
+        password_reset_rate_limit_per_minute=doc.password_reset_rate_limit_per_minute,
         announcement_message=doc.announcement_message,
         announcement_active=doc.announcement_active or False,
         updated_by_name=doc.updated_by.name if doc.updated_by else None,

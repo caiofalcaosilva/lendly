@@ -4,6 +4,8 @@ from app.dependencies import get_current_user
 from app.models.user import User
 from app.rate_limit import limiter
 from app.schemas.auth import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     TotpConfirm,
     TotpDisable,
     TotpSetupResponse,
@@ -25,7 +27,9 @@ from app.services.auth_service import (
     login_user,
     refresh_tokens,
     register_user,
+    request_password_reset,
     resend_verification,
+    reset_password,
     revoke_refresh_token,
     setup_totp,
     user_to_response,
@@ -102,6 +106,26 @@ def resend_email(
     """Re-sends the verification email with a fresh token, for when the
     original one expired or got lost."""
     return resend_verification(current_user, background_tasks)
+
+
+@router.post("/forgot-password")
+@limiter.limit(
+    lambda: f"{get_platform_settings().password_reset_rate_limit_per_minute}/minute"
+)
+def forgot_password(
+    request: Request, data: ForgotPasswordRequest, background_tasks: BackgroundTasks
+):
+    """Sends a password reset link if the email is registered — responds
+    the same either way, so this can't be used to check which emails have
+    an account."""
+    return request_password_reset(data, background_tasks)
+
+
+@router.post("/reset-password")
+def reset_password_route(data: ResetPasswordRequest):
+    """Sets a new password from a valid, unexpired reset token, and revokes
+    every existing session."""
+    return reset_password(data)
 
 
 @router.get("/me", response_model=UserResponse)

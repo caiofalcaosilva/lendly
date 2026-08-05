@@ -99,6 +99,11 @@ function LoginForm() {
               placeholder="••••••••"
               required
             />
+            <div className="text-right -mt-2">
+              <Link href="/forgot-password" className="text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
+                Esqueci minha senha
+              </Link>
+            </div>
             <Button type="submit" loading={loading} className="w-full mt-2">
               Entrar
             </Button>

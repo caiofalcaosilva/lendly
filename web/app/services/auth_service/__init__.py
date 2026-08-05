@@ -1,6 +1,6 @@
 """Split by responsibility across this package's modules (registration,
-session, totp, account) — re-exported here so callers keep using
-`auth_service.login_user` / `from app.services.auth_service import X`
+session, totp, account, password_reset) — re-exported here so callers keep
+using `auth_service.login_user` / `from app.services.auth_service import X`
 exactly as before the split."""
 
 from app.services.auth_service._common import user_to_public_response, user_to_response
@@ -8,6 +8,10 @@ from app.services.auth_service.account import (
     change_email,
     change_password,
     delete_account,
+)
+from app.services.auth_service.password_reset import (
+    request_password_reset,
+    reset_password,
 )
 from app.services.auth_service.registration import (
     register_user,
@@ -32,7 +36,9 @@ __all__ = [
     "login_user",
     "refresh_tokens",
     "register_user",
+    "request_password_reset",
     "resend_verification",
+    "reset_password",
     "revoke_refresh_token",
     "setup_totp",
     "user_to_public_response",

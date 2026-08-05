@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
 class TwoFactorComplete(BaseModel):
@@ -18,3 +18,12 @@ class TotpConfirm(BaseModel):
 
 class TotpDisable(BaseModel):
     code: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=6)

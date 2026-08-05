@@ -72,6 +72,8 @@ class User(Document):
     is_verified = BooleanField(default=False)
     email_verification_token = StringField()
     email_verification_expires = DateTimeField()
+    password_reset_token = StringField()
+    password_reset_expires = DateTimeField()
     totp_secret = StringField()
     totp_enabled = BooleanField(default=False)
     trusted_devices = ListField(StringField(), default=list)
@@ -92,6 +94,7 @@ class User(Document):
         "indexes": [
             {"fields": ["email"], "unique": True},
             "email_verification_token",
+            "password_reset_token",
             "created_at",
             "account_type",
             "status_changed_by",

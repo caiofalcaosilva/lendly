@@ -45,6 +45,14 @@ export const authService = {
 
   resendVerification: () => api.post('/auth/resend-verification').then((r) => r.data),
 
+  forgotPassword: (email: string) =>
+    api.post<{ detail: string }>('/auth/forgot-password', { email }).then((r) => r.data),
+
+  resetPassword: (token: string, newPassword: string) =>
+    api
+      .post<{ detail: string }>('/auth/reset-password', { token, new_password: newPassword })
+      .then((r) => r.data),
+
   setupTotp: () =>
     api.post<{ secret: string; uri: string }>('/auth/2fa/setup').then((r) => r.data),
 

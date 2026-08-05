@@ -20,6 +20,7 @@ const FIELDS: { key: keyof PlatformSettings; label: string; helper: string }[] =
   { key: 'refresh_rate_limit_per_minute', label: 'Limite de renovações de sessão por minuto', helper: 'Por IP — troca de refresh token por um novo par de tokens.' },
   { key: 'resend_verification_rate_limit_per_minute', label: 'Limite de reenvio de verificação por minuto', helper: 'Por IP — protege contra spam de e-mails de verificação.' },
   { key: 'chat_message_rate_limit_per_minute', label: 'Limite de mensagens de chat por minuto', helper: 'Por usuário — protege o chat de empréstimos contra flood.' },
+  { key: 'password_reset_rate_limit_per_minute', label: 'Limite de pedidos de redefinição de senha por minuto', helper: 'Por IP — protege "esqueci minha senha" contra abuso.' },
 ]
 
 export default function AdminSettingsPage() {
@@ -63,6 +64,7 @@ export default function AdminSettingsPage() {
         resend_verification_rate_limit_per_minute:
           settings.resend_verification_rate_limit_per_minute,
         chat_message_rate_limit_per_minute: settings.chat_message_rate_limit_per_minute,
+        password_reset_rate_limit_per_minute: settings.password_reset_rate_limit_per_minute,
         announcement_message: settings.announcement_message ?? '',
         announcement_active: settings.announcement_active,
       })

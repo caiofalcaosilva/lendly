@@ -45,6 +45,28 @@ async def send_verification_email(to: str, name: str, token: str) -> None:
     await send_email(to, "Verifique seu e-mail — Lendly", html)
 
 
+async def send_password_reset_email(to: str, name: str, token: str) -> None:
+    url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">Redefinir senha</h2>
+      <p>Olá, {name}! Recebemos um pedido para redefinir sua senha. Clique no
+      botão abaixo para escolher uma nova:</p>
+      <a href="{url}"
+         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Redefinir senha
+      </a>
+      <p style="color:#6b7280;font-size:13px">
+        Link válido por 1 hora.<br>
+        Se você não pediu essa redefinição, ignore este e-mail — sua senha
+        continua a mesma.
+      </p>
+    </div>
+    """
+    await send_email(to, "Redefinir senha — Lendly", html)
+
+
 _STATUS_COPY = {
     "accepted": (
         "Seu pedido foi aceito!",

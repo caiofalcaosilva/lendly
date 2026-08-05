@@ -13,6 +13,7 @@ class PlatformSettingsUpdate(BaseModel):
     refresh_rate_limit_per_minute: int | None = Field(None, ge=1)
     resend_verification_rate_limit_per_minute: int | None = Field(None, ge=1)
     chat_message_rate_limit_per_minute: int | None = Field(None, ge=1)
+    password_reset_rate_limit_per_minute: int | None = Field(None, ge=1)
     announcement_message: str | None = Field(None, max_length=280)
     announcement_active: bool | None = None
 
@@ -27,6 +28,7 @@ class PlatformSettingsResponse(BaseModel):
     refresh_rate_limit_per_minute: int
     resend_verification_rate_limit_per_minute: int
     chat_message_rate_limit_per_minute: int
+    password_reset_rate_limit_per_minute: int
     announcement_message: str | None = None
     announcement_active: bool = False
     updated_by_name: str | None = None
