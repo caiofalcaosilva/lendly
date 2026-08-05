@@ -20,13 +20,19 @@ def list_items(
     city: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(16, ge=1, le=100),
-    lat: float | None = Query(None),
+    lat: float | None = Query(None, description="Primary origin (e.g. home address)"),
     lng: float | None = Query(None),
+    lat2: float | None = Query(
+        None, description="Secondary origin (e.g. live browser location)"
+    ),
+    lng2: float | None = Query(None),
     radius_km: float | None = Query(None, ge=0.1),
     current_user: User | None = Depends(get_current_user_optional),
 ):
     """Browses the public item catalog with optional search, filters, and
-    distance-based radius search."""
+    distance-based radius search. Up to two origins can be given (home
+    address + current location) — an item matches if it's within radius_km
+    of either one."""
     return item_service.list_items(
         search=search,
         category=category,
@@ -38,6 +44,8 @@ def list_items(
         limit=limit,
         lat=lat,
         lng=lng,
+        lat2=lat2,
+        lng2=lng2,
         radius_km=radius_km,
         current_user=current_user,
     )

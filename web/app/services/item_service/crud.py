@@ -148,6 +148,14 @@ def _search_items(qs, search: str, cap: int | None = None) -> list[Item]:
     return text_items + fallback_items
 
 
+# A neighbor-lending app has no business surfacing an item hundreds of km
+# away just because nothing else narrowed the search — this caps results
+# even when the visitor never touched the distance filter, as long as we
+# know at least one location for them (home address and/or live browser
+# location; see list_items).
+DEFAULT_MAX_RADIUS_KM = 50
+
+
 def list_items(
     search: str | None,
     category: str | None,
@@ -158,6 +166,8 @@ def list_items(
     limit: int,
     lat: float | None = None,
     lng: float | None = None,
+    lat2: float | None = None,
+    lng2: float | None = None,
     radius_km: float | None = None,
     current_user: User | None = None,
     subcategory: str | None = None,
@@ -175,7 +185,19 @@ def list_items(
     if city:
         qs = qs.filter(city__icontains=city)
 
-    if lat is not None and lng is not None and radius_km:
+    # Up to two candidate origins — typically the visitor's home address
+    # and their live browser location. An item matches if it's within
+    # radius of EITHER one (union, not intersection): what matters to a
+    # borrower is "close to home" OR "close to where I am right now".
+    origin_candidates = [(lat, lng), (lat2, lng2)]
+    origins = [
+        (o_lat, o_lng)
+        for o_lat, o_lng in origin_candidates
+        if o_lat is not None and o_lng is not None
+    ]
+    effective_radius = radius_km or (DEFAULT_MAX_RADIUS_KM if origins else None)
+
+    if effective_radius and origins:
         ordered = _search_items(qs, search) if search else qs.order_by("-created_at")
         all_items = [to_response(i, current_user) for i in ordered]
         filtered = [
@@ -183,7 +205,11 @@ def list_items(
             for item in all_items
             if item.latitude is not None
             and item.longitude is not None
-            and _haversine_km(lat, lng, item.latitude, item.longitude) <= radius_km
+            and any(
+                _haversine_km(o_lat, o_lng, item.latitude, item.longitude)
+                <= effective_radius
+                for o_lat, o_lng in origins
+            )
         ]
         return filtered[skip : skip + limit]
 
