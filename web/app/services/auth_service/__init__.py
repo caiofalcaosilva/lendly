@@ -4,7 +4,11 @@ session, totp, account) — re-exported here so callers keep using
 exactly as before the split."""
 
 from app.services.auth_service._common import user_to_public_response, user_to_response
-from app.services.auth_service.account import delete_account
+from app.services.auth_service.account import (
+    change_email,
+    change_password,
+    delete_account,
+)
 from app.services.auth_service.registration import (
     register_user,
     resend_verification,
@@ -19,6 +23,8 @@ from app.services.auth_service.session import (
 from app.services.auth_service.totp import disable_totp, enable_totp, setup_totp
 
 __all__ = [
+    "change_email",
+    "change_password",
     "complete_2fa",
     "delete_account",
     "disable_totp",

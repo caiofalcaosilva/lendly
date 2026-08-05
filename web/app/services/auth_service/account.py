@@ -1,14 +1,23 @@
 import logging
 import secrets
+from datetime import timedelta
 
+from fastapi import BackgroundTasks
 from mongoengine import Q
 
 from app.models.group import Group
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.user import User
-from app.schemas.user import AccountDeleteRequest
-from app.services import group_service
+from app.schemas.user import (
+    AccountDeleteRequest,
+    EmailChangeRequest,
+    PasswordChangeRequest,
+    UserResponse,
+)
+from app.services import email_service, group_service
+from app.services.auth_service._common import user_to_response
+from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils import errors
 from app.utils.security import hash_password, verify_password
 from app.utils.time import utcnow
@@ -75,3 +84,47 @@ def delete_account(data: AccountDeleteRequest, current_user: User) -> None:
         updated_at=utcnow(),
     )
     logger.info("account deleted", extra={"user_id": str(current_user.id)})
+
+
+def change_password(data: PasswordChangeRequest, current_user: User) -> UserResponse:
+    if not verify_password(data.current_password, current_user.password_hash):
+        raise errors.bad_request("Senha atual incorreta")
+
+    current_user.update(
+        password_hash=hash_password(data.new_password),
+        refresh_sessions=[],
+        updated_at=utcnow(),
+    )
+    current_user.reload()
+    logger.info("password changed", extra={"user_id": str(current_user.id)})
+    return user_to_response(current_user)
+
+
+def change_email(
+    data: EmailChangeRequest, current_user: User, background_tasks: BackgroundTasks
+) -> UserResponse:
+    if not verify_password(data.password, current_user.password_hash):
+        raise errors.bad_request("Senha incorreta")
+
+    if User.objects(email=data.new_email, id__ne=current_user.id).first():
+        raise errors.conflict("Email already registered")
+
+    token = secrets.token_urlsafe(32)
+    current_user.update(
+        email=data.new_email,
+        is_verified=False,
+        email_verification_token=token,
+        email_verification_expires=utcnow()
+        + timedelta(hours=get_platform_settings().email_verification_expire_hours),
+        updated_at=utcnow(),
+    )
+    current_user.reload()
+
+    background_tasks.add_task(
+        email_service.send_verification_email,
+        current_user.email,
+        current_user.name,
+        token,
+    )
+    logger.info("email changed", extra={"user_id": str(current_user.id)})
+    return user_to_response(current_user)

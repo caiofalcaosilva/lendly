@@ -31,6 +31,14 @@ export const usersService = {
   updateMe: (data: UpdateProfileData) =>
     api.put<User>('/users/me', data).then((r) => r.data),
 
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api
+      .put<User>('/users/me/password', { current_password: currentPassword, new_password: newPassword })
+      .then((r) => r.data),
+
+  changeEmail: (newEmail: string, password: string) =>
+    api.put<User>('/users/me/email', { new_email: newEmail, password }).then((r) => r.data),
+
   uploadAvatar: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)

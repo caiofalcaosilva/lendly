@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, Response, UploadFile
 
 from app.dependencies import get_current_user, get_current_user_optional
 from app.models.user import User
@@ -13,8 +13,10 @@ from app.schemas.payment import (
 from app.schemas.user import (
     AccountDeleteRequest,
     BusinessSummary,
+    EmailChangeRequest,
     FavoriteUserSummary,
     FeaturedItemsUpdate,
+    PasswordChangeRequest,
     PublicUserResponse,
     UserResponse,
     UserUpdate,
@@ -30,6 +32,8 @@ from app.services import (
     user_favorites_service,
 )
 from app.services.auth_service import (
+    change_email,
+    change_password,
     delete_account,
     user_to_public_response,
     user_to_response,
@@ -57,6 +61,26 @@ def update_profile(data: UserUpdate, current_user: User = Depends(get_current_us
         current_user.update(**updates)
         current_user.reload()
     return user_to_response(current_user)
+
+
+@router.put("/me/password", response_model=UserResponse)
+def update_password(
+    data: PasswordChangeRequest, current_user: User = Depends(get_current_user)
+):
+    """Changes the logged-in user's password — requires the current one.
+    Revokes every refresh session, forcing re-login on other devices."""
+    return change_password(data, current_user)
+
+
+@router.put("/me/email", response_model=UserResponse)
+def update_email(
+    data: EmailChangeRequest,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Changes the logged-in user's email — requires the current password.
+    Flips is_verified back to false and sends a fresh verification link."""
+    return change_email(data, current_user, background_tasks)
 
 
 @router.post("/me/avatar", response_model=UserResponse, status_code=201)

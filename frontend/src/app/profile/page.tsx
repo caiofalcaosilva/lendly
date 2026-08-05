@@ -15,6 +15,8 @@ import Spinner from '@/components/ui/Spinner'
 import AddressFields from '@/components/ui/AddressFields'
 import TotpSetupModal from '@/components/auth/TotpSetupModal'
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal'
+import ChangePasswordModal from '@/components/profile/ChangePasswordModal'
+import ChangeEmailModal from '@/components/profile/ChangeEmailModal'
 import AvatarUploader from '@/components/profile/AvatarUploader'
 import ProfileCompleteness from '@/components/profile/ProfileCompleteness'
 import BusinessBadge from '@/components/ui/BusinessBadge'
@@ -75,6 +77,10 @@ export default function ProfilePage() {
   const [emailResent, setEmailResent] = useState(false)
   const [exportingData, setExportingData] = useState(false)
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [showChangeEmail, setShowChangeEmail] = useState(false)
+  const [passwordChanged, setPasswordChanged] = useState(false)
+  const [emailChanged, setEmailChanged] = useState(false)
 
   const {
     register,
@@ -309,9 +315,22 @@ export default function ProfilePage() {
               </Button>
             </div>
 
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              Para alterar e-mail ou senha, entre em contato com o suporte.
-            </p>
+            <div className="flex flex-col gap-2 pt-1">
+              <Button size="sm" variant="outline" onClick={() => setShowChangeEmail(true)}>
+                Trocar e-mail
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowChangePassword(true)}>
+                Trocar senha
+              </Button>
+              {emailChanged && (
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  E-mail atualizado — verifique a caixa de entrada do novo endereço.
+                </p>
+              )}
+              {passwordChanged && (
+                <p className="text-xs text-green-600 dark:text-green-400">Senha atualizada.</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -549,6 +568,29 @@ export default function ProfilePage() {
         <TotpSetupModal
           onSuccess={(updated) => { updateUser(updated); setShowTotpSetup(false) }}
           onClose={() => setShowTotpSetup(false)}
+        />
+      )}
+
+      {showChangePassword && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePassword(false)}
+          onSuccess={() => {
+            setShowChangePassword(false)
+            setPasswordChanged(true)
+            setTimeout(() => setPasswordChanged(false), 5000)
+          }}
+        />
+      )}
+
+      {showChangeEmail && (
+        <ChangeEmailModal
+          onClose={() => setShowChangeEmail(false)}
+          onSuccess={(updated) => {
+            updateUser(updated)
+            setShowChangeEmail(false)
+            setEmailChanged(true)
+            setTimeout(() => setEmailChanged(false), 8000)
+          }}
         />
       )}
 

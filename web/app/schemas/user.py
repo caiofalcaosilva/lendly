@@ -50,6 +50,16 @@ class AccountDeleteRequest(BaseModel):
     password: str
 
 
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=6)
+
+
+class EmailChangeRequest(BaseModel):
+    new_email: EmailStr
+    password: str
+
+
 class UserUpdate(BaseModel):
     name: str | None = Field(None, min_length=2, max_length=100)
     bio: str | None = Field(None, max_length=500)
