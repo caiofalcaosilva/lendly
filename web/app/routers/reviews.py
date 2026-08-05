@@ -21,3 +21,9 @@ def create_review(
 def get_user_reviews(user_id: str):
     """Every review a user has received, either as owner or requester."""
     return review_service.get_user_reviews(user_id)
+
+
+@router.get("/me/given", response_model=list[ReviewResponse])
+def get_my_given_reviews(current_user: User = Depends(get_current_user)):
+    """Every review the logged-in user has written about others."""
+    return review_service.get_given_reviews(current_user)

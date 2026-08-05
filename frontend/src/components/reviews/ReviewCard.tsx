@@ -23,9 +23,11 @@ interface Props {
   linkItem?: boolean
   /** Admin-only — shows a delete button when provided */
   onDelete?: () => void
+  /** 'received' shows who wrote it (default); 'given' shows who it's about — for a "reviews I wrote" list, showing the author is redundant */
+  perspective?: 'received' | 'given'
 }
 
-export default function ReviewCard({ review, linkItem = true, onDelete }: Props) {
+export default function ReviewCard({ review, linkItem = true, onDelete, perspective = 'received' }: Props) {
   const isLender = review.reviewed_role === 'owner'
 
   return (
@@ -82,11 +84,15 @@ export default function ReviewCard({ review, linkItem = true, onDelete }: Props)
         <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{review.comment}</p>
       )}
 
-      {/* Reviewer */}
-      <div className="flex items-center gap-1.5">
-        <Avatar name={review.reviewer_name} avatarUrl={review.reviewer_avatar_url} size="sm" />
-        <p className="text-xs text-gray-400 dark:text-gray-500">{review.reviewer_name}</p>
-      </div>
+      {/* Reviewer, or who it's about when viewing your own given reviews */}
+      {perspective === 'given' ? (
+        <p className="text-xs text-gray-400 dark:text-gray-500">Para: {review.reviewed_name}</p>
+      ) : (
+        <div className="flex items-center gap-1.5">
+          <Avatar name={review.reviewer_name} avatarUrl={review.reviewer_avatar_url} size="sm" />
+          <p className="text-xs text-gray-400 dark:text-gray-500">{review.reviewer_name}</p>
+        </div>
+      )}
     </div>
   )
 }

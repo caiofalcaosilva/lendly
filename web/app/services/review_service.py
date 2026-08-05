@@ -88,3 +88,12 @@ def get_user_reviews(user_id: str) -> list[ReviewResponse]:
     return [
         _to_response(r) for r in Review.objects(reviewed=user).order_by("-created_at")
     ]
+
+
+def get_given_reviews(current_user: User) -> list[ReviewResponse]:
+    """Reviews the logged-in user has written about others — the flip side
+    of get_user_reviews, which is what others wrote about them."""
+    return [
+        _to_response(r)
+        for r in Review.objects(reviewer=current_user).order_by("-created_at")
+    ]

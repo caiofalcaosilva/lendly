@@ -28,7 +28,7 @@ import { REQUEST_STATUS_LABELS } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-type Tab = 'items' | 'received' | 'sent' | 'history' | 'favorites' | 'analytics'
+type Tab = 'items' | 'received' | 'sent' | 'history' | 'favorites' | 'given-reviews' | 'analytics'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'items', label: 'Meus itens', icon: Package },
@@ -36,6 +36,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'sent', label: 'Solicitei', icon: Send },
   { id: 'history', label: 'Histórico', icon: History },
   { id: 'favorites', label: 'Favoritos', icon: Heart },
+  { id: 'given-reviews', label: 'Avaliações que dei', icon: Star },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ]
 
@@ -51,6 +52,7 @@ export default function DashboardPage() {
   const [favoriteUsers, setFavoriteUsers] = useState<FavoriteUserSummary[]>([])
   const [spending, setSpending] = useState<RequesterSpendingSummary | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
+  const [givenReviews, setGivenReviews] = useState<Review[]>([])
   const [analytics, setAnalytics] = useState<OwnerAnalyticsSummary | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -91,6 +93,7 @@ export default function DashboardPage() {
       setSpending(spend)
       if (user) {
         reviewsService.forUser(user.id).then(setReviews).catch(() => {})
+        reviewsService.mine().then(setGivenReviews).catch(() => {})
       }
     } catch (e: any) {
       if (!e.response) {
@@ -438,6 +441,25 @@ export default function DashboardPage() {
                       </Link>
                     ))}
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Given reviews */}
+          {tab === 'given-reviews' && (
+            <div>
+              {givenReviews.length === 0 ? (
+                <EmptyState
+                  icon={Star}
+                  title="Nenhuma avaliação dada ainda"
+                  description="Depois de finalizar um empréstimo, avalie a outra parte no card da solicitação."
+                />
+              ) : (
+                <div className="space-y-3">
+                  {givenReviews.map((rev) => (
+                    <ReviewCard key={rev.id} review={rev} perspective="given" />
+                  ))}
                 </div>
               )}
             </div>

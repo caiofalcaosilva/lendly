@@ -8,6 +8,8 @@ export const reviewsService = {
   forUser: (userId: string) =>
     api.get<Review[]>(`/reviews/user/${userId}`).then((r) => r.data),
 
+  mine: () => api.get<Review[]>('/reviews/me/given').then((r) => r.data),
+
   // Admin-only moderation — removes a review directly, no report required.
   remove: (id: string) => api.delete(`/admin/reviews/${id}`),
 }
