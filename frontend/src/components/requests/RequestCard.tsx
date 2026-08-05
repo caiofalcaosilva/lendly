@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { Calendar, MessageCircle, Package, CalendarClock, Check, X as XIcon, QrCode } from 'lucide-react'
+import { Calendar, MessageCircle, Package, CalendarClock, Check, X as XIcon, QrCode, Phone } from 'lucide-react'
 import { LoanRequest, PaymentStatus, REQUEST_STATUS_LABELS } from '@/types'
 import { requestsService } from '@/services/requests'
 import { formatDate } from '@/lib/utils'
@@ -64,6 +64,17 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {role === 'requester' ? `Dono: ${req.owner_name}` : `Solicitante: ${req.requester_name}`}
           </p>
+          {(() => {
+            const phone = role === 'requester' ? req.owner_phone : req.requester_phone
+            return phone ? (
+              <a
+                href={`tel:${phone}`}
+                className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 mt-0.5"
+              >
+                <Phone className="w-3 h-3" /> {phone}
+              </a>
+            ) : null
+          })()}
         </div>
         <div className="flex flex-col gap-1 items-end">
           <Badge variant={STATUS_COLORS[req.status]}>

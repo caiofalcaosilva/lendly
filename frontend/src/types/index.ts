@@ -449,8 +449,10 @@ export interface LoanRequest {
   item_title: string
   requester_id: string
   requester_name: string
+  requester_phone?: string | null
   owner_id: string
   owner_name: string
+  owner_phone?: string | null
   status: RequestStatus
   payment_status: PaymentStatus
   pickup_date: string

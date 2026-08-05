@@ -36,8 +36,10 @@ class LoanRequestResponse(BaseModel):
     item_title: str
     requester_id: str
     requester_name: str
+    requester_phone: str | None = None
     owner_id: str
     owner_name: str
+    owner_phone: str | None = None
     status: str
     payment_status: str
     pickup_date: datetime

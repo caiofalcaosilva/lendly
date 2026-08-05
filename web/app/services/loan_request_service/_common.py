@@ -5,16 +5,23 @@ from app.utils import errors
 
 WEEKDAY_LABELS = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
 
+# Phones are visible to each other only once there's an actual commitment to
+# coordinate pickup around — not while the request is still just pending.
+_PHONE_VISIBLE_STATUSES = {"accepted", "in_progress", "finished"}
+
 
 def to_response(req: LoanRequest) -> LoanRequestResponse:
+    show_phones = req.status in _PHONE_VISIBLE_STATUSES
     return LoanRequestResponse(
         id=str(req.id),
         item_id=str(req.item.id),
         item_title=req.item.title,
         requester_id=str(req.requester.id),
         requester_name=req.requester.name,
+        requester_phone=req.requester.phone if show_phones else None,
         owner_id=str(req.owner.id),
         owner_name=req.owner.name,
+        owner_phone=req.owner.phone if show_phones else None,
         status=req.status,
         payment_status=req.payment_status or "unpaid",
         pickup_date=req.pickup_date,
