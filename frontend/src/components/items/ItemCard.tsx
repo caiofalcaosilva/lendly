@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { MapPin, Star, Package, Navigation, Heart } from 'lucide-react'
+import { MapPin, Star, Package, Navigation, Heart, LocateFixed } from 'lucide-react'
 import { Category, Item } from '@/types'
 import { getCategoryLabel, getSubcategoryLabel, formatCurrency, formatDistance } from '@/lib/utils'
 import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
@@ -29,9 +29,12 @@ interface Props {
   item: Item
   distanceKm?: number
   onFavoriteChange?: (item: Item, favorited: boolean) => void
+  /** When provided, shows a "ver no mapa" pin button — used by the /items
+   * map/list toggle to jump straight to this item's marker. */
+  onLocate?: () => void
 }
 
-export default function ItemCard({ item, distanceKm, onFavoriteChange }: Props) {
+export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate }: Props) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const photo = item.photos?.[0]
@@ -115,6 +118,19 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange }: Props) 
               }`}
             />
           </button>
+
+          {/* Locate on map */}
+          {onLocate && item.latitude != null && item.longitude != null && (
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onLocate() }}
+              aria-label="Ver no mapa"
+              title="Ver no mapa"
+              className="absolute top-2.5 right-11 w-7 h-7 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-colors"
+            >
+              <LocateFixed className="w-4 h-4 text-white" />
+            </button>
+          )}
 
           {/* Distance badge */}
           {distanceKm != null && (

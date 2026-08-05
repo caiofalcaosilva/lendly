@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { Package, List, Map as MapIcon, MapPin } from 'lucide-react'
+import { Package, List, Map as MapIcon, MapPin, LocateFixed } from 'lucide-react'
 import { Category, Item } from '@/types'
 import { itemsService } from '@/services/items'
 import { categoriesService } from '@/services/categories'
@@ -30,18 +30,58 @@ const NEARBY_LIMIT = 8
 // user with a known location sees something personalized without having to
 // touch a single filter. Sorted client-side by exact distance since the
 // backend's radius filter only bounds results, it doesn't order by distance.
-async function loadNearbyItems(lat: number, lng: number): Promise<Item[]> {
-  const results = await itemsService.list({ lat, lng, radius_km: 50, limit: 30 } as any)
+// Accepts up to two origins (home address + live location) — same union
+// rule as the main search.
+async function loadNearbyItems(
+  origin: { lat: number; lng: number },
+  origin2?: { lat: number; lng: number },
+): Promise<Item[]> {
+  const results = await itemsService.list({
+    lat: origin.lat,
+    lng: origin.lng,
+    ...(origin2 ? { lat2: origin2.lat, lng2: origin2.lng } : {}),
+    radius_km: 50,
+    limit: 30,
+  } as any)
+  const distanceTo = (item: Item) => {
+    if (item.latitude == null || item.longitude == null) return Infinity
+    const d1 = haversineKm(origin.lat, origin.lng, item.latitude, item.longitude)
+    const d2 = origin2 ? haversineKm(origin2.lat, origin2.lng, item.latitude, item.longitude) : Infinity
+    return Math.min(d1, d2)
+  }
   return results
-    .map((item) => ({
-      item,
-      distance: item.latitude != null && item.longitude != null
-        ? haversineKm(lat, lng, item.latitude, item.longitude)
-        : Infinity,
-    }))
+    .map((item) => ({ item, distance: distanceTo(item) }))
     .sort((a, b) => a.distance - b.distance)
     .slice(0, NEARBY_LIMIT)
     .map((x) => x.item)
+}
+
+type LiveLocationStatus = 'idle' | 'loading' | 'granted' | 'denied' | 'unsupported'
+
+// Requests the browser's live location — falls back to the profile
+// address alone on denial/error, but surfaces enough status for the UI to
+// show "localizando..." while waiting and a manual retry afterward
+// (there's no other way to re-trigger a denied permission prompt).
+function useLiveLocation() {
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [status, setStatus] = useState<LiveLocationStatus>('idle')
+
+  const request = useCallback(() => {
+    if (!navigator.geolocation) { setStatus('unsupported'); return }
+    setStatus('loading')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setStatus('granted')
+      },
+      () => setStatus('denied'),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    )
+  }, [])
+
+  useEffect(() => { request() }, [request])
+
+  return { location, status, retry: request }
 }
 
 const INITIAL_FILTERS: Filters = {
@@ -99,19 +139,27 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
 
   const userHasLocation = !!(user?.latitude && user?.longitude)
   const userHasZip = !!user?.zip_code
+  const { location: liveLocation, status: liveLocationStatus, retry: retryLiveLocation } = useLiveLocation()
+  const hasAnyLocation = userHasLocation || !!liveLocation
+  const [focusItem, setFocusItem] = useState<{ id: string; token: number } | null>(null)
+  const focusTokenRef = useRef(0)
 
   useEffect(() => {
     categoriesService.list().then(setCategories)
   }, [])
 
   useEffect(() => {
-    if (!userHasLocation) { setNearbyItems([]); return }
+    if (!hasAnyLocation) { setNearbyItems([]); return }
     let cancelled = false
-    loadNearbyItems(user!.latitude!, user!.longitude!).then((results) => {
+    const primary = userHasLocation
+      ? { lat: user!.latitude!, lng: user!.longitude! }
+      : liveLocation!
+    const secondary = userHasLocation ? liveLocation ?? undefined : undefined
+    loadNearbyItems(primary, secondary).then((results) => {
       if (!cancelled) setNearbyItems(results)
     })
     return () => { cancelled = true }
-  }, [userHasLocation, user?.latitude, user?.longitude])
+  }, [hasAnyLocation, userHasLocation, user?.latitude, user?.longitude, liveLocation])
 
   const buildParams = useCallback((skip: number, limit: number) => {
     const p: Record<string, string | number> = { skip, limit }
@@ -121,13 +169,27 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
     if (filters.availability_type) p.availability_type = filters.availability_type
     if (filters.neighborhood) p.neighborhood = filters.neighborhood
     if (filters.city) p.city = filters.city
-    if (filters.radius_km > 0 && userHasLocation) {
+
+    // Home address and live location are sent whenever known, independent
+    // of whether a distance filter is set — the backend applies its own
+    // sane default radius when radius_km is omitted, so results are never
+    // unbounded just because the visitor didn't touch the slider.
+    if (userHasLocation) {
       p.lat = user!.latitude!
       p.lng = user!.longitude!
-      p.radius_km = filters.radius_km
     }
+    if (liveLocation) {
+      if (userHasLocation) {
+        p.lat2 = liveLocation.lat
+        p.lng2 = liveLocation.lng
+      } else {
+        p.lat = liveLocation.lat
+        p.lng = liveLocation.lng
+      }
+    }
+    if (filters.radius_km > 0) p.radius_km = filters.radius_km
     return p
-  }, [filters, user, userHasLocation])
+  }, [filters, user, userHasLocation, liveLocation])
 
   const loadMore = useCallback(async () => {
     if (isFetchingRef.current || !hasMoreRef.current) return
@@ -226,10 +288,17 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
     return () => observer.disconnect()
   }, [loadMore, initialLoading, view])
 
+  // Shows whichever origin the item is actually closest to — "how far this
+  // is from wherever you are" is more useful than always measuring from home.
   const getDistance = (item: Item): number | undefined => {
-    if (!userHasLocation || !item.latitude || !item.longitude) return undefined
-    return haversineKm(user!.latitude!, user!.longitude!, item.latitude, item.longitude)
+    if (!hasAnyLocation || !item.latitude || !item.longitude) return undefined
+    const distances: number[] = []
+    if (userHasLocation) distances.push(haversineKm(user!.latitude!, user!.longitude!, item.latitude, item.longitude))
+    if (liveLocation) distances.push(haversineKm(liveLocation.lat, liveLocation.lng, item.latitude, item.longitude))
+    return Math.min(...distances)
   }
+
+  const effectiveRadiusKm = filters.radius_km > 0 ? filters.radius_km : (hasAnyLocation ? 50 : 0)
 
   const hasActiveFilters = !!(filters.search || filters.category || filters.subcategory ||
     filters.availability_type || filters.neighborhood || filters.city || filters.radius_km > 0)
@@ -245,6 +314,19 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
               ? `Encontre objetos disponíveis perto de você em ${user.city}`
               : 'Encontre objetos disponíveis para empréstimo na sua região'}
           </p>
+          {liveLocationStatus === 'loading' && (
+            <p className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+              <LocateFixed className="w-3.5 h-3.5 animate-pulse" /> Localizando você...
+            </p>
+          )}
+          {(liveLocationStatus === 'denied' || liveLocationStatus === 'unsupported') && (
+            <button
+              onClick={retryLiveLocation}
+              className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 transition-colors mt-1.5"
+            >
+              <LocateFixed className="w-3.5 h-3.5" /> Usar minha localização atual
+            </button>
+          )}
         </div>
 
         {/* Nearby feed — personalized, doesn't react to the filters below */}
@@ -335,15 +417,25 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
           <ItemsMapView
             items={items}
             getDistance={getDistance}
-            userLocation={userHasLocation ? { lat: user!.latitude!, lng: user!.longitude! } : undefined}
-            radiusKm={filters.radius_km}
+            homeLocation={userHasLocation ? { lat: user!.latitude!, lng: user!.longitude! } : undefined}
+            liveLocation={liveLocation ?? undefined}
+            radiusKm={effectiveRadiusKm}
             categories={categories}
+            focusItem={focusItem}
           />
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {items.map((item) => (
-                <ItemCard key={item.id} item={item} distanceKm={getDistance(item)} />
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  distanceKm={getDistance(item)}
+                  onLocate={() => {
+                    setFocusItem({ id: item.id, token: focusTokenRef.current++ })
+                    setView('map')
+                  }}
+                />
               ))}
 
               {/* Skeleton cards while loading more */}

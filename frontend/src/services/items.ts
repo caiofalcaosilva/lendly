@@ -10,6 +10,8 @@ export interface ItemFilters {
   city?: string
   lat?: number
   lng?: number
+  lat2?: number
+  lng2?: number
   radius_km?: number
   skip?: number
   limit?: number

@@ -7,3 +7,9 @@
     @apply text-gray-900 dark:text-gray-100 antialiased;
   }
 }
+
+/* "You are here" pulse on the items map — see ItemsMapView.tsx */
+@keyframes map-pulse {
+  0% { transform: scale(0.6); opacity: 0.6; }
+  100% { transform: scale(2.4); opacity: 0; }
+}

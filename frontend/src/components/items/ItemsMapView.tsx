@@ -1,12 +1,23 @@
 'use client'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import { Category, Item } from '@/types'
 import { formatCurrency, getCategoryLabel, formatDistance } from '@/lib/utils'
+import { useTheme } from '@/contexts/ThemeContext'
+
+// CARTO's basemaps — same free OSM data, restyled to the clean, muted look
+// most map-based apps use today instead of the busy/saturated default OSM
+// tiles. Dark Matter automatically matches the app's dark mode.
+const CARTO_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+const TILE_URLS = {
+  light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+}
 
 // Hex equivalents of the Tailwind category colors used in ItemCard.tsx —
 // Leaflet's divIcon needs inline CSS, can't reuse Tailwind classes directly.
@@ -34,14 +45,72 @@ function categoryIcon(category: string) {
   })
 }
 
+// Distinctly bigger + shaped like a map pin (not a flat dot) so it never
+// reads as just another item marker, whatever the zoom level. The rounded-
+// square-rotated-45° trick is what most modern map UIs (Apple Maps, most
+// web map kits) use for a soft "balloon" pin instead of the sharper classic
+// teardrop — plain white dot inside, no glyph.
+const HOME_COLOR = '#1d4ed8'
+function homeIcon() {
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="position:relative;width:30px;height:30px">
+        <div style="position:absolute;inset:0;background:${HOME_COLOR};border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 6px rgba(0,0,0,0.35)"></div>
+        <div style="position:absolute;top:8px;left:8px;width:14px;height:14px;background:white;border-radius:9999px"></div>
+      </div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -28],
+  })
+}
+
+// "You are here" — the pulsing-dot pattern used by virtually every map app,
+// in a color that doesn't collide with any category marker.
+const LIVE_COLOR = '#0ea5e9'
+function liveLocationIcon() {
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="position:relative;width:26px;height:26px">
+        <div style="position:absolute;inset:0;border-radius:9999px;background:${LIVE_COLOR};opacity:0.35;animation:map-pulse 2s ease-out infinite"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:9999px;background:${LIVE_COLOR};border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>
+      </div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -13],
+  })
+}
+
+// Matches the app's own brand green (bg-green-600 elsewhere) instead of the
+// cluster plugin's default yellow/orange, so it doesn't clash with the
+// CARTO tiles or the rest of the UI.
+const CLUSTER_COLOR = '#16a34a'
+function createClusterIcon(cluster: { getChildCount: () => number }) {
+  const count = cluster.getChildCount()
+  const size = count < 10 ? 34 : count < 50 ? 42 : 50
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${CLUSTER_COLOR};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:${count < 100 ? 13 : 11}px">${count}</div>`,
+    iconSize: L.point(size, size, true),
+  })
+}
+
 const DEFAULT_CENTER: [number, number] = [-23.5505, -46.6333] // São Paulo fallback
 
 interface Props {
   items: Item[]
   getDistance: (item: Item) => number | undefined
-  userLocation?: { lat: number; lng: number }
+  /** Registered/home address. */
+  homeLocation?: { lat: number; lng: number }
+  /** Live browser geolocation, when granted. */
+  liveLocation?: { lat: number; lng: number }
   radiusKm?: number
   categories: Category[]
+  /** A specific item to pan/zoom to and pop open — set from a "ver no
+   * mapa" click on a list card. `token` just needs to change on every
+   * click so re-focusing the same item twice in a row still fires. */
+  focusItem?: { id: string; token: number } | null
 }
 
 /** Fits the map to the visible pins (+ user location) whenever they change. */
@@ -58,7 +127,41 @@ function FitBounds({ points }: { points: [number, number][] }) {
   return null
 }
 
-export default function ItemsMapView({ items, getDistance, userLocation, radiusKm, categories }: Props) {
+/** Pans/zooms to a specific item's marker and opens its popup — including
+ * zooming out of a cluster first if the marker is currently grouped. */
+function FocusItem({
+  focusItem,
+  itemsWithCoords,
+  markersRef,
+  clusterRef,
+}: {
+  focusItem?: { id: string; token: number } | null
+  itemsWithCoords: Item[]
+  markersRef: React.MutableRefObject<Map<string, L.Marker>>
+  clusterRef: React.MutableRefObject<{ zoomToShowLayer?: (layer: L.Layer, cb: () => void) => void } | null>
+}) {
+  const map = useMap()
+  useEffect(() => {
+    if (!focusItem) return
+    const item = itemsWithCoords.find((i) => i.id === focusItem.id)
+    const marker = markersRef.current.get(focusItem.id)
+    if (!item || !marker || item.latitude == null || item.longitude == null) return
+    if (clusterRef.current?.zoomToShowLayer) {
+      clusterRef.current.zoomToShowLayer(marker, () => marker.openPopup())
+    } else {
+      map.flyTo([item.latitude, item.longitude], 16)
+      marker.openPopup()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusItem?.id, focusItem?.token])
+  return null
+}
+
+export default function ItemsMapView({ items, getDistance, homeLocation, liveLocation, radiusKm, categories, focusItem }: Props) {
+  const { theme } = useTheme()
+  const markersRef = useRef<Map<string, L.Marker>>(new Map())
+  const clusterRef = useRef<{ zoomToShowLayer?: (layer: L.Layer, cb: () => void) => void } | null>(null)
+
   const itemsWithCoords = useMemo(
     () => items.filter((i) => i.latitude != null && i.longitude != null),
     [items],
@@ -67,12 +170,15 @@ export default function ItemsMapView({ items, getDistance, userLocation, radiusK
 
   const boundsPoints = useMemo<[number, number][]>(() => {
     const points = itemsWithCoords.map((i) => [i.latitude!, i.longitude!] as [number, number])
-    if (userLocation) points.push([userLocation.lat, userLocation.lng])
+    if (homeLocation) points.push([homeLocation.lat, homeLocation.lng])
+    if (liveLocation) points.push([liveLocation.lat, liveLocation.lng])
     return points
-  }, [itemsWithCoords, userLocation])
+  }, [itemsWithCoords, homeLocation, liveLocation])
 
-  const initialCenter: [number, number] = userLocation
-    ? [userLocation.lat, userLocation.lng]
+  const initialCenter: [number, number] = liveLocation
+    ? [liveLocation.lat, liveLocation.lng]
+    : homeLocation
+    ? [homeLocation.lat, homeLocation.lng]
     : boundsPoints[0] ?? DEFAULT_CENTER
 
   return (
@@ -80,29 +186,48 @@ export default function ItemsMapView({ items, getDistance, userLocation, radiusK
       <div className="h-[600px] w-full rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
         <MapContainer center={initialCenter} zoom={12} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution={CARTO_ATTRIBUTION}
+            url={theme === 'dark' ? TILE_URLS.dark : TILE_URLS.light}
           />
           <FitBounds points={boundsPoints} />
+          <FocusItem
+            focusItem={focusItem}
+            itemsWithCoords={itemsWithCoords}
+            markersRef={markersRef}
+            clusterRef={clusterRef}
+          />
 
-          {userLocation && (
+          {homeLocation && (
             <>
-              <CircleMarker
-                center={[userLocation.lat, userLocation.lng]}
-                radius={8}
-                pathOptions={{ color: 'white', weight: 2, fillColor: '#1d4ed8', fillOpacity: 1 }}
-              />
+              <Marker position={[homeLocation.lat, homeLocation.lng]} icon={homeIcon()} zIndexOffset={1000}>
+                <Popup>Seu endereço cadastrado</Popup>
+              </Marker>
               {!!radiusKm && radiusKm > 0 && (
                 <Circle
-                  center={[userLocation.lat, userLocation.lng]}
+                  center={[homeLocation.lat, homeLocation.lng]}
                   radius={radiusKm * 1000}
-                  pathOptions={{ color: '#16a34a', fillColor: '#16a34a', fillOpacity: 0.08, weight: 1.5 }}
+                  pathOptions={{ color: HOME_COLOR, fillColor: HOME_COLOR, fillOpacity: 0.06, weight: 1.5 }}
                 />
               )}
             </>
           )}
 
-          <MarkerClusterGroup chunkedLoading>
+          {liveLocation && (
+            <>
+              <Marker position={[liveLocation.lat, liveLocation.lng]} icon={liveLocationIcon()} zIndexOffset={1000}>
+                <Popup>Sua localização atual</Popup>
+              </Marker>
+              {!!radiusKm && radiusKm > 0 && (
+                <Circle
+                  center={[liveLocation.lat, liveLocation.lng]}
+                  radius={radiusKm * 1000}
+                  pathOptions={{ color: LIVE_COLOR, fillColor: LIVE_COLOR, fillOpacity: 0.06, weight: 1.5, dashArray: '6 4' }}
+                />
+              )}
+            </>
+          )}
+
+          <MarkerClusterGroup chunkedLoading iconCreateFunction={createClusterIcon} ref={clusterRef as any}>
             {itemsWithCoords.map((item) => {
               const distanceKm = getDistance(item)
               return (
@@ -110,6 +235,10 @@ export default function ItemsMapView({ items, getDistance, userLocation, radiusK
                   key={item.id}
                   position={[item.latitude!, item.longitude!]}
                   icon={categoryIcon(item.category)}
+                  ref={(m) => {
+                    if (m) markersRef.current.set(item.id, m)
+                    else markersRef.current.delete(item.id)
+                  }}
                 >
                   <Popup minWidth={200}>
                     <Link href={`/items/${item.id}`} className="block -m-1">
