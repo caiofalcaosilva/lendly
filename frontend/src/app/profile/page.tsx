@@ -23,6 +23,7 @@ import BusinessBadge from '@/components/ui/BusinessBadge'
 import ReputationBadges from '@/components/ui/ReputationBadges'
 import IdentityVerificationSection from '@/components/profile/IdentityVerificationSection'
 import MercadoPagoConnectSection from '@/components/profile/MercadoPagoConnectSection'
+import SessionsSection from '@/components/profile/SessionsSection'
 
 const opt = z.string().optional().or(z.literal(''))
 
@@ -492,6 +493,9 @@ export default function ProfilePage() {
 
           {/* Mercado Pago connection — required to sell paid items */}
           <MercadoPagoConnectSection />
+
+          {/* Connected devices / active sessions */}
+          <SessionsSection />
 
           {/* TOTP 2FA */}
           <div className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">

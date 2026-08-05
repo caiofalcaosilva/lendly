@@ -69,6 +69,12 @@ export interface PublicUser {
   created_at: string
 }
 
+export interface SessionSummary {
+  id: string
+  created_at: string
+  expires_at: string
+}
+
 export interface FavoriteUserSummary {
   id: string
   name: string

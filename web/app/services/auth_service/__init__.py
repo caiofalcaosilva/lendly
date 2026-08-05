@@ -20,9 +20,11 @@ from app.services.auth_service.registration import (
 )
 from app.services.auth_service.session import (
     complete_2fa,
+    get_sessions,
     login_user,
     refresh_tokens,
     revoke_refresh_token,
+    revoke_session,
 )
 from app.services.auth_service.totp import disable_totp, enable_totp, setup_totp
 
@@ -33,6 +35,7 @@ __all__ = [
     "delete_account",
     "disable_totp",
     "enable_totp",
+    "get_sessions",
     "login_user",
     "refresh_tokens",
     "register_user",
@@ -40,6 +43,7 @@ __all__ = [
     "resend_verification",
     "reset_password",
     "revoke_refresh_token",
+    "revoke_session",
     "setup_totp",
     "user_to_public_response",
     "user_to_response",

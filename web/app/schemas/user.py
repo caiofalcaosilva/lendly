@@ -131,6 +131,14 @@ class UserResponse(BaseModel):
     created_at: datetime
 
 
+class SessionSummary(BaseModel):
+    # The refresh token's hash — irreversible, but stable and unique per
+    # session, so it doubles as a safe-to-expose identifier for revocation.
+    id: str
+    created_at: datetime
+    expires_at: datetime
+
+
 class FeaturedItemsUpdate(BaseModel):
     item_ids: list[str] = Field(..., max_length=3)
 

@@ -1,7 +1,13 @@
 from jose import JWTError
 
 from app.models.user import User
-from app.schemas.user import LoginResponse, RefreshResponse, TokenResponse, UserLogin
+from app.schemas.user import (
+    LoginResponse,
+    RefreshResponse,
+    SessionSummary,
+    TokenResponse,
+    UserLogin,
+)
 from app.services import totp_service
 from app.services.auth_service._common import (
     add_trusted_device,
@@ -118,3 +124,27 @@ def revoke_refresh_token(current_user: User, refresh_token: str) -> dict:
             break
     current_user.update(refresh_sessions=sessions)
     return {"detail": "Logout realizado"}
+
+
+def get_sessions(current_user: User) -> list[SessionSummary]:
+    """Every still-valid (not revoked, not expired) session — what /profile
+    shows as "dispositivos conectados". The access token used to call this
+    endpoint isn't itself one of these; only refresh sessions are tracked."""
+    now = utcnow()
+    return [
+        SessionSummary(
+            id=s.token_hash, created_at=s.created_at, expires_at=s.expires_at
+        )
+        for s in (current_user.refresh_sessions or [])
+        if s.revoked_at is None and s.expires_at > now
+    ]
+
+
+def revoke_session(session_id: str, current_user: User) -> dict:
+    sessions = list(current_user.refresh_sessions or [])
+    for s in sessions:
+        if s.token_hash == session_id:
+            s.revoked_at = utcnow()
+            break
+    current_user.update(refresh_sessions=sessions)
+    return {"detail": "Sessão revogada"}

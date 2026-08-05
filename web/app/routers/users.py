@@ -18,6 +18,7 @@ from app.schemas.user import (
     FeaturedItemsUpdate,
     PasswordChangeRequest,
     PublicUserResponse,
+    SessionSummary,
     UserResponse,
     UserUpdate,
 )
@@ -35,6 +36,8 @@ from app.services.auth_service import (
     change_email,
     change_password,
     delete_account,
+    get_sessions,
+    revoke_session,
     user_to_public_response,
     user_to_response,
 )
@@ -81,6 +84,20 @@ def update_email(
     """Changes the logged-in user's email — requires the current password.
     Flips is_verified back to false and sends a fresh verification link."""
     return change_email(data, current_user, background_tasks)
+
+
+@router.get("/me/sessions", response_model=list[SessionSummary])
+def my_sessions(current_user: User = Depends(get_current_user)):
+    """Every device/session currently able to refresh the logged-in user's
+    access token."""
+    return get_sessions(current_user)
+
+
+@router.delete("/me/sessions/{session_id}")
+def revoke_my_session(session_id: str, current_user: User = Depends(get_current_user)):
+    """Revokes one session by id — that device gets logged out next time its
+    access token expires and it tries to refresh."""
+    return revoke_session(session_id, current_user)
 
 
 @router.post("/me/avatar", response_model=UserResponse, status_code=201)
