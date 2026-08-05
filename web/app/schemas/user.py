@@ -131,6 +131,8 @@ class UserResponse(BaseModel):
     reliability_count: int = 0
     on_time_rate: float | None = None
     finished_loans_count: int = 0
+    avg_response_minutes: float | None = None
+    response_count: int = 0
     account_type: str = "individual"
     company_name: str | None = None
     trade_name: str | None = None
@@ -187,6 +189,8 @@ class PublicUserResponse(BaseModel):
     reliability_count: int = 0
     on_time_rate: float | None = None
     finished_loans_count: int = 0
+    avg_response_minutes: float | None = None
+    response_count: int = 0
     account_type: str = "individual"
     trade_name: str | None = None
     business_category: str | None = None

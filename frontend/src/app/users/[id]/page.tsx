@@ -142,6 +142,8 @@ export default function UserPublicPage() {
                 finishedLoansCount={user.finished_loans_count}
                 averageRating={user.average_rating}
                 ratingCount={user.rating_count}
+                avgResponseMinutes={user.avg_response_minutes}
+                responseCount={user.response_count}
               />
             </div>
 

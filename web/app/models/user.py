@@ -100,6 +100,8 @@ class User(Document):
     reliability_score = FloatField()
     reliability_count = IntField(default=0)
     on_time_rate = FloatField()
+    avg_response_minutes = FloatField()
+    response_count = IntField(default=0)
     finished_loans_count = IntField(default=0)
     created_at = DateTimeField(default=utcnow)
     updated_at = DateTimeField(default=utcnow)

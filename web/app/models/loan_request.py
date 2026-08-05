@@ -30,6 +30,10 @@ class LoanRequest(Document):
     extension_status = StringField(
         default="none", choices=["none", "pending", "approved", "rejected"]
     )
+    # Set once, at accept/refuse — unlike updated_at, later transitions
+    # (in_progress, finished...) don't touch it, so it stays a clean
+    # "how long did the owner take to decide" signal.
+    responded_at = DateTimeField()
     created_at = DateTimeField(default=utcnow)
     updated_at = DateTimeField(default=utcnow)
 

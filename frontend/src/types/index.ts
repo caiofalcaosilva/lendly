@@ -25,6 +25,8 @@ export interface User {
   reliability_count: number
   on_time_rate?: number | null
   finished_loans_count: number
+  avg_response_minutes?: number | null
+  response_count: number
   account_type: 'individual' | 'business'
   company_name?: string
   trade_name?: string
@@ -64,6 +66,8 @@ export interface PublicUser {
   reliability_count: number
   on_time_rate?: number | null
   finished_loans_count: number
+  avg_response_minutes?: number | null
+  response_count: number
   account_type: 'individual' | 'business'
   trade_name?: string
   business_category?: string

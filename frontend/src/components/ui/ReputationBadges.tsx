@@ -1,4 +1,4 @@
-import { HeartHandshake, Timer, Award, Sparkles } from 'lucide-react'
+import { HeartHandshake, Timer, Award, Sparkles, Zap } from 'lucide-react'
 
 /// Qualitative reputation badges, distinct from the numeric ReliabilityBadge —
 /// each one recognizes a specific pattern of good behavior. Renders nothing
@@ -11,6 +11,8 @@ export default function ReputationBadges({
   finishedLoansCount,
   averageRating,
   ratingCount,
+  avgResponseMinutes,
+  responseCount = 0,
   size = 'sm',
 }: {
   reliabilityScore?: number | null
@@ -19,6 +21,8 @@ export default function ReputationBadges({
   finishedLoansCount: number
   averageRating: number
   ratingCount: number
+  avgResponseMinutes?: number | null
+  responseCount?: number
   size?: 'sm' | 'md'
 }) {
   const badges: { key: string; label: string; title: string; icon: typeof HeartHandshake; tone: string }[] = []
@@ -64,6 +68,18 @@ export default function ReputationBadges({
       title: `Nota média ${averageRating.toFixed(1)} em ${ratingCount} avaliações`,
       icon: Award,
       tone: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800',
+    })
+  }
+
+  if (avgResponseMinutes != null && avgResponseMinutes <= 60 && responseCount >= 3) {
+    const responseLabel =
+      avgResponseMinutes < 1 ? 'menos de 1 min' : `${Math.round(avgResponseMinutes)} min`
+    badges.push({
+      key: 'responsive',
+      label: 'Responde rápido',
+      title: `Responde solicitações em ${responseLabel}, em média, nas últimas ${responseCount}`,
+      icon: Zap,
+      tone: 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-800',
     })
   }
 

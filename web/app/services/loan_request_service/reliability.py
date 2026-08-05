@@ -47,3 +47,20 @@ def recalculate_reliability(user: User) -> None:
         updates["reliability_count"] = count
     if updates:
         user.update(**updates)
+
+
+def recalculate_response_time(owner: User) -> None:
+    """Average minutes between a request landing and the owner accepting or
+    refusing it — distinct from reliability_score, which only looks at what
+    happens after acceptance."""
+    responded = LoanRequest.objects(
+        owner=owner, status__in=["accepted", "refused"], responded_at__ne=None
+    )
+    deltas = [
+        (req.responded_at - req.created_at).total_seconds() / 60 for req in responded
+    ]
+    if deltas:
+        owner.update(
+            avg_response_minutes=round(sum(deltas) / len(deltas), 1),
+            response_count=len(deltas),
+        )

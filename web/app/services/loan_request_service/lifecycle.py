@@ -12,7 +12,10 @@ from app.services.loan_request_service._common import (
     get_as_participant,
     to_response,
 )
-from app.services.loan_request_service.reliability import recalculate_reliability
+from app.services.loan_request_service.reliability import (
+    recalculate_reliability,
+    recalculate_response_time,
+)
 from app.utils import errors
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
@@ -93,8 +96,9 @@ def accept_request(
 ) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
     assert_status(req, "pending")
-    req.update(status="accepted", updated_at=utcnow())
+    req.update(status="accepted", responded_at=utcnow(), updated_at=utcnow())
     req.reload()
+    recalculate_response_time(current_user)
 
     if req.item.availability_type == "paid":
         payment_service.create_payment_for_request(req)
@@ -109,9 +113,10 @@ def refuse_request(
 ) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
     assert_status(req, "pending")
-    req.update(status="refused", updated_at=utcnow())
+    req.update(status="refused", responded_at=utcnow(), updated_at=utcnow())
     req.reload()
     recalculate_reliability(current_user)
+    recalculate_response_time(current_user)
     _notify_status_change(req, background_tasks)
     return to_response(req)
 
