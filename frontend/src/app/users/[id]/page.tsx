@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { MapPin, Star, Package, ArrowLeft, Calendar, Clock, Phone, Globe, Flag, Instagram, MessageCircle } from 'lucide-react'
+import { MapPin, Star, Package, ArrowLeft, Calendar, Clock, Phone, Globe, Flag, Instagram, MessageCircle, Heart } from 'lucide-react'
 import { PublicUser, Item, Review } from '@/types'
 import { usersService } from '@/services/users'
 import { reviewsService } from '@/services/reviews'
@@ -27,6 +27,7 @@ export default function UserPublicPage() {
   const [notFound, setNotFound] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [reportSent, setReportSent] = useState(false)
+  const [togglingFavorite, setTogglingFavorite] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -57,6 +58,19 @@ export default function UserPublicPage() {
     setReviews((prev) => prev.filter((r) => r.id !== reviewId))
     const updated = await usersService.getPublic(id)
     setUser(updated)
+  }
+
+  const toggleFavorite = async () => {
+    if (!user) return
+    setTogglingFavorite(true)
+    try {
+      const updated = user.is_favorited
+        ? await usersService.unfavoriteUser(user.id)
+        : await usersService.favoriteUser(user.id)
+      setUser(updated)
+    } finally {
+      setTogglingFavorite(false)
+    }
   }
 
   if (loading) {
@@ -180,12 +194,26 @@ export default function UserPublicPage() {
             </p>
             <ReliabilityBadge score={user.reliability_score} count={user.reliability_count} size="md" />
             {isAuthenticated && currentUser?.id !== user.id && (
-              <button
-                onClick={() => setShowReport(true)}
-                className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors mt-3"
-              >
-                <Flag className="w-3 h-3" /> Denunciar
-              </button>
+              <div className="flex items-center gap-3 mt-3">
+                <button
+                  onClick={toggleFavorite}
+                  disabled={togglingFavorite}
+                  className={`flex items-center gap-1 text-xs transition-colors disabled:opacity-50 ${
+                    user.is_favorited
+                      ? 'text-red-500 dark:text-red-400'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400'
+                  }`}
+                >
+                  <Heart className={`w-3.5 h-3.5 ${user.is_favorited ? 'fill-red-500 dark:fill-red-400' : ''}`} />
+                  {user.is_favorited ? 'Favoritado' : 'Favoritar'}
+                </button>
+                <button
+                  onClick={() => setShowReport(true)}
+                  className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                >
+                  <Flag className="w-3 h-3" /> Denunciar
+                </button>
+              </div>
             )}
           </div>
         </div>

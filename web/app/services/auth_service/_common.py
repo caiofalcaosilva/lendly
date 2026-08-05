@@ -8,7 +8,14 @@ from app.utils.security import create_access_token, hash_refresh_token
 from app.utils.time import utcnow
 
 
-def user_to_public_response(user: User) -> PublicUserResponse:
+def user_to_public_response(
+    user: User, viewer: User | None = None
+) -> PublicUserResponse:
+    is_favorited = bool(
+        viewer
+        and viewer.favorite_users
+        and any(str(u.id) == str(user.id) for u in viewer.favorite_users)
+    )
     return PublicUserResponse(
         id=str(user.id),
         name=user.name,
@@ -32,6 +39,7 @@ def user_to_public_response(user: User) -> PublicUserResponse:
         instagram=user.instagram,
         whatsapp=user.whatsapp,
         featured_item_ids=[str(i.id) for i in (user.featured_items or [])],
+        is_favorited=is_favorited,
         created_at=user.created_at,
     )
 

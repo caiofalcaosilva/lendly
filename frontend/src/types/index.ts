@@ -65,7 +65,22 @@ export interface PublicUser {
   instagram?: string
   whatsapp?: string
   featured_item_ids: string[]
+  is_favorited: boolean
   created_at: string
+}
+
+export interface FavoriteUserSummary {
+  id: string
+  name: string
+  avatar_url?: string | null
+  trade_name?: string
+  account_type: 'individual' | 'business'
+  business_category?: string
+  city?: string
+  neighborhood?: string
+  average_rating: number
+  reliability_score?: number | null
+  reliability_count: number
 }
 
 export type ReportReason = 'spam' | 'fake_item' | 'inappropriate' | 'fraud' | 'other'

@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { BusinessSummary, OwnerAnalyticsSummary, PublicUser, User } from '@/types'
+import { BusinessSummary, FavoriteUserSummary, OwnerAnalyticsSummary, PublicUser, User } from '@/types'
 
 export interface UpdateProfileData {
   name?: string
@@ -41,6 +41,15 @@ export const usersService = {
 
   setFeaturedItems: (itemIds: string[]) =>
     api.put<User>('/users/me/featured-items', { item_ids: itemIds }).then((r) => r.data),
+
+  getFavoriteUsers: () =>
+    api.get<FavoriteUserSummary[]>('/users/me/favorite-users').then((r) => r.data),
+
+  favoriteUser: (id: string) =>
+    api.post<PublicUser>(`/users/${id}/favorite`).then((r) => r.data),
+
+  unfavoriteUser: (id: string) =>
+    api.delete<PublicUser>(`/users/${id}/favorite`).then((r) => r.data),
 
   getPublic: (id: string) => api.get<PublicUser>(`/users/${id}`).then((r) => r.data),
 

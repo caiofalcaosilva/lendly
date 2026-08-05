@@ -154,7 +154,22 @@ class PublicUserResponse(BaseModel):
     instagram: str | None = None
     whatsapp: str | None = None
     featured_item_ids: list[str] = []
+    is_favorited: bool = False
     created_at: datetime
+
+
+class FavoriteUserSummary(BaseModel):
+    id: str
+    name: str
+    avatar_url: str | None = None
+    trade_name: str | None = None
+    account_type: str = "individual"
+    business_category: str | None = None
+    city: str | None = None
+    neighborhood: str | None = None
+    average_rating: float
+    reliability_score: float | None = None
+    reliability_count: int = 0
 
 
 class BusinessSummary(BaseModel):

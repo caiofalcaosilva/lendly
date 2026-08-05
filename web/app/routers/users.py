@@ -13,6 +13,7 @@ from app.schemas.payment import (
 from app.schemas.user import (
     AccountDeleteRequest,
     BusinessSummary,
+    FavoriteUserSummary,
     FeaturedItemsUpdate,
     PublicUserResponse,
     UserResponse,
@@ -26,6 +27,7 @@ from app.services import (
     item_service,
     loan_request_service,
     mp_connect_service,
+    user_favorites_service,
 )
 from app.services.auth_service import (
     delete_account,
@@ -162,6 +164,12 @@ def mercadopago_status(current_user: User = Depends(get_current_user)):
     return mp_connect_service.get_connect_status(current_user)
 
 
+@router.get("/me/favorite-users", response_model=list[FavoriteUserSummary])
+def my_favorite_users(current_user: User = Depends(get_current_user)):
+    """Users/businesses the logged-in user has favorited."""
+    return user_favorites_service.get_favorite_users(current_user)
+
+
 @router.get("/businesses", response_model=list[BusinessSummary])
 def list_businesses():
     """Public directory of business accounts — no auth, no pagination
@@ -202,10 +210,24 @@ def get_user_items_public(
     return item_service.get_user_items(user_id, current_user)
 
 
+@router.post("/{user_id}/favorite", response_model=PublicUserResponse)
+def favorite_user(user_id: str, current_user: User = Depends(get_current_user)):
+    """Adds a user/business to the logged-in user's favorites."""
+    return user_favorites_service.set_favorite_user(user_id, current_user, True)
+
+
+@router.delete("/{user_id}/favorite", response_model=PublicUserResponse)
+def unfavorite_user(user_id: str, current_user: User = Depends(get_current_user)):
+    """Removes a user/business from the logged-in user's favorites."""
+    return user_favorites_service.set_favorite_user(user_id, current_user, False)
+
+
 @router.get("/{user_id}", response_model=PublicUserResponse)
-def get_user(user_id: str):
+def get_user(
+    user_id: str, current_user: User | None = Depends(get_current_user_optional)
+):
     """Public profile of any active, non-admin user — no auth required."""
     user = User.objects(id=user_id, is_active=True, is_admin__ne=True).first()
     if not user:
         raise errors.not_found("User not found")
-    return user_to_public_response(user)
+    return user_to_public_response(user, viewer=current_user)

@@ -30,6 +30,7 @@ class User(Document):
     bio = StringField(max_length=500)
     # Capped at 3 by featured_items_service.set_featured_items, not enforced here.
     featured_items = ListField(ReferenceField("Item"))
+    favorite_users = ListField(ReferenceField("User"), default=list)
     zip_code = StringField(max_length=10)
     latitude = FloatField()
     longitude = FloatField()

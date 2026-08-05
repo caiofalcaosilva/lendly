@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import ReviewCard from '@/components/reviews/ReviewCard'
 import ItemCard from '@/components/items/ItemCard'
-import { Category, Item, LoanRequest, OwnerAnalyticsSummary, Review } from '@/types'
+import { Category, FavoriteUserSummary, Item, LoanRequest, OwnerAnalyticsSummary, Review } from '@/types'
 import { itemsService } from '@/services/items'
 import { requestsService } from '@/services/requests'
 import { reviewsService } from '@/services/reviews'
@@ -22,6 +22,8 @@ import Spinner from '@/components/ui/Spinner'
 import RequestCard from '@/components/requests/RequestCard'
 import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist'
+import Avatar from '@/components/ui/Avatar'
+import BusinessBadge from '@/components/ui/BusinessBadge'
 import { REQUEST_STATUS_LABELS } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -46,6 +48,7 @@ export default function DashboardPage() {
   const [sent, setSent] = useState<LoanRequest[]>([])
   const [history, setHistory] = useState<LoanRequest[]>([])
   const [favorites, setFavorites] = useState<Item[]>([])
+  const [favoriteUsers, setFavoriteUsers] = useState<FavoriteUserSummary[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [analytics, setAnalytics] = useState<OwnerAnalyticsSummary | null>(null)
   const [loading, setLoading] = useState(false)
@@ -67,12 +70,13 @@ export default function DashboardPage() {
     setLoading(true)
     setLoadError(null)
     try {
-      const [myItems, recv, snt, hist, favs, stats] = await Promise.all([
+      const [myItems, recv, snt, hist, favs, favUsers, stats] = await Promise.all([
         itemsService.myItems(),
         requestsService.received(),
         requestsService.sent(),
         requestsService.history(),
         itemsService.myFavorites(),
+        usersService.getFavoriteUsers(),
         usersService.getMyAnalytics(),
       ])
       setItems(myItems)
@@ -80,6 +84,7 @@ export default function DashboardPage() {
       setSent(snt)
       setHistory(hist)
       setFavorites(favs)
+      setFavoriteUsers(favUsers)
       setAnalytics(stats)
       if (user) {
         reviewsService.forUser(user.id).then(setReviews).catch(() => {})
@@ -388,6 +393,37 @@ export default function DashboardPage() {
                       }}
                     />
                   ))}
+                </div>
+              )}
+
+              {favoriteUsers.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Pessoas e empresas favoritas
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {favoriteUsers.map((u) => (
+                      <Link
+                        key={u.id}
+                        href={`/users/${u.id}`}
+                        className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 hover:border-green-300 dark:hover:border-green-700 transition-colors"
+                      >
+                        <Avatar name={u.trade_name || u.name} avatarUrl={u.avatar_url} size="sm" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                              {u.trade_name || u.name}
+                            </span>
+                            <BusinessBadge accountType={u.account_type} />
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            {u.average_rating.toFixed(1)}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
