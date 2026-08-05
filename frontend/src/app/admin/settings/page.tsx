@@ -16,6 +16,10 @@ const FIELDS: { key: keyof PlatformSettings; label: string; helper: string }[] =
   { key: 'email_verification_expire_hours', label: 'Expiração do link de verificação de e-mail (horas)', helper: 'Prazo pro usuário clicar no link antes de precisar reenviar.' },
   { key: 'login_rate_limit_per_minute', label: 'Limite de tentativas de login por minuto', helper: 'Por IP — protege contra força bruta.' },
   { key: 'register_rate_limit_per_minute', label: 'Limite de cadastros por minuto', helper: 'Por IP — protege contra abuso de criação de contas.' },
+  { key: 'complete_2fa_rate_limit_per_minute', label: 'Limite de confirmações de 2FA por minuto', helper: 'Por IP — protege contra força bruta no código do autenticador.' },
+  { key: 'refresh_rate_limit_per_minute', label: 'Limite de renovações de sessão por minuto', helper: 'Por IP — troca de refresh token por um novo par de tokens.' },
+  { key: 'resend_verification_rate_limit_per_minute', label: 'Limite de reenvio de verificação por minuto', helper: 'Por IP — protege contra spam de e-mails de verificação.' },
+  { key: 'chat_message_rate_limit_per_minute', label: 'Limite de mensagens de chat por minuto', helper: 'Por usuário — protege o chat de empréstimos contra flood.' },
 ]
 
 export default function AdminSettingsPage() {
@@ -54,6 +58,11 @@ export default function AdminSettingsPage() {
         email_verification_expire_hours: settings.email_verification_expire_hours,
         login_rate_limit_per_minute: settings.login_rate_limit_per_minute,
         register_rate_limit_per_minute: settings.register_rate_limit_per_minute,
+        complete_2fa_rate_limit_per_minute: settings.complete_2fa_rate_limit_per_minute,
+        refresh_rate_limit_per_minute: settings.refresh_rate_limit_per_minute,
+        resend_verification_rate_limit_per_minute:
+          settings.resend_verification_rate_limit_per_minute,
+        chat_message_rate_limit_per_minute: settings.chat_message_rate_limit_per_minute,
         announcement_message: settings.announcement_message ?? '',
         announcement_active: settings.announcement_active,
       })

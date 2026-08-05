@@ -9,13 +9,14 @@ Requires: pip install requests
 
 import contextlib
 import itertools
+import os
 import random
 import time
 from datetime import UTC, datetime, timedelta
 
 import requests
 
-BASE = "http://localhost:8000"
+BASE = os.environ.get("SEED_API_URL", "http://localhost:8000")
 
 random.seed(42)
 

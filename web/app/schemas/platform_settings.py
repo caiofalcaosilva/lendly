@@ -9,6 +9,10 @@ class PlatformSettingsUpdate(BaseModel):
     email_verification_expire_hours: int | None = Field(None, ge=1)
     login_rate_limit_per_minute: int | None = Field(None, ge=1)
     register_rate_limit_per_minute: int | None = Field(None, ge=1)
+    complete_2fa_rate_limit_per_minute: int | None = Field(None, ge=1)
+    refresh_rate_limit_per_minute: int | None = Field(None, ge=1)
+    resend_verification_rate_limit_per_minute: int | None = Field(None, ge=1)
+    chat_message_rate_limit_per_minute: int | None = Field(None, ge=1)
     announcement_message: str | None = Field(None, max_length=280)
     announcement_active: bool | None = None
 
@@ -19,6 +23,10 @@ class PlatformSettingsResponse(BaseModel):
     email_verification_expire_hours: int
     login_rate_limit_per_minute: int
     register_rate_limit_per_minute: int
+    complete_2fa_rate_limit_per_minute: int
+    refresh_rate_limit_per_minute: int
+    resend_verification_rate_limit_per_minute: int
+    chat_message_rate_limit_per_minute: int
     announcement_message: str | None = None
     announcement_active: bool = False
     updated_by_name: str | None = None

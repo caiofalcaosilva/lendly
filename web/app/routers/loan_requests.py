@@ -20,6 +20,7 @@ from app.schemas.loan_request import (
 from app.schemas.message import MessageCreate, MessageResponse
 from app.schemas.payment import PaymentResponse
 from app.services import loan_request_service, message_service, payment_service
+from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils.security import decode_token
 from app.ws_manager import manager
 
@@ -137,7 +138,9 @@ def list_messages(request_id: str, current_user: User = Depends(get_current_user
 
 
 @router.post("/{request_id}/messages", response_model=MessageResponse, status_code=201)
-@limiter.limit("20/minute")
+@limiter.limit(
+    lambda: f"{get_platform_settings().chat_message_rate_limit_per_minute}/minute"
+)
 def send_message(
     request_id: str,
     data: MessageCreate,

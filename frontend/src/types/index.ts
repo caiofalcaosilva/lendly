@@ -197,6 +197,10 @@ export interface PlatformSettings {
   email_verification_expire_hours: number
   login_rate_limit_per_minute: number
   register_rate_limit_per_minute: number
+  complete_2fa_rate_limit_per_minute: number
+  refresh_rate_limit_per_minute: number
+  resend_verification_rate_limit_per_minute: number
+  chat_message_rate_limit_per_minute: number
   announcement_message?: string | null
   announcement_active: boolean
   updated_by_name?: string | null

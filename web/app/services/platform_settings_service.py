@@ -16,6 +16,12 @@ def _to_response(doc: PlatformSettings) -> PlatformSettingsResponse:
         email_verification_expire_hours=doc.email_verification_expire_hours,
         login_rate_limit_per_minute=doc.login_rate_limit_per_minute,
         register_rate_limit_per_minute=doc.register_rate_limit_per_minute,
+        complete_2fa_rate_limit_per_minute=doc.complete_2fa_rate_limit_per_minute,
+        refresh_rate_limit_per_minute=doc.refresh_rate_limit_per_minute,
+        resend_verification_rate_limit_per_minute=(
+            doc.resend_verification_rate_limit_per_minute
+        ),
+        chat_message_rate_limit_per_minute=doc.chat_message_rate_limit_per_minute,
         announcement_message=doc.announcement_message,
         announcement_active=doc.announcement_active or False,
         updated_by_name=doc.updated_by.name if doc.updated_by else None,

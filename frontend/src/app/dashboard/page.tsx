@@ -24,6 +24,8 @@ import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist'
 import { REQUEST_STATUS_LABELS } from '@/types'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
 type Tab = 'items' | 'received' | 'sent' | 'history' | 'favorites' | 'analytics'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
@@ -83,7 +85,7 @@ export default function DashboardPage() {
       }
     } catch (e: any) {
       if (!e.response) {
-        setLoadError('Não foi possível conectar ao servidor. Verifique se a API está rodando em http://localhost:8000.')
+        setLoadError(`Não foi possível conectar ao servidor. Verifique se a API está rodando em ${API_URL}.`)
       } else {
         setLoadError(e.response?.data?.detail || `Erro ao carregar dados (${e.response?.status})`)
       }

@@ -55,7 +55,9 @@ def login(request: Request, data: UserLogin):
 
 
 @router.post("/login/complete-2fa", response_model=TokenResponse)
-@limiter.limit("5/minute")
+@limiter.limit(
+    lambda: f"{get_platform_settings().complete_2fa_rate_limit_per_minute}/minute"
+)
 def login_complete_2fa(request: Request, data: TwoFactorComplete):
     """Finishes a login that returned requires_2fa=True — exchanges the
     temp_token + TOTP code for real access/refresh tokens."""
@@ -63,7 +65,9 @@ def login_complete_2fa(request: Request, data: TwoFactorComplete):
 
 
 @router.post("/refresh", response_model=RefreshResponse)
-@limiter.limit("10/minute")
+@limiter.limit(
+    lambda: f"{get_platform_settings().refresh_rate_limit_per_minute}/minute"
+)
 def refresh(request: Request, data: RefreshTokenRequest):
     """Exchanges a refresh token for a new access/refresh pair, rotating
     the old one out of the user's stored sessions."""
@@ -85,7 +89,11 @@ def verify_email(token: str):
 
 
 @router.post("/resend-verification")
-@limiter.limit("3/minute")
+@limiter.limit(
+    lambda: (
+        f"{get_platform_settings().resend_verification_rate_limit_per_minute}/minute"
+    )
+)
 def resend_email(
     request: Request,
     background_tasks: BackgroundTasks,
