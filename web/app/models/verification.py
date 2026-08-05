@@ -8,9 +8,7 @@ VERIFICATION_STATUSES = ["pending", "approved", "rejected"]
 class VerificationSubmission(Document):
     user = ReferenceField("User", required=True)
     cpf = StringField(required=True, max_length=14)
-    # Filesystem paths, not URLs — these live outside the public /uploads
-    # mount (unlike item photos) since a CPF document + selfie are
-    # sensitive. Served only via an admin-authenticated endpoint.
+    # Filesystem paths, not public URLs — served only via an admin endpoint.
     selfie_path = StringField(required=True)
     document_path = StringField(required=True)
     status = StringField(default="pending", choices=VERIFICATION_STATUSES)

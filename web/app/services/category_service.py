@@ -1,9 +1,7 @@
 from app.models.category import Category, Subcategory
 from app.schemas.category import CategoryResponse, SubcategoryResponse
 
-# One-time seed data, mirroring the old hardcoded ItemCategory enum +
-# SUBCATEGORIES dict (same keys, so existing items' category/subcategory
-# values keep matching after the switch to a DB-backed source of truth).
+# One-time seed data, loaded on first read.
 _SEED = [
     (
         "tools",

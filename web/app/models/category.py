@@ -18,11 +18,8 @@ class Subcategory(EmbeddedDocument):
 
 
 class Category(Document):
-    """Editable via /admin/categories — replaces the old hardcoded
-    ItemCategory enum + SUBCATEGORIES dict. Deactivating a category or
-    subcategory only hides it from new item creation (see category_service);
-    existing items keep referencing the same key, so nothing needs
-    migrating when one gets deactivated."""
+    """Deactivating only hides a category/subcategory from new item
+    creation — existing items keep referencing the same key."""
 
     key = StringField(required=True, unique=True, max_length=50)
     label = StringField(required=True, max_length=100)

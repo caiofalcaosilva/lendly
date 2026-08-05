@@ -23,11 +23,8 @@ def delete_account(data: AccountDeleteRequest, current_user: User) -> None:
     document, since items/reviews/messages belonging to *other* users
     reference it and must keep working (showing "Usuário removido")."""
     if not verify_password(data.password, current_user.password_hash):
-        # 400, not 401 — a 401 here would trip the frontend's generic
-        # "session expired" interceptor (which retries after a token refresh,
-        # then evicts on a second failure) instead of surfacing this as a
-        # simple form validation error. Same convention already used by
-        # disable_totp's "Código inválido" below.
+        # 400, not 401 — a 401 would trip the frontend's session-expired
+        # interceptor instead of showing a plain form error.
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Senha incorreta"
         )
@@ -69,10 +66,8 @@ def delete_account(data: AccountDeleteRequest, current_user: User) -> None:
         longitude=None,
         company_name=None,
         trade_name=None,
-        # $unset, not $set null — cnpj has a sparse unique index, and unlike
-        # a plain insert (where mongoengine omits None fields entirely), an
-        # explicit `.update(cnpj=None)` here would write a literal null,
-        # which sparse indexes still track and can collide on.
+        # $unset, not $set null — cnpj's sparse unique index still tracks
+        # (and can collide on) an explicit null.
         unset__cnpj=1,
         business_category=None,
         business_phone=None,

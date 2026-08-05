@@ -22,9 +22,7 @@ def _validate_available_days(value: list[int]) -> list[int]:
 class ItemCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=100)
     description: str | None = Field(None, max_length=1000)
-    # Validated against the DB-backed category list (see category_service),
-    # not a fixed enum — admins can add/deactivate categories without a
-    # deploy, so the valid set can change at runtime.
+    # Validated against category_service's DB-backed list, not a fixed enum.
     category: str = Field(..., min_length=1, max_length=50)
     subcategory: str | None = None
     photos: list[str] | None = []

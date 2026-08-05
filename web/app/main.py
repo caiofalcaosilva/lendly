@@ -66,10 +66,8 @@ app.add_middleware(SlowAPIMiddleware)
 
 @app.middleware("http")
 async def block_view_as_mutations(request: Request, call_next):
-    """ "Ver como" (see admin_view_as_service) issues a token carrying
-    type=view_as — a single check here, ahead of every router, is enough
-    to keep that whole mode strictly read-only, instead of threading a
-    read-only check through every mutating endpoint individually."""
+    """Blocks every mutating request carrying a view_as token (see
+    admin_view_as_service) — keeps that mode strictly read-only."""
     if request.method not in _SAFE_METHODS:
         auth_header = request.headers.get("authorization", "")
         if auth_header.startswith("Bearer "):
@@ -102,9 +100,7 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 os.makedirs("uploads/items", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-# Not mounted as static — verification photos are sensitive (CPF document +
-# selfie), served only via the admin-authenticated endpoint in
-# routers/verification.py.
+# Not mounted as static — served via the authenticated endpoint in verification.py.
 os.makedirs("verification_uploads", exist_ok=True)
 
 app.include_router(auth.router)

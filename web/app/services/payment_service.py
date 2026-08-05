@@ -108,10 +108,7 @@ def get_payment_for_request(request_id: str, current_user: User) -> PaymentRespo
         and req.payment_status == "unpaid"
         and req.item.availability_type == "paid"
     ):
-        # Self-healing retry: the eager charge at accept_request time
-        # failed (Mercado Pago down/rejected) — try again now that the
-        # requester has opened the checkout screen, instead of leaving
-        # the request stuck with no way to ever pay.
+        # Self-healing retry: the charge at accept_request time must have failed.
         payment = create_payment_for_request(req)
 
     if not payment:

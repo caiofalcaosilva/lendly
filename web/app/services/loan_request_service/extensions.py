@@ -29,10 +29,7 @@ def request_extension(
             detail="An extension request is already pending",
         )
 
-    # Mongo round-trips datetimes as naive UTC (see expected_return_date,
-    # loaded from the DB above); normalize the freshly-parsed pydantic value
-    # the same way before comparing, or an offset-aware client payload
-    # (e.g. a browser's toISOString(), which ends in "Z") blows up here.
+    # Normalize to naive UTC to match expected_return_date before comparing.
     new_date = data.new_expected_return_date
     if new_date.tzinfo is not None:
         new_date = new_date.astimezone(UTC).replace(tzinfo=None)

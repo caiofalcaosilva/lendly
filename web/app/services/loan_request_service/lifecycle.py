@@ -176,9 +176,7 @@ def cancel_request(request_id: str, current_user: User) -> LoanRequestResponse:
             detail=f"Cannot cancel a request with status '{req.status}'",
         )
 
-    # cancel_request only ever runs before pickup (in_progress is excluded
-    # above) — so a held payment always gets a full refund here. Once
-    # picked up, there's no cancellation path at all, only finish_request.
+    # Only reachable before pickup, so a held payment always gets a full refund.
     if req.payment_status == "held":
         payment_service.refund_payment(req)
         req.reload()

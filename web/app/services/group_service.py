@@ -119,10 +119,7 @@ def join_group(invite_code: str, current_user: User) -> GroupResponse:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Invalid invite code"
         )
-    # Admins never become group members (see roadmap "Restrições de conta
-    # administrativa") — they can already view any group via _get_group_readable,
-    # so an invite link just takes them straight to that read-only view
-    # instead of adding them to the member list.
+    # Admins never become members — they can already view any group read-only.
     is_member = any(str(m.id) == str(current_user.id) for m in group.members)
     if not is_member and not current_user.is_admin:
         group.update(push__members=current_user)

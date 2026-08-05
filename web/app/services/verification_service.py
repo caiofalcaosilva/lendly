@@ -11,9 +11,7 @@ from app.utils.images import load_and_resize
 from app.utils.time import utcnow
 from app.utils.validators import is_valid_cpf
 
-# Deliberately outside app/main.py's public "uploads/" StaticFiles mount —
-# these are CPF documents + selfies, served only via an admin-authenticated
-# endpoint, never as a plain static URL.
+# Not under the public "uploads/" mount — served only via an admin endpoint.
 UPLOAD_ROOT = "verification_uploads"
 
 

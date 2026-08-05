@@ -4,9 +4,7 @@ from app.models.user import User
 from app.models.verification import VerificationSubmission
 from app.schemas.admin_actions import AdminActionEntry
 
-# How far back each source query looks before merging + sorting — keeps
-# this cheap (no aggregation pipeline, consistent with the rest of the
-# codebase) instead of pulling entire collections just to sort and slice.
+# How far back each source query looks before merging + sorting.
 _SOURCE_LIMIT = 100
 
 

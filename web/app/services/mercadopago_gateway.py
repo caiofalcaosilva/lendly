@@ -1,28 +1,7 @@
-"""Every call to the Mercado Pago API goes through this module — nothing
-else in the codebase imports `mercadopago` directly. That's deliberate:
-until we have a real developer account (see docs/pagamento-online.md), the
-exact request/response shape of a couple of these calls is our best
-reading of the SDK/docs, not something we've run against a live sandbox.
-Keeping them behind one thin interface means fixing a wrong assumption
-later touches this file only, not payment_service.py or the routers.
-
-Confirmed against the installed SDK (mercadopago==3.3.1) source directly:
-- OAuth authorization URL building and code-for-token exchange.
-- Standard payment creation (`/v1/payments`) returning Pix QR data
-  (`point_of_interaction.transaction_data.qr_code` /
-  `qr_code_base64`) — this part is well-documented and used widely.
-- Advanced Payments (`/v1/advanced_payments`) supporting `disbursements`
-  (marketplace split) and `update_release_date` to control exactly when
-  a seller's share becomes available — this is the hold-then-release
-  mechanism the product needs (charge at accept, release at pickup).
-
-NOT independently confirmed: whether `payment_method_id: "pix"` on an
-Advanced Payment returns the same embeddable QR fields as a plain
-payment does. It's the most likely reading (Advanced Payments is a
-payment-creation endpoint with disbursements layered on, same as
-/v1/payments), but it's the first thing to verify once real sandbox
-credentials exist — see create_pix_charge() below.
-"""
+"""Only module that imports `mercadopago` directly, so a wrong assumption
+is one file to fix. Not yet run against a real sandbox account (see
+docs/pagamento-online.md) — create_pix_charge()'s Pix QR fields on an
+Advanced Payment are our best reading of the SDK, unconfirmed live."""
 
 import logging
 import uuid
@@ -36,13 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class MercadoPagoError(Exception):
-    """Raised whenever Mercado Pago's API itself reports failure. The SDK
-    does NOT raise on HTTP errors (401, 400, etc.) — every call returns
-    {"status": <code>, "response": {...}} regardless, confirmed directly
-    against the installed SDK. Every function below must check the status
-    before trusting `response` as success data, or a bad/expired token
-    would silently produce garbage Payment records (empty QR code, None
-    ids) instead of a clear, catchable failure."""
+    """The SDK never raises on its own HTTP errors — every call returns
+    {"status": <code>, "response": {...}} regardless, so _unwrap() below
+    is what turns a bad status into an actual exception."""
 
 
 def _sdk(access_token: str | None = None) -> mercadopago.SDK:
@@ -142,8 +117,7 @@ def create_pix_charge(
                 "external_reference": external_reference,
                 "collector_id": seller_mp_user_id,
                 "application_fee": round(platform_fee_amount, 2),
-                # Far-future placeholder — real release happens via
-                # release_payment() at pickup, not on a timer.
+                # Far-future placeholder — release_payment() does the real release.
                 "money_release_date": "2099-01-01T00:00:00.000-00:00",
             }
         ],
@@ -188,14 +162,9 @@ def new_state_token() -> str:
 
 
 def verify_webhook_signature(x_signature: str, x_request_id: str, data_id: str) -> bool:
-    """Mercado Pago signs each webhook with an HMAC in the `x-signature`
-    header (format: `ts=...,v1=...`), computed over a manifest string built
-    from the notification's data.id, the x-request-id header, and the
-    timestamp — validated against MP_WEBHOOK_SECRET. Not yet exercised
-    against a real webhook payload; the manifest format below follows
-    Mercado Pago's published webhook-signature spec and needs confirming
-    against a real notification before this gates anything in production.
-    """
+    """HMAC in `x-signature` (format `ts=...,v1=...`) against
+    MP_WEBHOOK_SECRET — per Mercado Pago's spec, unconfirmed against a
+    real webhook payload."""
     import hashlib
     import hmac
 

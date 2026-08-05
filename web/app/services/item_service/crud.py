@@ -90,12 +90,8 @@ def create_item(data: ItemCreate, current_user: User) -> ItemResponse:
     groups = _resolve_member_groups(data.group_ids or [], current_user)
     _assert_visible(data.is_public, groups)
 
-    # Only fall back to the owner's own address when NO address was given
-    # at all — if the caller provided a custom neighborhood/city/zip (e.g.
-    # geocoding just didn't return coordinates for that CEP), latitude/
-    # longitude must never silently default to the owner's own location,
-    # or the item ends up with a mismatched address (right city in text,
-    # wrong coordinates on the map).
+    # Fall back to the owner's address only when none was given at all —
+    # a partial custom address must never get the owner's lat/lng mixed in.
     using_owner_address = not any(
         [data.zip_code, data.neighborhood, data.city, data.state]
     )

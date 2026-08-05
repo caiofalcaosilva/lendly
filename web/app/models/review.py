@@ -16,13 +16,8 @@ class Review(Document):
         "indexes": [
             "reviewer",
             "reviewed",
-            # Was two separate single-field indexes (reviewer, loan_request)
-            # backing review_service.create_review's duplicate check — that
-            # check was app-level only (query-then-insert), so two
-            # near-simultaneous requests could both pass it and create two
-            # reviews for the same pair. A unique compound index turns that
-            # into an actual DB-level guarantee; create_review now catches
-            # the resulting NotUniqueError.
+            # Enforces one review per reviewer per request at the DB level —
+            # see review_service.create_review's NotUniqueError handling.
             {"fields": ["loan_request", "reviewer"], "unique": True},
         ],
     }
