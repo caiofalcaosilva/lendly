@@ -1,6 +1,8 @@
 import secrets
 from datetime import timedelta
 
+from fastapi import Request
+
 from app.models.user import RefreshSession, User
 from app.schemas.user import PublicUserResponse, UserResponse
 from app.services.platform_settings_service import get_settings as get_platform_settings
@@ -104,6 +106,17 @@ def make_temp_token(user: User) -> str:
     )
 
 
+def client_info(request: Request | None) -> tuple[str | None, str | None]:
+    """IP + user-agent for the login-history entry this request's session
+    creates — None/None when called without a request (tests, internal
+    callers)."""
+    if request is None:
+        return None, None
+    ip = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    return ip, (user_agent[:300] if user_agent else None)
+
+
 def new_device_token() -> str:
     return secrets.token_urlsafe(32)
 
@@ -115,17 +128,23 @@ def add_trusted_device(user: User, device_token: str) -> None:
         user.update(trusted_devices=devices[-20:])
 
 
-def new_refresh_session(user: User) -> str:
-    """Mints a new opaque refresh token, storing only its hash, and prunes expired
-    ones."""
+def new_refresh_session(
+    user: User, ip_address: str | None = None, user_agent: str | None = None
+) -> str:
+    """Mints a new opaque refresh token, storing only its hash. Expired/revoked
+    entries are kept (not pruned) up to the 50-entry cap below, since this
+    list doubles as login history — refresh_tokens() already rejects an
+    expired session explicitly rather than relying on it being absent."""
     token = secrets.token_urlsafe(32)
     now = utcnow()
-    sessions = [s for s in (user.refresh_sessions or []) if s.expires_at > now]
+    sessions = list(user.refresh_sessions or [])
     sessions.append(
         RefreshSession(
             token_hash=hash_refresh_token(token),
             expires_at=now
             + timedelta(days=get_platform_settings().refresh_token_expire_days),
+            ip_address=ip_address,
+            user_agent=user_agent,
         )
     )
     user.update(refresh_sessions=sessions[-50:])

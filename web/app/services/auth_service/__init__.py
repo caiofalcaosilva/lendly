@@ -20,6 +20,7 @@ from app.services.auth_service.registration import (
 )
 from app.services.auth_service.session import (
     complete_2fa,
+    get_login_history,
     get_sessions,
     login_user,
     refresh_tokens,
@@ -35,6 +36,7 @@ __all__ = [
     "delete_account",
     "disable_totp",
     "enable_totp",
+    "get_login_history",
     "get_sessions",
     "login_user",
     "refresh_tokens",

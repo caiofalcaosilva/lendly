@@ -46,6 +46,7 @@ export default function SessionsSection() {
           {sessions.map((s) => (
             <div key={s.id} className="flex items-center justify-between gap-3 text-xs">
               <span className="text-gray-600 dark:text-gray-300">
+                {s.ip_address ? `${s.ip_address} · ` : ''}
                 Conectado em {formatDate(s.created_at)} · expira em {formatDate(s.expires_at)}
               </span>
               <button

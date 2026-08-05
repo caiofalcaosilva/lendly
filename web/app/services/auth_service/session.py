@@ -1,7 +1,9 @@
+from fastapi import Request
 from jose import JWTError
 
 from app.models.user import User
 from app.schemas.user import (
+    LoginHistoryEntry,
     LoginResponse,
     RefreshResponse,
     SessionSummary,
@@ -11,6 +13,7 @@ from app.schemas.user import (
 from app.services import totp_service
 from app.services.auth_service._common import (
     add_trusted_device,
+    client_info,
     make_access_token,
     make_temp_token,
     new_device_token,
@@ -22,7 +25,7 @@ from app.utils.security import decode_token, hash_refresh_token, verify_password
 from app.utils.time import utcnow
 
 
-def login_user(data: UserLogin) -> LoginResponse:
+def login_user(data: UserLogin, request: Request | None = None) -> LoginResponse:
     user = User.objects(email=data.email, is_active=True).first()
     if not user or not verify_password(data.password, user.password_hash):
         raise errors.unauthorized("Invalid credentials")
@@ -47,15 +50,18 @@ def login_user(data: UserLogin) -> LoginResponse:
         device_token = new_device_token()
         add_trusted_device(user, device_token)
 
+    ip, user_agent = client_info(request)
     return LoginResponse(
         access_token=make_access_token(user),
-        refresh_token=new_refresh_session(user),
+        refresh_token=new_refresh_session(user, ip, user_agent),
         user=user_to_response(user),
         device_token=device_token,
     )
 
 
-def complete_2fa(temp_token: str, code: str, trust_device: bool) -> TokenResponse:
+def complete_2fa(
+    temp_token: str, code: str, trust_device: bool, request: Request | None = None
+) -> TokenResponse:
     try:
         payload = decode_token(temp_token)
     except JWTError as err:
@@ -77,15 +83,18 @@ def complete_2fa(temp_token: str, code: str, trust_device: bool) -> TokenRespons
     if trust_device:
         add_trusted_device(user, device_token)
 
+    ip, user_agent = client_info(request)
     return TokenResponse(
         access_token=make_access_token(user),
-        refresh_token=new_refresh_session(user),
+        refresh_token=new_refresh_session(user, ip, user_agent),
         user=user_to_response(user),
         device_token=device_token,
     )
 
 
-def refresh_tokens(refresh_token: str) -> RefreshResponse:
+def refresh_tokens(
+    refresh_token: str, request: Request | None = None
+) -> RefreshResponse:
     token_hash = hash_refresh_token(refresh_token)
     user = User.objects(refresh_sessions__token_hash=token_hash, is_active=True).first()
     session = next(
@@ -109,7 +118,8 @@ def refresh_tokens(refresh_token: str) -> RefreshResponse:
         raise errors.unauthorized("Refresh token expirado")
 
     session.revoked_at = utcnow()
-    new_refresh = new_refresh_session(user)
+    ip, user_agent = client_info(request)
+    new_refresh = new_refresh_session(user, ip, user_agent)
     return RefreshResponse(
         access_token=make_access_token(user), refresh_token=new_refresh
     )
@@ -133,10 +143,32 @@ def get_sessions(current_user: User) -> list[SessionSummary]:
     now = utcnow()
     return [
         SessionSummary(
-            id=s.token_hash, created_at=s.created_at, expires_at=s.expires_at
+            id=s.token_hash,
+            created_at=s.created_at,
+            expires_at=s.expires_at,
+            ip_address=s.ip_address,
+            user_agent=s.user_agent,
         )
         for s in (current_user.refresh_sessions or [])
         if s.revoked_at is None and s.expires_at > now
+    ]
+
+
+def get_login_history(current_user: User) -> list[LoginHistoryEntry]:
+    """Passive log, most recent first — unlike get_sessions, includes
+    revoked/expired entries too, since this is for the user to spot
+    something suspicious, not to manage active sessions."""
+    sessions = sorted(
+        current_user.refresh_sessions or [], key=lambda s: s.created_at, reverse=True
+    )
+    return [
+        LoginHistoryEntry(
+            created_at=s.created_at,
+            ip_address=s.ip_address,
+            user_agent=s.user_agent,
+            revoked=s.revoked_at is not None,
+        )
+        for s in sessions
     ]
 
 

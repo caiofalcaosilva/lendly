@@ -20,6 +20,8 @@ class RefreshSession(EmbeddedDocument):
     created_at = DateTimeField(default=utcnow)
     expires_at = DateTimeField(required=True)
     revoked_at = DateTimeField()
+    ip_address = StringField(max_length=45)  # long enough for IPv6
+    user_agent = StringField(max_length=300)
 
 
 class User(Document):

@@ -73,6 +73,15 @@ export interface SessionSummary {
   id: string
   created_at: string
   expires_at: string
+  ip_address?: string | null
+  user_agent?: string | null
+}
+
+export interface LoginHistoryEntry {
+  created_at: string
+  ip_address?: string | null
+  user_agent?: string | null
+  revoked: boolean
 }
 
 export interface FavoriteUserSummary {

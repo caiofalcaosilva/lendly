@@ -137,6 +137,15 @@ class SessionSummary(BaseModel):
     id: str
     created_at: datetime
     expires_at: datetime
+    ip_address: str | None = None
+    user_agent: str | None = None
+
+
+class LoginHistoryEntry(BaseModel):
+    created_at: datetime
+    ip_address: str | None = None
+    user_agent: str | None = None
+    revoked: bool
 
 
 class FeaturedItemsUpdate(BaseModel):

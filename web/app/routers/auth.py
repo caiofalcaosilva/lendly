@@ -47,7 +47,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def register(request: Request, data: UserCreate, background_tasks: BackgroundTasks):
     """Creates an account and sends a verification email. Returns tokens
     right away, but most endpoints stay off-limits until is_verified."""
-    return register_user(data, background_tasks)
+    return register_user(data, background_tasks, request)
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -55,7 +55,7 @@ def register(request: Request, data: UserCreate, background_tasks: BackgroundTas
 def login(request: Request, data: UserLogin):
     """Password login. If 2FA is enabled and the device isn't trusted,
     returns requires_2fa=True with a temp_token instead of real tokens."""
-    return login_user(data)
+    return login_user(data, request)
 
 
 @router.post("/login/complete-2fa", response_model=TokenResponse)
@@ -65,7 +65,7 @@ def login(request: Request, data: UserLogin):
 def login_complete_2fa(request: Request, data: TwoFactorComplete):
     """Finishes a login that returned requires_2fa=True — exchanges the
     temp_token + TOTP code for real access/refresh tokens."""
-    return complete_2fa(data.temp_token, data.code, data.trust_device)
+    return complete_2fa(data.temp_token, data.code, data.trust_device, request)
 
 
 @router.post("/refresh", response_model=RefreshResponse)
@@ -75,7 +75,7 @@ def login_complete_2fa(request: Request, data: TwoFactorComplete):
 def refresh(request: Request, data: RefreshTokenRequest):
     """Exchanges a refresh token for a new access/refresh pair, rotating
     the old one out of the user's stored sessions."""
-    return refresh_tokens(data.refresh_token)
+    return refresh_tokens(data.refresh_token, request)
 
 
 @router.post("/logout")

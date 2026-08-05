@@ -16,6 +16,7 @@ from app.schemas.user import (
     EmailChangeRequest,
     FavoriteUserSummary,
     FeaturedItemsUpdate,
+    LoginHistoryEntry,
     PasswordChangeRequest,
     PublicUserResponse,
     SessionSummary,
@@ -36,6 +37,7 @@ from app.services.auth_service import (
     change_email,
     change_password,
     delete_account,
+    get_login_history,
     get_sessions,
     revoke_session,
     user_to_public_response,
@@ -98,6 +100,13 @@ def revoke_my_session(session_id: str, current_user: User = Depends(get_current_
     """Revokes one session by id — that device gets logged out next time its
     access token expires and it tries to refresh."""
     return revoke_session(session_id, current_user)
+
+
+@router.get("/me/login-history", response_model=list[LoginHistoryEntry])
+def my_login_history(current_user: User = Depends(get_current_user)):
+    """Passive log of past logins (date, IP, device) — read-only, for
+    spotting suspicious activity. See /me/sessions to actually revoke one."""
+    return get_login_history(current_user)
 
 
 @router.post("/me/avatar", response_model=UserResponse, status_code=201)

@@ -1,12 +1,13 @@
 import secrets
 from datetime import timedelta
 
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, Request
 
 from app.models.user import User
 from app.schemas.user import TokenResponse, UserCreate, UserResponse
 from app.services import email_service
 from app.services.auth_service._common import (
+    client_info,
     make_access_token,
     new_device_token,
     new_refresh_session,
@@ -18,7 +19,9 @@ from app.utils.security import hash_password
 from app.utils.time import utcnow
 
 
-def register_user(data: UserCreate, background_tasks: BackgroundTasks) -> TokenResponse:
+def register_user(
+    data: UserCreate, background_tasks: BackgroundTasks, request: Request | None = None
+) -> TokenResponse:
     if User.objects(email=data.email).first():
         raise errors.conflict("Email already registered")
 
@@ -69,9 +72,10 @@ def register_user(data: UserCreate, background_tasks: BackgroundTasks) -> TokenR
         verification_token,
     )
 
+    ip, user_agent = client_info(request)
     return TokenResponse(
         access_token=make_access_token(user),
-        refresh_token=new_refresh_session(user),
+        refresh_token=new_refresh_session(user, ip, user_agent),
         user=user_to_response(user),
         device_token=device_token,
     )
