@@ -52,20 +52,24 @@ def register(request: Request, data: UserCreate, background_tasks: BackgroundTas
 
 @router.post("/login", response_model=LoginResponse)
 @limiter.limit(lambda: f"{get_platform_settings().login_rate_limit_per_minute}/minute")
-def login(request: Request, data: UserLogin):
+def login(request: Request, data: UserLogin, background_tasks: BackgroundTasks):
     """Password login. If 2FA is enabled and the device isn't trusted,
     returns requires_2fa=True with a temp_token instead of real tokens."""
-    return login_user(data, request)
+    return login_user(data, request, background_tasks)
 
 
 @router.post("/login/complete-2fa", response_model=TokenResponse)
 @limiter.limit(
     lambda: f"{get_platform_settings().complete_2fa_rate_limit_per_minute}/minute"
 )
-def login_complete_2fa(request: Request, data: TwoFactorComplete):
+def login_complete_2fa(
+    request: Request, data: TwoFactorComplete, background_tasks: BackgroundTasks
+):
     """Finishes a login that returned requires_2fa=True — exchanges the
     temp_token + TOTP code for real access/refresh tokens."""
-    return complete_2fa(data.temp_token, data.code, data.trust_device, request)
+    return complete_2fa(
+        data.temp_token, data.code, data.trust_device, request, background_tasks
+    )
 
 
 @router.post("/refresh", response_model=RefreshResponse)

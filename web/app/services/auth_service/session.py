@@ -1,4 +1,4 @@
-from fastapi import Request
+from fastapi import BackgroundTasks, Request
 from jose import JWTError
 
 from app.models.user import User
@@ -10,7 +10,7 @@ from app.schemas.user import (
     TokenResponse,
     UserLogin,
 )
-from app.services import totp_service
+from app.services import email_service, totp_service
 from app.services.auth_service._common import (
     add_trusted_device,
     client_info,
@@ -25,7 +25,11 @@ from app.utils.security import decode_token, hash_refresh_token, verify_password
 from app.utils.time import utcnow
 
 
-def login_user(data: UserLogin, request: Request | None = None) -> LoginResponse:
+def login_user(
+    data: UserLogin,
+    request: Request | None = None,
+    background_tasks: BackgroundTasks | None = None,
+) -> LoginResponse:
     user = User.objects(email=data.email, is_active=True).first()
     if not user or not verify_password(data.password, user.password_hash):
         raise errors.unauthorized("Invalid credentials")
@@ -43,14 +47,23 @@ def login_user(data: UserLogin, request: Request | None = None) -> LoginResponse
     if user.totp_enabled and not device_trusted:
         return LoginResponse(requires_2fa=True, temp_token=make_temp_token(user))
 
+    ip, user_agent = client_info(request)
+
     if device_trusted:
         assert data.device_token is not None  # device_trusted implies this was truthy
         device_token = data.device_token
     else:
         device_token = new_device_token()
         add_trusted_device(user, device_token)
+        if background_tasks:
+            background_tasks.add_task(
+                email_service.send_new_login_email,
+                user.email,
+                user.name,
+                ip,
+                user_agent,
+            )
 
-    ip, user_agent = client_info(request)
     return LoginResponse(
         access_token=make_access_token(user),
         refresh_token=new_refresh_session(user, ip, user_agent),
@@ -60,7 +73,11 @@ def login_user(data: UserLogin, request: Request | None = None) -> LoginResponse
 
 
 def complete_2fa(
-    temp_token: str, code: str, trust_device: bool, request: Request | None = None
+    temp_token: str,
+    code: str,
+    trust_device: bool,
+    request: Request | None = None,
+    background_tasks: BackgroundTasks | None = None,
 ) -> TokenResponse:
     try:
         payload = decode_token(temp_token)
@@ -84,6 +101,12 @@ def complete_2fa(
         add_trusted_device(user, device_token)
 
     ip, user_agent = client_info(request)
+    # Reaching this endpoint always means a device that wasn't already
+    # trusted — the direct-login path skips 2FA entirely otherwise.
+    if background_tasks:
+        background_tasks.add_task(
+            email_service.send_new_login_email, user.email, user.name, ip, user_agent
+        )
     return TokenResponse(
         access_token=make_access_token(user),
         refresh_token=new_refresh_session(user, ip, user_agent),

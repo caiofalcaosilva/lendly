@@ -67,6 +67,29 @@ async def send_password_reset_email(to: str, name: str, token: str) -> None:
     await send_email(to, "Redefinir senha — Lendly", html)
 
 
+async def send_new_login_email(
+    to: str, name: str, ip_address: str | None, user_agent: str | None
+) -> None:
+    where = ip_address or "endereço desconhecido"
+    device = f" ({user_agent})" if user_agent else ""
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">Novo login detectado</h2>
+      <p>Olá, {name}! Sua conta acabou de ser acessada de um dispositivo que
+      não reconhecíamos.</p>
+      <p style="color:#374151;font-size:14px">
+        <strong>IP:</strong> {where}{device}
+      </p>
+      <p style="color:#6b7280;font-size:13px">
+        Se foi você, pode ignorar este e-mail. Se não reconhece esse acesso,
+        troque sua senha imediatamente em /profile — isso encerra todas as
+        outras sessões.
+      </p>
+    </div>
+    """
+    await send_email(to, "Novo login detectado — Lendly", html)
+
+
 _STATUS_COPY = {
     "accepted": (
         "Seu pedido foi aceito!",
