@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from mongoengine import (
     BooleanField,
     DateTimeField,
@@ -14,10 +12,12 @@ from mongoengine import (
     StringField,
 )
 
+from app.utils.time import utcnow
+
 
 class RefreshSession(EmbeddedDocument):
     token_hash = StringField(required=True)
-    created_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
     expires_at = DateTimeField(required=True)
     revoked_at = DateTimeField()
 
@@ -64,7 +64,9 @@ class User(Document):
     # submission is made; identity_status mirrors the latest submission's
     # outcome so other code can check it without a join.
     cpf = StringField(max_length=14, sparse=True, unique=True)
-    identity_status = StringField(default="none", choices=["none", "pending", "approved", "rejected"])
+    identity_status = StringField(
+        default="none", choices=["none", "pending", "approved", "rejected"]
+    )
     # Mercado Pago account connection — required before this user can create
     # a paid item (see item_service.create_item). Tokens are encrypted at
     # rest (app/utils/crypto.py) since, unlike a password hash, they must be
@@ -102,8 +104,8 @@ class User(Document):
     # only measures on-time returns. See _recalculate_reliability.
     on_time_rate = FloatField()
     finished_loans_count = IntField(default=0)
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "users",

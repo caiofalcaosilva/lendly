@@ -1,9 +1,12 @@
-from datetime import datetime
-
 from app.config import settings
 from app.models.platform_settings import PlatformSettings
 from app.models.user import User
-from app.schemas.platform_settings import AnnouncementResponse, PlatformSettingsResponse, PlatformSettingsUpdate
+from app.schemas.platform_settings import (
+    AnnouncementResponse,
+    PlatformSettingsResponse,
+    PlatformSettingsUpdate,
+)
+from app.utils.time import utcnow
 
 
 def _to_response(doc: PlatformSettings) -> PlatformSettingsResponse:
@@ -39,10 +42,12 @@ def get_settings_response() -> PlatformSettingsResponse:
     return _to_response(get_settings())
 
 
-def update_settings(data: PlatformSettingsUpdate, admin: User) -> PlatformSettingsResponse:
+def update_settings(
+    data: PlatformSettingsUpdate, admin: User
+) -> PlatformSettingsResponse:
     doc = get_settings()
     updates = data.model_dump(exclude_none=True)
-    doc.update(**updates, updated_by=admin, updated_at=datetime.utcnow())
+    doc.update(**updates, updated_by=admin, updated_at=utcnow())
     doc.reload()
     return _to_response(doc)
 
@@ -52,4 +57,6 @@ def get_announcement() -> AnnouncementResponse:
     users. See routers/admin.py for editing and GET /announcement in
     main.py for where this is exposed."""
     doc = get_settings()
-    return AnnouncementResponse(message=doc.announcement_message, active=doc.announcement_active or False)
+    return AnnouncementResponse(
+        message=doc.announcement_message, active=doc.announcement_active or False
+    )

@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import BaseModel
 
 
@@ -28,6 +26,6 @@ class AdminDashboardSummary(BaseModel):
     loans_cancelled_or_refused: int
     pending_reports: int
     pending_verifications: int
-    signups_last_8_weeks: List[WeeklySignups]
-    top_categories: List[CategoryCount]
-    top_cities: List[CityCount]
+    signups_last_8_weeks: list[WeeklySignups]
+    top_categories: list[CategoryCount]
+    top_cities: list[CityCount]

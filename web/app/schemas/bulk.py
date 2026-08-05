@@ -1,10 +1,8 @@
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
 class BulkActionRequest(BaseModel):
-    ids: List[str] = Field(..., min_length=1)
+    ids: list[str] = Field(..., min_length=1)
 
 
 class BulkActionFailure(BaseModel):
@@ -13,5 +11,5 @@ class BulkActionFailure(BaseModel):
 
 
 class BulkActionResult(BaseModel):
-    succeeded: List[str]
-    failed: List[BulkActionFailure]
+    succeeded: list[str]
+    failed: list[BulkActionFailure]

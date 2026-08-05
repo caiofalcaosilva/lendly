@@ -1,14 +1,13 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
 
 class ReportCreate(BaseModel):
-    item_id: Optional[str] = None
-    reported_user_id: Optional[str] = None
+    item_id: str | None = None
+    reported_user_id: str | None = None
     reason: str = Field(..., pattern="^(spam|fake_item|inappropriate|fraud|other)$")
-    description: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
 
     @model_validator(mode="after")
     def _exactly_one_target(self):
@@ -21,13 +20,13 @@ class ReportResponse(BaseModel):
     id: str
     reporter_id: str
     reporter_name: str
-    item_id: Optional[str] = None
-    item_title: Optional[str] = None
-    reported_user_id: Optional[str] = None
-    reported_user_name: Optional[str] = None
+    item_id: str | None = None
+    item_title: str | None = None
+    reported_user_id: str | None = None
+    reported_user_name: str | None = None
     reason: str
-    description: Optional[str] = None
+    description: str | None = None
     status: str
-    reviewed_by_name: Optional[str] = None
-    reviewed_at: Optional[datetime] = None
+    reviewed_by_name: str | None = None
+    reviewed_at: datetime | None = None
     created_at: datetime

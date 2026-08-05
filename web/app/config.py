@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # is dev-only, same spirit as SECRET_KEY above.
     ENCRYPTION_KEY: str = "changeme-32-byte-fernet-key-base64=="
 
-    # Mercado Pago — payment gateway (see docs/pagamento-online design doc).
+    # Mercado Pago — payment gateway (see docs/pagamento-online.md).
     # All blank by default; payment features stay inert until an admin fills
     # these in a real .env, same lazy-configuration spirit as SMTP above.
     MP_APP_ID: str = ""
@@ -47,3 +47,21 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+_INSECURE_DEFAULTS = {
+    "SECRET_KEY": "changeme-in-production",
+    "ENCRYPTION_KEY": "changeme-32-byte-fernet-key-base64==",
+}
+
+
+def assert_secrets_configured() -> None:
+    """Called from main.py's startup — fails loudly if a placeholder secret
+    is still in place, rather than silently signing JWTs (or encrypting
+    Mercado Pago tokens) with a value anyone can read straight out of this
+    file."""
+    for field, placeholder in _INSECURE_DEFAULTS.items():
+        if getattr(settings, field) == placeholder:
+            raise RuntimeError(
+                f"{field} is still set to its placeholder value — set a real "
+                "one in .env before starting the app."
+            )

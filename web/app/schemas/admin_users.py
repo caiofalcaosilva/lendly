@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -9,9 +8,9 @@ class AdminUserSummary(BaseModel):
     name: str
     email: str
     account_type: str
-    trade_name: Optional[str] = None
-    city: Optional[str] = None
-    neighborhood: Optional[str] = None
+    trade_name: str | None = None
+    city: str | None = None
+    neighborhood: str | None = None
     is_active: bool
     is_admin: bool
     is_verified: bool

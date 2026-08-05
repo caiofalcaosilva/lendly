@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import HTTPException, status
 
 from app.models.loan_request import LoanRequest
@@ -10,7 +8,9 @@ from app.schemas.review import ReviewCreate, ReviewResponse
 
 def _to_response(review: Review) -> ReviewResponse:
     req = review.loan_request
-    reviewed_role = "owner" if str(review.reviewed.id) == str(req.owner.id) else "requester"
+    reviewed_role = (
+        "owner" if str(review.reviewed.id) == str(req.owner.id) else "requester"
+    )
     return ReviewResponse(
         id=str(review.id),
         loan_request_id=str(req.id),
@@ -40,16 +40,22 @@ def recalculate_rating(user: User) -> None:
     user.update(average_rating=round(avg, 2), rating_count=len(reviews))
 
 
-def create_review(request_id: str, data: ReviewCreate, current_user: User) -> ReviewResponse:
+def create_review(
+    request_id: str, data: ReviewCreate, current_user: User
+) -> ReviewResponse:
     req = LoanRequest.objects(id=request_id).first()
     if not req:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
+        )
 
     is_requester = str(req.requester.id) == str(current_user.id)
     is_owner = str(req.owner.id) == str(current_user.id)
 
     if not is_requester and not is_owner:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
     if req.status != "finished":
         raise HTTPException(
@@ -78,8 +84,12 @@ def create_review(request_id: str, data: ReviewCreate, current_user: User) -> Re
     return _to_response(review)
 
 
-def get_user_reviews(user_id: str) -> List[ReviewResponse]:
+def get_user_reviews(user_id: str) -> list[ReviewResponse]:
     user = User.objects(id=user_id, is_active=True).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return [_to_response(r) for r in Review.objects(reviewed=user).order_by("-created_at")]
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return [
+        _to_response(r) for r in Review.objects(reviewed=user).order_by("-created_at")
+    ]

@@ -1,0 +1,118 @@
+import secrets
+from datetime import timedelta
+
+from fastapi import BackgroundTasks, HTTPException, status
+
+from app.models.user import User
+from app.schemas.user import TokenResponse, UserCreate, UserResponse
+from app.services import email_service
+from app.services.auth_service._common import (
+    make_access_token,
+    new_device_token,
+    new_refresh_session,
+    user_to_response,
+)
+from app.services.platform_settings_service import get_settings as get_platform_settings
+from app.utils.security import hash_password
+from app.utils.time import utcnow
+
+
+def register_user(data: UserCreate, background_tasks: BackgroundTasks) -> TokenResponse:
+    if User.objects(email=data.email).first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+        )
+
+    cnpj_digits = None
+    if data.account_type == "business":
+        assert data.cnpj is not None  # enforced by UserCreate's model_validator
+        cnpj_digits = "".join(c for c in data.cnpj if c.isdigit())
+        if User.objects(cnpj=cnpj_digits).first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="CNPJ already registered"
+            )
+
+    verification_token = secrets.token_urlsafe(32)
+    device_token = new_device_token()
+
+    user = User(
+        name=data.name,
+        email=data.email,
+        phone=data.phone,
+        zip_code=data.zip_code,
+        street=data.street,
+        number=data.number,
+        complement=data.complement,
+        neighborhood=data.neighborhood,
+        city=data.city,
+        state=data.state,
+        latitude=data.latitude,
+        longitude=data.longitude,
+        password_hash=hash_password(data.password),
+        is_verified=False,
+        email_verification_token=verification_token,
+        email_verification_expires=utcnow()
+        + timedelta(hours=get_platform_settings().email_verification_expire_hours),
+        trusted_devices=[device_token],
+        account_type=data.account_type,
+        company_name=data.company_name,
+        trade_name=data.trade_name,
+        cnpj=cnpj_digits,
+        business_category=data.business_category,
+        business_phone=data.business_phone,
+        business_hours=data.business_hours,
+        website=data.website,
+    )
+    user.save()
+
+    background_tasks.add_task(
+        email_service.send_verification_email,
+        user.email,
+        user.name,
+        verification_token,
+    )
+
+    return TokenResponse(
+        access_token=make_access_token(user),
+        refresh_token=new_refresh_session(user),
+        user=user_to_response(user),
+        device_token=device_token,
+    )
+
+
+def verify_email_token(token: str) -> UserResponse:
+    user = User.objects(
+        email_verification_token=token,
+        email_verification_expires__gt=utcnow(),
+    ).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Link inválido ou expirado"
+        )
+
+    user.update(
+        is_verified=True, email_verification_token=None, email_verification_expires=None
+    )
+    user.reload()
+    return user_to_response(user)
+
+
+def resend_verification(current_user: User, background_tasks: BackgroundTasks) -> dict:
+    if current_user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="E-mail já verificado"
+        )
+
+    token = secrets.token_urlsafe(32)
+    current_user.update(
+        email_verification_token=token,
+        email_verification_expires=utcnow()
+        + timedelta(hours=get_platform_settings().email_verification_expire_hours),
+    )
+    background_tasks.add_task(
+        email_service.send_verification_email,
+        current_user.email,
+        current_user.name,
+        token,
+    )
+    return {"detail": "E-mail de verificação enviado"}

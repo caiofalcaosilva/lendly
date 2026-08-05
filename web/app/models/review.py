@@ -1,6 +1,6 @@
-from datetime import datetime
-
 from mongoengine import DateTimeField, Document, IntField, ReferenceField, StringField
+
+from app.utils.time import utcnow
 
 
 class Review(Document):
@@ -9,7 +9,7 @@ class Review(Document):
     reviewed = ReferenceField("User", required=True)
     rating = IntField(required=True, min_value=1, max_value=5)
     comment = StringField(max_length=500)
-    created_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "reviews",

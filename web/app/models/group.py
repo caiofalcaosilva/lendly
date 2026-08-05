@@ -1,6 +1,6 @@
-from datetime import datetime
-
 from mongoengine import DateTimeField, Document, ListField, ReferenceField, StringField
+
+from app.utils.time import utcnow
 
 
 class Group(Document):
@@ -9,7 +9,7 @@ class Group(Document):
     invite_code = StringField(required=True, unique=True)
     created_by = ReferenceField("User", required=True)
     members = ListField(ReferenceField("User"), default=list)
-    created_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "groups",

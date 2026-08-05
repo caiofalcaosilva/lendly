@@ -1,0 +1,28 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.7
+    hooks:
+      - id: ruff
+        name: ruff (lint)
+        # Scoped to app/ + tests/, not all of web/ — seed.py and other
+        # top-level scripts haven't been through the code-quality pass yet
+        # (see roadmap) and would otherwise get bulk-reformatted as a
+        # surprise side effect of installing this hook.
+        files: ^web/(app|tests)/
+        args: [--fix]
+      - id: ruff-format
+        name: ruff (format)
+        files: ^web/(app|tests)/
+
+  - repo: local
+    hooks:
+      # Uses the mypy already on the developer's PATH (see web/requirements-dev.txt)
+      # instead of pre-commit's own mirror — this project's mypy config
+      # (pyproject.toml) assumes running from inside web/, which the mirror's
+      # isolated environment + repo-root-relative file paths don't support.
+      - id: mypy
+        name: mypy (web/app)
+        entry: bash -c 'cd web && mypy app'
+        language: system
+        files: ^web/app/.*\.py$
+        pass_filenames: false

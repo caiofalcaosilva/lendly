@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 
 class GroupCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
 
 
 class JoinGroupRequest(BaseModel):
@@ -28,9 +27,9 @@ class GroupSummary(BaseModel):
 class GroupResponse(BaseModel):
     id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     invite_code: str
     member_count: int
-    members: List[GroupMemberResponse]
+    members: list[GroupMemberResponse]
     created_by: str
     created_at: datetime

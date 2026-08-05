@@ -1,5 +1,5 @@
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
@@ -12,13 +12,14 @@ from app.schemas.admin_dashboard import (
     CityCount,
     WeeklySignups,
 )
+from app.utils.time import utcnow
 
 TOP_N = 5
 WEEKS = 8
 
 
 def _signups_last_8_weeks() -> list:
-    now = datetime.utcnow()
+    now = utcnow()
     weeks = []
     for i in range(WEEKS - 1, -1, -1):
         start = now - timedelta(weeks=i + 1)
@@ -33,11 +34,16 @@ def get_admin_dashboard() -> AdminDashboardSummary:
 
     categories = [i.category for i in active_items_qs.only("category")]
     top_categories = [
-        CategoryCount(category=c, count=n) for c, n in Counter(categories).most_common(TOP_N)
+        CategoryCount(category=c, count=n)
+        for c, n in Counter(categories).most_common(TOP_N)
     ]
 
-    cities = [i.city for i in active_items_qs.filter(city__ne=None).only("city") if i.city]
-    top_cities = [CityCount(city=c, count=n) for c, n in Counter(cities).most_common(TOP_N)]
+    cities = [
+        i.city for i in active_items_qs.filter(city__ne=None).only("city") if i.city
+    ]
+    top_cities = [
+        CityCount(city=c, count=n) for c, n in Counter(cities).most_common(TOP_N)
+    ]
 
     return AdminDashboardSummary(
         total_users=User.objects(is_active=True).count(),
@@ -46,7 +52,9 @@ def get_admin_dashboard() -> AdminDashboardSummary:
         loans_pending=LoanRequest.objects(status="pending").count(),
         loans_in_progress=LoanRequest.objects(status="in_progress").count(),
         loans_finished=LoanRequest.objects(status="finished").count(),
-        loans_cancelled_or_refused=LoanRequest.objects(status__in=["cancelled", "refused"]).count(),
+        loans_cancelled_or_refused=LoanRequest.objects(
+            status__in=["cancelled", "refused"]
+        ).count(),
         pending_reports=Report.objects(status="pending").count(),
         pending_verifications=VerificationSubmission.objects(status="pending").count(),
         signups_last_8_weeks=_signups_last_8_weeks(),

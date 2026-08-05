@@ -1,6 +1,6 @@
-from datetime import datetime
-
 from mongoengine import DateTimeField, Document, FloatField, ReferenceField, StringField
+
+from app.utils.time import utcnow
 
 # unpaid never applies to a Payment doc (that's the free-item / no-payment-
 # created-yet state, tracked on LoanRequest.payment_status instead).
@@ -11,8 +11,8 @@ class Payment(Document):
     """One per paid LoanRequest. amount/platform_fee_amount are snapshotted
     at charge time — never recomputed from Item.daily_rate later, so an
     owner editing their price afterwards can't retroactively change what
-    was actually charged. See docs/pagamento-online design doc for the
-    full held → released state machine (charged at accept, released at
+    was actually charged. See docs/pagamento-online.md for the full
+    held → released state machine (charged at accept, released at
     pickup check-in, refunded on cancel-before-pickup)."""
 
     loan_request = ReferenceField("LoanRequest", required=True, unique=True)
@@ -34,7 +34,7 @@ class Payment(Document):
     pix_qr_code_base64 = StringField()
     expires_at = DateTimeField()
 
-    created_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
     held_at = DateTimeField()
     released_at = DateTimeField()
     refunded_at = DateTimeField()

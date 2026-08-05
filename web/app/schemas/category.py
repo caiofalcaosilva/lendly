@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -13,7 +11,7 @@ class CategoryResponse(BaseModel):
     key: str
     label: str
     is_active: bool = True
-    subcategories: List[SubcategoryResponse] = []
+    subcategories: list[SubcategoryResponse] = []
 
 
 class CategoryCreate(BaseModel):
@@ -22,8 +20,8 @@ class CategoryCreate(BaseModel):
 
 
 class CategoryUpdate(BaseModel):
-    label: Optional[str] = Field(None, min_length=1, max_length=100)
-    is_active: Optional[bool] = None
+    label: str | None = Field(None, min_length=1, max_length=100)
+    is_active: bool | None = None
 
 
 class SubcategoryCreate(BaseModel):
@@ -32,5 +30,5 @@ class SubcategoryCreate(BaseModel):
 
 
 class SubcategoryUpdate(BaseModel):
-    label: Optional[str] = Field(None, min_length=1, max_length=100)
-    is_active: Optional[bool] = None
+    label: str | None = Field(None, min_length=1, max_length=100)
+    is_active: bool | None = None

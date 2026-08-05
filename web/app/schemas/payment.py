@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -10,9 +9,9 @@ class PaymentResponse(BaseModel):
     status: str
     gross_amount: float
     platform_fee_amount: float
-    pix_qr_code: Optional[str] = None
-    pix_qr_code_base64: Optional[str] = None
-    expires_at: Optional[datetime] = None
+    pix_qr_code: str | None = None
+    pix_qr_code_base64: str | None = None
+    expires_at: datetime | None = None
     created_at: datetime
 
 
@@ -22,7 +21,7 @@ class MercadoPagoConnectResponse(BaseModel):
 
 class MercadoPagoConnectStatus(BaseModel):
     connected: bool
-    connected_at: Optional[datetime] = None
+    connected_at: datetime | None = None
 
 
 class MercadoPagoCallback(BaseModel):

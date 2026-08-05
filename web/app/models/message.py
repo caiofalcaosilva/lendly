@@ -1,13 +1,13 @@
-from datetime import datetime
-
 from mongoengine import DateTimeField, Document, ReferenceField, StringField
+
+from app.utils.time import utcnow
 
 
 class Message(Document):
     request = ReferenceField("LoanRequest", required=True)
     sender = ReferenceField("User", required=True)
     text = StringField(required=True, max_length=2000)
-    created_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "messages",

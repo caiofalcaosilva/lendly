@@ -92,7 +92,8 @@ async def send_new_message_email(
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">Nova mensagem de {sender_name}</h2>
-      <p>Olá, {name}! Você recebeu uma nova mensagem de {sender_name} sobre <strong>{item_title}</strong>.</p>
+      <p>Olá, {name}! Você recebeu uma nova mensagem de {sender_name} sobre
+      <strong>{item_title}</strong>.</p>
       <a href="{url}"
          style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
                 border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
@@ -108,8 +109,8 @@ async def send_verification_approved_email(to: str, name: str) -> None:
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">Sua identidade foi verificada!</h2>
-      <p>Olá, {name}! Sua verificação de identidade foi aprovada. Agora você pode solicitar
-      itens que exigem verificação.</p>
+      <p>Olá, {name}! Sua verificação de identidade foi aprovada. Agora você
+      pode solicitar itens que exigem verificação.</p>
       <a href="{url}"
          style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
                 border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
@@ -120,7 +121,9 @@ async def send_verification_approved_email(to: str, name: str) -> None:
     await send_email(to, "Identidade verificada — Lendly", html)
 
 
-async def send_verification_rejected_email(to: str, name: str, reason: str = "") -> None:
+async def send_verification_rejected_email(
+    to: str, name: str, reason: str = ""
+) -> None:
     url = f"{settings.FRONTEND_URL}/profile#identity-verification"
     reason_html = f"<p><strong>Motivo:</strong> {reason}</p>" if reason else ""
     html = f"""
@@ -139,7 +142,9 @@ async def send_verification_rejected_email(to: str, name: str, reason: str = "")
     await send_email(to, "Verificação de identidade não aprovada — Lendly", html)
 
 
-async def send_item_available_email(to: str, name: str, item_title: str, item_id: str) -> None:
+async def send_item_available_email(
+    to: str, name: str, item_title: str, item_id: str
+) -> None:
     url = f"{settings.FRONTEND_URL}/items/{item_id}"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">

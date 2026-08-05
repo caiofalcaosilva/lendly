@@ -1,6 +1,13 @@
-from datetime import datetime
+from mongoengine import (
+    BooleanField,
+    DateTimeField,
+    Document,
+    IntField,
+    ReferenceField,
+    StringField,
+)
 
-from mongoengine import BooleanField, DateTimeField, Document, IntField, ReferenceField, StringField
+from app.utils.time import utcnow
 
 
 class PlatformSettings(Document):
@@ -22,6 +29,6 @@ class PlatformSettings(Document):
     announcement_message = StringField(max_length=280)
     announcement_active = BooleanField(default=False)
     updated_by = ReferenceField("User")
-    updated_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {"collection": "platform_settings"}

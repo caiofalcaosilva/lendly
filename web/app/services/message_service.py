@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import BackgroundTasks
 
 from app.models.message import Message
@@ -31,9 +29,13 @@ def send_message(
     msg.save()
     response = _to_response(msg)
 
-    background_tasks.add_task(manager.broadcast, request_id, response.model_dump(mode="json"))
+    background_tasks.add_task(
+        manager.broadcast, request_id, response.model_dump(mode="json")
+    )
 
-    recipient = req.owner if str(req.requester.id) == str(current_user.id) else req.requester
+    recipient = (
+        req.owner if str(req.requester.id) == str(current_user.id) else req.requester
+    )
     background_tasks.add_task(
         email_service.send_new_message_email,
         recipient.email,
@@ -46,7 +48,7 @@ def send_message(
     return response
 
 
-def list_messages(request_id: str, current_user: User) -> List[MessageResponse]:
+def list_messages(request_id: str, current_user: User) -> list[MessageResponse]:
     req = loan_request_service._get_as_participant(request_id, current_user)
     msgs = Message.objects(request=req).order_by("-created_at").limit(PAGE_SIZE)
     return [_to_response(m) for m in reversed(list(msgs))]

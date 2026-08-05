@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from pydantic import BaseModel
 
 
@@ -17,5 +15,5 @@ class OwnerAnalyticsSummary(BaseModel):
     total_loans: int
     total_revenue: float
     average_occupancy_rate: float
-    most_popular_item: Optional[str] = None
-    items: List[ItemAnalytics]
+    most_popular_item: str | None = None
+    items: list[ItemAnalytics]

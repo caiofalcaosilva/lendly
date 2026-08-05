@@ -1,6 +1,6 @@
-from datetime import datetime
-
 from mongoengine import DateTimeField, Document, ReferenceField, StringField
+
+from app.utils.time import utcnow
 
 REPORT_REASONS = ["spam", "fake_item", "inappropriate", "fraud", "other"]
 REPORT_STATUSES = ["pending", "dismissed", "actioned"]
@@ -16,7 +16,7 @@ class Report(Document):
     status = StringField(default="pending", choices=REPORT_STATUSES)
     reviewed_by = ReferenceField("User")
     reviewed_at = DateTimeField()
-    created_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "reports",

@@ -1,6 +1,5 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -18,7 +17,7 @@ class LoanRequestCreate(BaseModel):
     item_id: str
     pickup_date: datetime
     expected_return_date: datetime
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)
 
     @model_validator(mode="after")
     def check_dates(self) -> "LoanRequestCreate":
@@ -43,9 +42,9 @@ class LoanRequestResponse(BaseModel):
     payment_status: str
     pickup_date: datetime
     expected_return_date: datetime
-    actual_return_date: Optional[datetime] = None
-    notes: Optional[str] = None
-    requested_extension_date: Optional[datetime] = None
+    actual_return_date: datetime | None = None
+    notes: str | None = None
+    requested_extension_date: datetime | None = None
     extension_status: str = "none"
     created_at: datetime
     updated_at: datetime

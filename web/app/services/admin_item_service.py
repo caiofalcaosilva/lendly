@@ -1,12 +1,11 @@
-from datetime import datetime
-from typing import List, Optional
-
 from fastapi import HTTPException, status
 
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.admin_items import AdminItemSummary
-from app.schemas.bulk import BulkActionFailure, BulkActionResult
+from app.schemas.bulk import BulkActionResult
+from app.utils.bulk import run_bulk
+from app.utils.time import utcnow
 
 
 def _to_summary(item: Item) -> AdminItemSummary:
@@ -30,7 +29,7 @@ def _to_summary(item: Item) -> AdminItemSummary:
     )
 
 
-def list_items(search: Optional[str], skip: int, limit: int) -> List[AdminItemSummary]:
+def list_items(search: str | None, skip: int, limit: int) -> list[AdminItemSummary]:
     qs = Item.objects()
     if search:
         qs = qs.filter(title__icontains=search)
@@ -40,7 +39,9 @@ def list_items(search: Optional[str], skip: int, limit: int) -> List[AdminItemSu
 def _get_item(item_id: str) -> Item:
     item = Item.objects(id=item_id).first()
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
     return item
 
 
@@ -50,33 +51,21 @@ def get_item(item_id: str) -> AdminItemSummary:
 
 def deactivate_item(item_id: str, admin: User) -> AdminItemSummary:
     item = _get_item(item_id)
-    item.update(is_active=False, status_changed_by=admin, status_changed_at=datetime.utcnow())
+    item.update(is_active=False, status_changed_by=admin, status_changed_at=utcnow())
     item.reload()
     return _to_summary(item)
 
 
 def activate_item(item_id: str, admin: User) -> AdminItemSummary:
     item = _get_item(item_id)
-    item.update(is_active=True, status_changed_by=admin, status_changed_at=datetime.utcnow())
+    item.update(is_active=True, status_changed_by=admin, status_changed_at=utcnow())
     item.reload()
     return _to_summary(item)
 
 
-def _bulk_run(item_ids: List[str], admin: User, action) -> BulkActionResult:
-    succeeded: List[str] = []
-    failed: List[BulkActionFailure] = []
-    for item_id in item_ids:
-        try:
-            action(item_id, admin)
-            succeeded.append(item_id)
-        except HTTPException as e:
-            failed.append(BulkActionFailure(id=item_id, reason=str(e.detail)))
-    return BulkActionResult(succeeded=succeeded, failed=failed)
+def bulk_activate_items(item_ids: list[str], admin: User) -> BulkActionResult:
+    return run_bulk(item_ids, admin, activate_item)
 
 
-def bulk_activate_items(item_ids: List[str], admin: User) -> BulkActionResult:
-    return _bulk_run(item_ids, admin, activate_item)
-
-
-def bulk_deactivate_items(item_ids: List[str], admin: User) -> BulkActionResult:
-    return _bulk_run(item_ids, admin, deactivate_item)
+def bulk_deactivate_items(item_ids: list[str], admin: User) -> BulkActionResult:
+    return run_bulk(item_ids, admin, deactivate_item)

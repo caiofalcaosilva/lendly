@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.schemas.analytics import ItemAnalytics, OwnerAnalyticsSummary
+from app.utils.time import utcnow
 
 
 def _duration_days(req: LoanRequest) -> int:
@@ -13,7 +12,7 @@ def _duration_days(req: LoanRequest) -> int:
 
 def get_owner_analytics(current_user: User) -> OwnerAnalyticsSummary:
     items = list(Item.objects(owner=current_user, is_active=True))
-    now = datetime.utcnow()
+    now = utcnow()
 
     item_analytics: list[ItemAnalytics] = []
     for item in items:
@@ -51,7 +50,11 @@ def get_owner_analytics(current_user: User) -> OwnerAnalyticsSummary:
         if item_analytics
         else 0.0
     )
-    most_popular_item = item_analytics[0].title if item_analytics and item_analytics[0].times_borrowed > 0 else None
+    most_popular_item = (
+        item_analytics[0].title
+        if item_analytics and item_analytics[0].times_borrowed > 0
+        else None
+    )
 
     return OwnerAnalyticsSummary(
         total_items=len(item_analytics),

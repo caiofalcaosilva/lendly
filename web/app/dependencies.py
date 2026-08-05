@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
@@ -22,11 +20,11 @@ def get_current_user(
     )
     try:
         payload = decode_token(credentials.credentials)
-        user_id: str = payload.get("sub")
+        user_id: str | None = payload.get("sub")
         if not user_id:
             raise exc
-    except JWTError:
-        raise exc
+    except JWTError as err:
+        raise exc from err
 
     user = User.objects(id=user_id, is_active=True).first()
     if not user:
@@ -39,12 +37,14 @@ def get_current_admin(
 ):
     user = get_current_user(credentials)
     if not user.is_admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
+        )
     return user
 
 
 def get_current_user_optional(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_optional),
 ):
     """Like get_current_user, but returns None instead of raising when no
     (or an invalid) token is present — for public endpoints that only need
@@ -55,7 +55,7 @@ def get_current_user_optional(
         return None
     try:
         payload = decode_token(credentials.credentials)
-        user_id: str = payload.get("sub")
+        user_id: str | None = payload.get("sub")
         if not user_id:
             return None
     except JWTError:

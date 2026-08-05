@@ -1,11 +1,11 @@
 import hashlib
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import timedelta
 
 from jose import jwt
 from passlib.context import CryptContext
 
 from app.config import settings
+from app.utils.time import utcnow
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -18,9 +18,9 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     payload = data.copy()
-    expire = datetime.utcnow() + (
+    expire = utcnow() + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     payload["exp"] = expire

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from mongoengine import (
     BooleanField,
     DateTimeField,
@@ -10,6 +8,8 @@ from mongoengine import (
     ReferenceField,
     StringField,
 )
+
+from app.utils.time import utcnow
 
 
 class Item(Document):
@@ -49,8 +49,8 @@ class Item(Document):
     # (is_available flips back to True). Cleared after notifying — a
     # one-shot alert, not a standing subscription.
     waitlist = ListField(ReferenceField("User"), default=list)
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "items",

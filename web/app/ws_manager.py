@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import Dict, List
 
 from fastapi import WebSocket
 
@@ -13,7 +12,7 @@ class ConnectionManager:
     """
 
     def __init__(self) -> None:
-        self._connections: Dict[str, List[WebSocket]] = defaultdict(list)
+        self._connections: dict[str, list[WebSocket]] = defaultdict(list)
 
     async def connect(self, request_id: str, websocket: WebSocket) -> None:
         await websocket.accept()
@@ -27,7 +26,7 @@ class ConnectionManager:
             self._connections.pop(request_id, None)
 
     async def broadcast(self, request_id: str, payload: dict) -> None:
-        dead: List[WebSocket] = []
+        dead: list[WebSocket] = []
         for ws in self._connections.get(request_id, []):
             try:
                 await ws.send_json(payload)

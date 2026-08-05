@@ -1,6 +1,6 @@
-from datetime import datetime
-
 from mongoengine import DateTimeField, Document, ReferenceField, StringField
+
+from app.utils.time import utcnow
 
 VERIFICATION_STATUSES = ["pending", "approved", "rejected"]
 
@@ -17,7 +17,7 @@ class VerificationSubmission(Document):
     rejection_reason = StringField(max_length=500)
     reviewed_by = ReferenceField("User")
     reviewed_at = DateTimeField()
-    created_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "verification_submissions",

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from fastapi import HTTPException, status
 
@@ -8,6 +8,7 @@ from app.schemas.payment import MercadoPagoConnectResponse, MercadoPagoConnectSt
 from app.services import mercadopago_gateway
 from app.services.mercadopago_gateway import MercadoPagoError
 from app.utils.crypto import encrypt
+from app.utils.time import utcnow
 
 _REDIRECT_PATH = "/mercadopago/callback"
 
@@ -20,7 +21,9 @@ def get_connect_url(current_user: User) -> MercadoPagoConnectResponse:
     return MercadoPagoConnectResponse(authorization_url=url)
 
 
-def handle_callback(code: str, state: str, current_user: User) -> MercadoPagoConnectStatus:
+def handle_callback(
+    code: str, state: str, current_user: User
+) -> MercadoPagoConnectStatus:
     if not state or state != current_user.mp_oauth_state:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -35,15 +38,15 @@ def handle_callback(code: str, state: str, current_user: User) -> MercadoPagoCon
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Não foi possível conectar sua conta Mercado Pago ({e}).",
-        )
+        ) from e
 
     expires_in = token_data.get("expires_in", 15552000)  # MP default ~6 months
     current_user.update(
         mp_user_id=str(token_data["user_id"]),
         mp_access_token=encrypt(token_data["access_token"]),
         mp_refresh_token=encrypt(token_data["refresh_token"]),
-        mp_token_expires_at=datetime.utcnow() + timedelta(seconds=expires_in),
-        mp_connected_at=datetime.utcnow(),
+        mp_token_expires_at=utcnow() + timedelta(seconds=expires_in),
+        mp_connected_at=utcnow(),
     )
     current_user.reload()
     return get_connect_status(current_user)

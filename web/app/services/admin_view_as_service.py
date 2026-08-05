@@ -17,7 +17,9 @@ VIEW_AS_EXPIRE_MINUTES = 30
 def create_view_as_token(admin: User, target_user_id: str) -> ViewAsResponse:
     target = User.objects(id=target_user_id, is_active=True).first()
     if not target:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     if str(target.id) == str(admin.id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -1,11 +1,10 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
 class VerificationRejectRequest(BaseModel):
-    reason: Optional[str] = Field(None, max_length=500)
+    reason: str | None = Field(None, max_length=500)
 
 
 class VerificationResponse(BaseModel):
@@ -14,12 +13,12 @@ class VerificationResponse(BaseModel):
     user_name: str
     cpf: str
     status: str
-    rejection_reason: Optional[str] = None
-    reviewed_by_name: Optional[str] = None
-    reviewed_at: Optional[datetime] = None
+    rejection_reason: str | None = None
+    reviewed_by_name: str | None = None
+    reviewed_at: datetime | None = None
     created_at: datetime
 
 
 class VerificationStatusResponse(BaseModel):
     identity_status: str
-    rejection_reason: Optional[str] = None
+    rejection_reason: str | None = None

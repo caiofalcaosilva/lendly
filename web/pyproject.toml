@@ -1,0 +1,40 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # import sorting (isort)
+    "UP",   # pyupgrade — modern syntax (list[str] over List[str], etc.)
+    "B",    # flake8-bugbear — likely bugs and design issues
+    "SIM",  # flake8-simplify
+    "N",    # pep8-naming
+    "DTZ",  # flake8-datetimez — flags naive datetime usage
+]
+ignore = [
+    "B008",  # function call in default argument — idiomatic for FastAPI's Depends()
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.lint.per-file-ignores]
+# Fixture dates (e.g. datetime(2026, 9, 1)) are arbitrary sample data, not
+# real timestamps — the naive-vs-aware distinction DTZ exists for doesn't
+# apply here the way it does in application code.
+"tests/*" = ["DTZ"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+# Most third-party deps here (mongoengine, jose, mercadopago, PIL...) ship
+# no type stubs — without this every import of them fails on its own,
+# drowning the errors that actually matter under noise.
+ignore_missing_imports = true
+warn_unused_ignores = true
+check_untyped_defs = true

@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -14,7 +12,11 @@ from app.dependencies import get_current_user
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.rate_limit import limiter
-from app.schemas.loan_request import LoanRequestCreate, LoanRequestExtend, LoanRequestResponse
+from app.schemas.loan_request import (
+    LoanRequestCreate,
+    LoanRequestExtend,
+    LoanRequestResponse,
+)
 from app.schemas.message import MessageCreate, MessageResponse
 from app.schemas.payment import PaymentResponse
 from app.services import loan_request_service, message_service, payment_service
@@ -25,12 +27,18 @@ router = APIRouter(prefix="/requests", tags=["loan_requests"])
 
 
 @router.post("/", response_model=LoanRequestResponse, status_code=201)
-def create_request(data: LoanRequestCreate, current_user: User = Depends(get_current_user)):
+def create_request(
+    data: LoanRequestCreate, current_user: User = Depends(get_current_user)
+):
+    """Requests to borrow an item — starts in 'pending', awaiting the
+    owner's accept/refuse."""
     return loan_request_service.create_request(data, current_user)
 
 
 @router.get("/{request_id}", response_model=LoanRequestResponse)
 def get_request(request_id: str, current_user: User = Depends(get_current_user)):
+    """A single loan request's detail — visible to its owner or requester
+    only."""
     return loan_request_service.get_request(request_id, current_user)
 
 
@@ -40,7 +48,11 @@ def accept(
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
-    return loan_request_service.accept_request(request_id, current_user, background_tasks)
+    """Owner accepts a pending request. For paid items, this is also when
+    the Pix charge is created."""
+    return loan_request_service.accept_request(
+        request_id, current_user, background_tasks
+    )
 
 
 @router.patch("/{request_id}/refuse", response_model=LoanRequestResponse)
@@ -49,11 +61,16 @@ def refuse(
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
-    return loan_request_service.refuse_request(request_id, current_user, background_tasks)
+    """Owner declines a pending request."""
+    return loan_request_service.refuse_request(
+        request_id, current_user, background_tasks
+    )
 
 
 @router.patch("/{request_id}/start", response_model=LoanRequestResponse)
 def start(request_id: str, current_user: User = Depends(get_current_user)):
+    """Owner confirms pickup, moving the request to 'in_progress'. For paid
+    items, blocked until the Pix payment has been confirmed."""
     return loan_request_service.start_request(request_id, current_user)
 
 
@@ -63,40 +80,59 @@ def finish(
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
-    return loan_request_service.finish_request(request_id, current_user, background_tasks)
+    """Owner confirms the item's return, closing out the loan."""
+    return loan_request_service.finish_request(
+        request_id, current_user, background_tasks
+    )
 
 
 @router.patch("/{request_id}/cancel", response_model=LoanRequestResponse)
 def cancel(request_id: str, current_user: User = Depends(get_current_user)):
+    """Either party cancels before pickup. Only allowed while 'pending' or
+    'accepted' — a held payment is fully refunded."""
     return loan_request_service.cancel_request(request_id, current_user)
 
 
 @router.get("/{request_id}/payment", response_model=PaymentResponse)
 def get_payment(request_id: str, current_user: User = Depends(get_current_user)):
+    """The Pix payment for a paid request — includes the QR code to pay
+    with. Retries the charge if the initial attempt failed."""
     return payment_service.get_payment_for_request(request_id, current_user)
 
 
-@router.post("/{request_id}/extend", response_model=LoanRequestResponse, status_code=201)
+@router.post(
+    "/{request_id}/extend", response_model=LoanRequestResponse, status_code=201
+)
 def extend(
-    request_id: str, data: LoanRequestExtend, current_user: User = Depends(get_current_user)
+    request_id: str,
+    data: LoanRequestExtend,
+    current_user: User = Depends(get_current_user),
 ):
+    """Requester asks to push back the return date on an in-progress loan —
+    awaits the owner's approval."""
     return loan_request_service.request_extension(request_id, data, current_user)
 
 
 @router.patch("/{request_id}/extension/approve", response_model=LoanRequestResponse)
 def approve_extension(request_id: str, current_user: User = Depends(get_current_user)):
+    """Owner approves a pending extension, pushing back
+    expected_return_date."""
     return loan_request_service.approve_extension(request_id, current_user)
 
 
 @router.patch("/{request_id}/extension/reject", response_model=LoanRequestResponse)
 def reject_extension(request_id: str, current_user: User = Depends(get_current_user)):
+    """Owner rejects a pending extension — the original return date
+    stands."""
     return loan_request_service.reject_extension(request_id, current_user)
 
 
 # ── Chat ─────────────────────────────────────────────────────────────────────
 
-@router.get("/{request_id}/messages", response_model=List[MessageResponse])
+
+@router.get("/{request_id}/messages", response_model=list[MessageResponse])
 def list_messages(request_id: str, current_user: User = Depends(get_current_user)):
+    """Full chat history for a loan request — participants only."""
     return message_service.list_messages(request_id, current_user)
 
 
@@ -109,11 +145,18 @@ def send_message(
     request: Request,
     current_user: User = Depends(get_current_user),
 ):
-    return message_service.send_message(request_id, current_user, data.text, background_tasks)
+    """Sends a chat message on a loan request — broadcast live to the other
+    participant over the /ws socket if they're connected."""
+    return message_service.send_message(
+        request_id, current_user, data.text, background_tasks
+    )
 
 
 @router.websocket("/{request_id}/ws")
 async def messages_ws(websocket: WebSocket, request_id: str, token: str):
+    """Live chat socket for a loan request. Auth via `?token=` query param
+    (browsers can't set headers on a WS handshake) — closes with 4401 if
+    the token doesn't belong to a participant."""
     is_participant = False
     try:
         payload = decode_token(token)
@@ -121,9 +164,9 @@ async def messages_ws(websocket: WebSocket, request_id: str, token: str):
         user = User.objects(id=user_id, is_active=True).first() if user_id else None
         req = LoanRequest.objects(id=request_id).first() if user else None
         if user and req:
-            is_participant = str(req.requester.id) == str(user.id) or str(req.owner.id) == str(
-                user.id
-            )
+            is_participant = str(req.requester.id) == str(user.id) or str(
+                req.owner.id
+            ) == str(user.id)
     except JWTError:
         is_participant = False
 

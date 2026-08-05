@@ -1,6 +1,6 @@
 """Every call to the Mercado Pago API goes through this module — nothing
 else in the codebase imports `mercadopago` directly. That's deliberate:
-until we have a real developer account (see the payment design doc), the
+until we have a real developer account (see docs/pagamento-online.md), the
 exact request/response shape of a couple of these calls is our best
 reading of the SDK/docs, not something we've run against a live sandbox.
 Keeping them behind one thin interface means fixing a wrong assumption
@@ -24,13 +24,15 @@ payment-creation endpoint with disbursements layered on, same as
 credentials exist — see create_pix_charge() below.
 """
 
+import logging
 import uuid
-from datetime import datetime
-from typing import Optional
 
 import mercadopago
 
 from app.config import settings
+from app.utils.time import utcnow
+
+logger = logging.getLogger(__name__)
 
 
 class MercadoPagoError(Exception):
@@ -43,50 +45,78 @@ class MercadoPagoError(Exception):
     ids) instead of a clear, catchable failure."""
 
 
-def _sdk(access_token: Optional[str] = None) -> mercadopago.SDK:
+def _sdk(access_token: str | None = None) -> mercadopago.SDK:
     return mercadopago.SDK(access_token or settings.MP_ACCESS_TOKEN)
 
 
 def _unwrap(result: dict, action: str) -> dict:
     if result.get("status") not in (200, 201):
         error = (result.get("response") or {}).get("message") or "Erro desconhecido"
-        raise MercadoPagoError(f"Mercado Pago rejected {action}: {error} (HTTP {result.get('status')})")
+        logger.error(
+            "mercadopago request rejected",
+            extra={
+                "mp_action": action,
+                "mp_status": result.get("status"),
+                "mp_error": error,
+            },
+        )
+        raise MercadoPagoError(
+            f"Mercado Pago rejected {action}: {error} (HTTP {result.get('status')})"
+        )
     return result["response"]
 
 
 # ─── OAuth (seller connects their own Mercado Pago account) ──────────────────
 
+
 def get_authorization_url(redirect_uri: str, state: str) -> str:
-    return _sdk().oauth().get_authorization_url(
-        app_id=settings.MP_APP_ID,
-        redirect_uri=redirect_uri,
-        random_id=state,
+    return (
+        _sdk()
+        .oauth()
+        .get_authorization_url(
+            app_id=settings.MP_APP_ID,
+            redirect_uri=redirect_uri,
+            random_id=state,
+        )
     )
 
 
 def exchange_oauth_code(code: str, redirect_uri: str) -> dict:
     """Returns dict with access_token, refresh_token, user_id, expires_in."""
-    result = _sdk().oauth().create({
-        "client_id": settings.MP_APP_ID,
-        "client_secret": settings.MP_CLIENT_SECRET,
-        "code": code,
-        "redirect_uri": redirect_uri,
-        "grant_type": "authorization_code",
-    })
+    result = (
+        _sdk()
+        .oauth()
+        .create(
+            {
+                "client_id": settings.MP_APP_ID,
+                "client_secret": settings.MP_CLIENT_SECRET,
+                "code": code,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            }
+        )
+    )
     return _unwrap(result, "OAuth code exchange")
 
 
 def refresh_oauth_token(refresh_token: str) -> dict:
-    result = _sdk().oauth().refresh({
-        "client_id": settings.MP_APP_ID,
-        "client_secret": settings.MP_CLIENT_SECRET,
-        "refresh_token": refresh_token,
-        "grant_type": "refresh_token",
-    })
+    result = (
+        _sdk()
+        .oauth()
+        .refresh(
+            {
+                "client_id": settings.MP_APP_ID,
+                "client_secret": settings.MP_CLIENT_SECRET,
+                "refresh_token": refresh_token,
+                "grant_type": "refresh_token",
+            }
+        )
+    )
     return _unwrap(result, "OAuth token refresh")
 
 
 # ─── Charging the requester, holding, releasing, refunding ───────────────────
+
 
 def create_pix_charge(
     *,
@@ -135,13 +165,13 @@ def get_payment_status(mp_payment_id: str) -> str:
     used by the webhook handler instead of trusting the notification body,
     so a forged POST can't fake an approval even with a guessed valid id."""
     result = _sdk().advanced_payment().get(mp_payment_id)
-    return _unwrap(result, "payment status lookup").get("status")
+    return str(_unwrap(result, "payment status lookup").get("status"))
 
 
 def release_payment(mp_payment_id: str) -> None:
     """Moves the seller's held disbursement into their available balance —
     called the moment the requester's pickup QR scan is confirmed."""
-    result = _sdk().advanced_payment().update_release_date(mp_payment_id, datetime.utcnow())
+    result = _sdk().advanced_payment().update_release_date(mp_payment_id, utcnow())
     _unwrap(result, "payment release")
 
 

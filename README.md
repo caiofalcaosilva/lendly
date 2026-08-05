@@ -1,51 +1,59 @@
 # Lendly
 
-Plataforma comunitária de empréstimo e aluguel de objetos entre vizinhos.
+Plataforma comunitária de empréstimo e aluguel de objetos entre vizinhos — cadastre um item, empreste de graça ou alugue por diária via Pix, combine tudo pelo chat e avalie ao final.
 
 ## Stack
 
 - **Backend:** Python 3.11 + FastAPI
 - **Banco de dados:** MongoDB via MongoEngine
-- **Autenticação:** JWT (python-jose + passlib/bcrypt)
+- **Frontend web:** Next.js 14 (App Router) — em `frontend/`, não coberto por este README
+- **Autenticação:** JWT (python-jose + passlib/bcrypt), com 2FA opcional via TOTP
+- **Pagamentos:** Mercado Pago (Pix, split automático de taxa da plataforma)
+- **E-mail:** SMTP (MailHog em desenvolvimento)
 - **Containerização:** Docker + Docker Compose
+- **Qualidade de código:** Ruff, mypy, pytest, pre-commit, GitHub Actions
+
+Este README cobre o backend (`web/`). O frontend (`frontend/`) tem seu próprio `package.json`/scripts e não está documentado aqui.
 
 ---
 
-## Estrutura do projeto
+## Estrutura do repositório
+
+```
+lendly/
+├── web/            # Backend — FastAPI + MongoEngine (este README)
+├── frontend/        # Frontend web — Next.js 14
+└── mobile/          # App mobile (Flutter) — fora do controle de versão por enquanto
+```
+
+### `web/app/`
+
+```
+app/
+├── main.py              # Entrada da aplicação, middlewares, rotas públicas (/health, /categories, /announcement)
+├── config.py             # Variáveis de ambiente (pydantic-settings)
+├── database.py           # Conexão MongoEngine
+├── dependencies.py       # get_current_user / get_current_admin (injeção de dependência)
+├── rate_limit.py          # Configuração do slowapi (limite de requisições)
+├── ws_manager.py          # Conexões WebSocket ativas (chat em tempo real)
+├── models/                # Documentos MongoEngine (ODM) — 11 modelos
+├── schemas/                # Pydantic v2 — validação de request/response — 19 arquivos
+├── routers/                 # Endpoints FastAPI, um arquivo por domínio — 107 rotas ao todo
+├── services/                 # Regras de negócio — 25 arquivos
+└── utils/                     # Segurança, criptografia, validadores (CPF/CNPJ), data/hora
+```
+
+### `web/` (raiz)
 
 ```
 web/
-├── app/
-│   ├── main.py              # Entrada da aplicação, middlewares, routers
-│   ├── config.py            # Variáveis de ambiente (pydantic-settings)
-│   ├── database.py          # Conexão MongoEngine
-│   ├── dependencies.py      # get_current_user (injeção de dependência)
-│   ├── models/              # Documentos MongoEngine (ODM)
-│   │   ├── user.py
-│   │   ├── item.py
-│   │   ├── loan_request.py
-│   │   └── review.py
-│   ├── schemas/             # Pydantic v2 — request/response validation
-│   │   ├── user.py
-│   │   ├── item.py
-│   │   ├── loan_request.py
-│   │   └── review.py
-│   ├── routers/             # Endpoints FastAPI
-│   │   ├── auth.py
-│   │   ├── users.py
-│   │   ├── items.py
-│   │   ├── loan_requests.py
-│   │   └── reviews.py
-│   ├── services/            # Regras de negócio
-│   │   ├── auth_service.py
-│   │   ├── item_service.py
-│   │   ├── loan_request_service.py
-│   │   └── review_service.py
-│   └── utils/
-│       └── security.py      # Hash de senha, criação/decodificação de JWT
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
+├── Dockerfile              # Imagem de produção — só requirements.txt
+├── docker-compose.yml       # api + mongo + mailhog
+├── requirements.txt          # Dependências de runtime
+├── requirements-dev.txt       # + ruff, mypy, pytest, httpx, pre-commit (nunca entra na imagem)
+├── pyproject.toml              # Config do Ruff, mypy e pytest
+├── seed.py                      # Popula o banco com dados de exemplo via HTTP
+├── tests/                        # Suíte pytest (auth, empréstimos, pagamento)
 └── .env.example
 ```
 
@@ -60,14 +68,14 @@ cd web
 
 # 1. Crie o .env a partir do exemplo
 cp .env.example .env
-# Edite .env e defina um SECRET_KEY forte
+# Edite .env — no mínimo troque SECRET_KEY e ENCRYPTION_KEY antes de qualquer
+# coisa parecida com produção (veja "Variáveis de ambiente" abaixo)
 
-# 2. Suba os containers
+# 2. Suba os containers (api + mongo + mailhog)
 docker compose up --build
 ```
 
-A API ficará disponível em `http://localhost:8000`.  
-Documentação interativa: `http://localhost:8000/docs`
+A API fica em `http://localhost:8000`, a documentação interativa em `http://localhost:8000/docs`, e o MailHog (captura os e-mails enviados em dev) em `http://localhost:8025`.
 
 ### Sem Docker (desenvolvimento local)
 
@@ -78,197 +86,115 @@ cd web
 
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # runtime + ferramentas de dev
 
 cp .env.example .env
-
 uvicorn app.main:app --reload
 ```
+
+### Popular com dados de exemplo
+
+Com a API já rodando (`http://localhost:8000` por padrão):
+
+```bash
+python web/seed.py
+```
+
+Cria ~20 usuários (5 contas empresariais), ~112 itens, 3 grupos e ~35 empréstimos finalizados com avaliações — tudo centrado em Campo Grande, Recife (PE), pra testar busca por proximidade.
 
 ---
 
 ## Variáveis de ambiente
 
-| Variável | Padrão | Descrição |
+`web/.env.example` traz todas com um valor padrão de desenvolvimento. As que precisam de um valor real antes de qualquer coisa próxima de produção estão marcadas.
+
+| Variável | Padrão (dev) | Descrição |
 |---|---|---|
 | `MONGODB_URL` | `mongodb://localhost:27017` | URI de conexão com o MongoDB |
 | `MONGODB_DB` | `lendly` | Nome do banco de dados |
-| `SECRET_KEY` | *(obrigatório em produção)* | Chave para assinar JWT |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` | Validade do token (24 h) |
+| `SECRET_KEY` | *(trocar!)* | Chave para assinar os JWT |
+| `ALGORITHM` | `HS256` | Algoritmo de assinatura do JWT |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Validade do access token |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | `30` | Validade do refresh token |
+| `SMTP_HOST` / `SMTP_PORT` | `mailhog` / `1025` | Servidor de e-mail (verificação de conta, notificações) |
+| `SMTP_USER` / `SMTP_PASS` | *(vazio)* | Credenciais SMTP — vazio funciona com o MailHog do compose |
+| `SMTP_FROM` | `noreply@lendly.app` | Remetente dos e-mails |
+| `SMTP_TLS` | `false` | Usar TLS na conexão SMTP |
+| `EMAIL_VERIFICATION_EXPIRE_HOURS` | `24` | Validade do link de verificação de e-mail |
+| `FRONTEND_URL` | `http://localhost:3000` | Usado para montar links absolutos (verificação de e-mail, callback do Mercado Pago) |
+| `TOTP_ISSUER` | `Lendly` | Nome exibido no app autenticador (2FA) |
+| `API_PUBLIC_URL` | `http://localhost:8000` | Base para URLs absolutas de fotos — trocar para `http://10.0.2.2:8000` no emulador Android |
+| `ENCRYPTION_KEY` | *(trocar!)* | Chave Fernet (32 bytes base64) usada para criptografar os tokens do Mercado Pago em repouso |
+| `MP_APP_ID` / `MP_CLIENT_SECRET` | *(vazio)* | Credenciais OAuth do app Mercado Pago |
+| `MP_ACCESS_TOKEN` | *(vazio)* | Token da conta Mercado Pago da própria Lendly |
+| `MP_WEBHOOK_SECRET` | *(vazio)* | Segredo pra validar a assinatura dos webhooks do Mercado Pago |
+| `PLATFORM_FEE_PERCENT` | `0.05` | Percentual retido pela Lendly em cada empréstimo pago (5%) |
+
+Sem `MP_ACCESS_TOKEN` configurado, tudo relacionado a pagamento fica inerte (itens gratuitos e o resto da plataforma funcionam normalmente).
 
 ---
 
-## Endpoints da API
+## Funcionalidades
 
-### Autenticação — `/auth`
+A API tem 107 rotas — a listagem completa, com descrição de cada uma, está em `/docs` (Swagger, gerado a partir das docstrings de cada handler). Por domínio:
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/auth/register` | Cadastrar novo usuário |
-| `POST` | `/auth/login` | Login, retorna JWT |
-| `GET` | `/auth/me` | Perfil do usuário autenticado |
+- **Autenticação** (`/auth`) — cadastro com verificação de e-mail, login, refresh token, 2FA via TOTP, dispositivos confiáveis
+- **Usuários** (`/users`) — perfil, meus itens/favoritos/solicitações, analytics do dono, exportação de dados pessoais (LGPD), conexão com Mercado Pago, contas empresariais (CNPJ) com diretório público
+- **Itens** (`/items`) — CRUD, busca full-text + filtros + raio de distância, favoritos, lista de espera, fotos (com remoção de EXIF/GPS)
+- **Solicitações de empréstimo** (`/requests`) — ciclo `pending → accepted → in_progress → finished`, extensão de prazo, chat em tempo real via WebSocket
+- **Pagamentos** — cobrança Pix na aceitação, retenção até a retirada, liberação ao dono, estorno em cancelamento (ver [`web/docs/pagamento-online.md`](web/docs/pagamento-online.md) para o ciclo de vida completo)
+- **Grupos** (`/groups`) — compartilhamento privado de itens por convite
+- **Avaliações** (`/reviews`) — uma por participante por solicitação finalizada
+- **Verificação de identidade** (`/verification`) — CPF + selfie + documento, fila de aprovação manual
+- **Denúncias** (`/reports`) — de itens ou usuários, com fila de moderação
+- **Administração** (`/admin`, 31 rotas) — dashboard, gestão de usuários/itens/grupos/avaliações/categorias, ações em lote, exportação CSV, histórico de ações administrativas, modo "ver como" (somente leitura)
+- **Configurações da plataforma** — banner de aviso, limites de taxa, validade de token — editáveis sem redeploy
 
-### Usuários — `/users`
+### Fluxo de status de uma solicitação
 
-| Método | Endpoint | Auth | Descrição |
-|---|---|---|---|
-| `PUT` | `/users/me` | ✅ | Atualizar meu perfil |
-| `GET` | `/users/me/items` | ✅ | Meus itens cadastrados |
-| `GET` | `/users/me/requests/sent` | ✅ | Solicitações que enviei |
-| `GET` | `/users/me/requests/received` | ✅ | Solicitações que recebi |
-| `GET` | `/users/me/history` | ✅ | Histórico de empréstimos |
-| `GET` | `/users/{user_id}` | — | Perfil público de um usuário |
-
-### Itens — `/items`
-
-| Método | Endpoint | Auth | Descrição |
-|---|---|---|---|
-| `GET` | `/items` | — | Listar/buscar itens (com filtros) |
-| `GET` | `/items/{item_id}` | — | Detalhe de um item |
-| `POST` | `/items` | ✅ | Cadastrar item |
-| `PUT` | `/items/{item_id}` | ✅ | Editar item |
-| `DELETE` | `/items/{item_id}` | ✅ | Remover item (soft delete) |
-| `PATCH` | `/items/{item_id}/activate` | ✅ | Marcar como disponível |
-| `PATCH` | `/items/{item_id}/deactivate` | ✅ | Marcar como indisponível |
-
-**Filtros disponíveis em `GET /items`:**
-- `search` — busca por título (case-insensitive)
-- `category` — `tools`, `electronics`, `sports`, `garden`, `kitchen`, `books`, `toys`, `clothing`, `furniture`, `other`
-- `availability_type` — `free` ou `paid`
-- `neighborhood` — filtro de bairro
-- `city` — filtro de cidade
-- `skip` / `limit` — paginação
-
-### Solicitações — `/requests`
-
-| Método | Endpoint | Auth | Descrição |
-|---|---|---|---|
-| `POST` | `/requests` | ✅ | Criar solicitação |
-| `GET` | `/requests/{id}` | ✅ | Ver detalhes (apenas participantes) |
-| `PATCH` | `/requests/{id}/accept` | ✅ (dono) | Aceitar solicitação |
-| `PATCH` | `/requests/{id}/refuse` | ✅ (dono) | Recusar solicitação |
-| `PATCH` | `/requests/{id}/start` | ✅ (dono) | Iniciar empréstimo |
-| `PATCH` | `/requests/{id}/finish` | ✅ (dono) | Finalizar empréstimo |
-| `PATCH` | `/requests/{id}/cancel` | ✅ (ambos) | Cancelar solicitação |
-
-**Fluxo de status:**
 ```
 pending → accepted → in_progress → finished
 pending → refused
 pending / accepted → cancelled
 ```
 
-### Avaliações — `/reviews`
+---
 
-| Método | Endpoint | Auth | Descrição |
-|---|---|---|---|
-| `POST` | `/reviews/request/{request_id}` | ✅ | Avaliar após solicitação finalizada |
-| `GET` | `/reviews/user/{user_id}` | — | Ver avaliações de um usuário |
+## Regras de negócio (destaques)
+
+- Usuário não pode solicitar seu próprio item; contas administrativas não cadastram itens nem fazem solicitações
+- Apenas o dono aceita, recusa, inicia ou finaliza uma solicitação; qualquer um dos dois pode cancelar enquanto `pending`/`accepted`
+- Item com solicitação `accepted`/`in_progress` bloqueia novas solicitações
+- Item que exige verificação de identidade só aceita solicitações de quem tem `identity_status == "approved"`
+- Item pago exige que o dono já tenha conectado uma conta Mercado Pago
+- Retirada (`start`) de item pago fica bloqueada até o Pix ser confirmado
+- Avaliação só depois de `finished`, uma por avaliador por solicitação
+- Remoção de item/conta é sempre soft delete — nunca some do banco (referências de outros usuários continuam válidas)
 
 ---
 
-## Exemplos de chamadas
+## Qualidade de código
 
-### Cadastrar usuário
 ```bash
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Maria Silva",
-    "email": "maria@example.com",
-    "password": "senha123",
-    "phone": "11999990000",
-    "neighborhood": "Vila Madalena",
-    "city": "São Paulo",
-    "approximate_address": "Rua Harmonia, próximo ao metrô"
-  }'
+cd web
+pip install -r requirements-dev.txt
+
+ruff check app tests          # lint
+ruff format app tests         # formatação
+mypy app                       # checagem de tipos
+pytest                          # suíte de testes (requer Mongo rodando)
 ```
 
-### Login
-```bash
-curl -X POST http://localhost:8000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "maria@example.com", "password": "senha123"}'
-```
-
-### Cadastrar item (requer token)
-```bash
-curl -X POST http://localhost:8000/items \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Furadeira Bosch",
-    "description": "Furadeira de impacto 650W, brocas incluídas",
-    "category": "tools",
-    "availability_type": "paid",
-    "daily_rate": 25.00,
-    "usage_rules": "Devolver limpa e com todas as brocas",
-    "neighborhood": "Vila Madalena",
-    "city": "São Paulo"
-  }'
-```
-
-### Buscar itens gratuitos em São Paulo
-```bash
-curl "http://localhost:8000/items?city=São+Paulo&availability_type=free"
-```
-
-### Solicitar um item
-```bash
-curl -X POST http://localhost:8000/requests \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "item_id": "<item_id>",
-    "pickup_date": "2026-07-01T10:00:00",
-    "expected_return_date": "2026-07-03T10:00:00",
-    "notes": "Vou usar para reformar o banheiro"
-  }'
-```
-
-### Avaliar após finalizar
-```bash
-curl -X POST http://localhost:8000/reviews/request/<request_id> \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"rating": 5, "comment": "Ótima experiência, item em perfeito estado!"}'
-```
+`pre-commit install` (na raiz do repositório) roda lint + formatação + mypy automaticamente antes de cada commit — config em `.pre-commit-config.yaml`. O GitHub Actions (`.github/workflows/backend-ci.yml`) roda a mesma checagem, mais os testes, em todo push/PR que toca `web/**`.
 
 ---
 
-## Regras de negócio implementadas
+## O que ainda falta
 
-- Apenas usuários autenticados podem cadastrar itens ou fazer solicitações
-- Usuário não pode solicitar seu próprio item
-- Apenas o dono aceita, recusa, inicia ou finaliza uma solicitação
-- Ambos (dono e solicitante) podem cancelar enquanto `pending` ou `accepted`
-- Avaliação só é possível após status `finished`
-- Cada participante avalia apenas uma vez por solicitação
-- Itens com solicitação ativa (`accepted` ou `in_progress`) bloqueiam novas solicitações
-- Remoção de item é soft delete (`is_active = false`)
+Boa parte do que era "melhoria futura" numa versão anterior deste README já foi implementado (pagamento online, chat, verificação de identidade, categorias com subcategorias, geolocalização, contas empresariais...). O que continua em aberto:
 
----
-
-## Sugestões de melhorias futuras
-
-### Curto prazo (próximas iterações)
-- [ ] Upload real de fotos (S3 / Cloudflare R2)
-- [ ] Notificações por e-mail (SendGrid) ao aceitar/recusar solicitações
-- [ ] Refresh token para renovação de sessão sem novo login
-- [ ] Rate limiting por IP para evitar abuso de cadastros
-
-### Médio prazo
-- [ ] Pagamento online integrado (Stripe ou Pix via Mercado Pago)
-- [ ] Chat entre dono e solicitante dentro da plataforma
-- [ ] Mapa de itens por geolocalização (MongoDB `$near`)
-- [ ] Sistema de categorias hierárquicas (ex: Ferramentas > Elétricas)
-- [ ] Busca full-text com Atlas Search ou Elasticsearch
-
-### Produto completo
-- [ ] App mobile (React Native / Flutter)
-- [ ] Verificação de identidade (CPF + foto) para aumentar confiança
-- [ ] Seguro para itens de alto valor
-- [ ] Sistema de caução/depósito
-- [ ] Grupos de vizinhança com convites privados
-- [ ] Dashboard de analytics para o dono (quantas vezes o item foi emprestado, receita gerada)
-- [ ] API de CEP para autocompletar endereço e normalizar dados de localização
+- [ ] App mobile (o diretório `mobile/` existe mas está fora do controle de versão por enquanto)
+- [ ] Internacionalização (planejado: `next-intl`, inglês como segundo idioma no frontend)
+- [ ] Programa de indicação (dois lados ganham destaque temporário no item ao indicar um novo usuário)
+- [ ] Seguro/caução para itens de maior valor
+- [ ] Cobertura de testes além dos fluxos de maior risco (hoje: autenticação, empréstimos, pagamento)

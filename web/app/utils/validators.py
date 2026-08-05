@@ -2,7 +2,7 @@ import re
 
 
 def _check_digit(digits: list, weights: list) -> int:
-    total = sum(d * w for d, w in zip(digits, weights))
+    total = sum(d * w for d, w in zip(digits, weights, strict=False))
     remainder = total % 11
     return 0 if remainder < 2 else 11 - remainder
 
@@ -21,9 +21,7 @@ def is_valid_cnpj(cnpj: str) -> bool:
 
     if _check_digit(digits[:12], weights1) != digits[12]:
         return False
-    if _check_digit(digits[:13], weights2) != digits[13]:
-        return False
-    return True
+    return _check_digit(digits[:13], weights2) == digits[13]
 
 
 def is_valid_cpf(cpf: str) -> bool:
@@ -40,6 +38,4 @@ def is_valid_cpf(cpf: str) -> bool:
 
     if _check_digit(digits[:9], weights1) != digits[9]:
         return False
-    if _check_digit(digits[:10], weights2) != digits[10]:
-        return False
-    return True
+    return _check_digit(digits[:10], weights2) == digits[10]

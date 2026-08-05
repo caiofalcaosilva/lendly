@@ -1,0 +1,65 @@
+from fastapi import HTTPException, status
+
+from app.models.item import Item
+from app.models.user import User
+from app.schemas.item import ItemOwnerResponse, ItemResponse
+
+
+def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
+    owner = item.owner
+    is_favorited = False
+    if current_user and current_user.favorites:
+        is_favorited = any(str(f.id) == str(item.id) for f in current_user.favorites)
+    is_waitlisted = False
+    if current_user and item.waitlist:
+        is_waitlisted = any(str(u.id) == str(current_user.id) for u in item.waitlist)
+    return ItemResponse(
+        id=str(item.id),
+        owner=ItemOwnerResponse(
+            id=str(owner.id),
+            name=owner.name,
+            neighborhood=owner.neighborhood,
+            city=owner.city,
+            average_rating=owner.average_rating,
+            reliability_score=owner.reliability_score,
+            reliability_count=owner.reliability_count or 0,
+            account_type=owner.account_type or "individual",
+            trade_name=owner.trade_name,
+        ),
+        title=item.title,
+        description=item.description,
+        category=item.category,
+        subcategory=item.subcategory,
+        photos=item.photos or [],
+        availability_type=item.availability_type,
+        daily_rate=item.daily_rate,
+        usage_rules=item.usage_rules,
+        zip_code=item.zip_code,
+        neighborhood=item.neighborhood,
+        city=item.city,
+        state=item.state,
+        latitude=item.latitude,
+        longitude=item.longitude,
+        is_available=item.is_available,
+        is_active=item.is_active,
+        is_favorited=is_favorited,
+        is_waitlisted=is_waitlisted,
+        is_public=item.is_public,
+        groups=[str(g.id) for g in item.groups],
+        available_days=item.available_days or [],
+        requires_identity_verification=item.requires_identity_verification or False,
+        created_at=item.created_at,
+    )
+
+
+def get_owned_item(item_id: str, current_user: User) -> Item:
+    item = Item.objects(id=item_id, is_active=True).first()
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
+    if str(item.owner.id) != str(current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not the owner"
+        )
+    return item
