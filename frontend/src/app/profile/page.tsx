@@ -26,6 +26,7 @@ import MercadoPagoConnectSection from '@/components/profile/MercadoPagoConnectSe
 import SessionsSection from '@/components/profile/SessionsSection'
 import LoginHistorySection from '@/components/profile/LoginHistorySection'
 import NotificationPreferencesSection from '@/components/profile/NotificationPreferencesSection'
+import InAppNotificationPreferencesSection from '@/components/profile/InAppNotificationPreferencesSection'
 
 const opt = z.string().optional().or(z.literal(''))
 
@@ -521,6 +522,9 @@ export default function ProfilePage() {
 
           {/* Email notification toggles */}
           {user && <NotificationPreferencesSection user={user} updateUser={updateUser} />}
+
+          {/* In-app (bell) notification toggles — separate from email */}
+          {user && <InAppNotificationPreferencesSection user={user} updateUser={updateUser} />}
 
           {/* TOTP 2FA */}
           <div className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">

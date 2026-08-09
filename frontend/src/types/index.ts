@@ -40,6 +40,7 @@ export interface User {
   whatsapp?: string
   featured_item_ids: string[]
   notification_prefs: NotificationPreferences
+  inapp_notification_prefs: InAppNotificationPreferences
   created_at: string
 }
 
@@ -49,6 +50,42 @@ export interface NotificationPreferences {
   verification_result: boolean
   item_available: boolean
   review_reminder: boolean
+}
+
+// Same 5 categories as NotificationPreferences, but for the in-app bell —
+// a separate toggle set, kept as its own type so the two never get mixed
+// up at a call site.
+export interface InAppNotificationPreferences {
+  request_status: boolean
+  new_message: boolean
+  verification_result: boolean
+  item_available: boolean
+  review_reminder: boolean
+  // Bell-only categories — no email equivalent.
+  group_vouch: boolean
+  favorite_item_changed: boolean
+}
+
+export type NotificationType =
+  | 'request_status'
+  | 'new_message'
+  | 'verification_result'
+  | 'item_available'
+  | 'review_reminder'
+  | 'group_vouch'
+  | 'favorite_item_changed'
+
+// Named AppNotification, not Notification — the DOM lib already declares a
+// global `Notification` (the browser Notifications API), and shadowing it
+// would break any future code that needs the real one.
+export interface AppNotification {
+  id: string
+  type: NotificationType
+  title: string
+  body?: string | null
+  link?: string | null
+  read_at?: string | null
+  created_at: string
 }
 
 // What GET /users/{id} returns — no email, cpf, phone, address detail,

@@ -8,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { platformSettingsService } from '@/services/platformSettings'
 import { getViewAsTargetId, exitViewAs, clearViewAsMarkers } from '@/lib/tokenStorage'
 import Button from '@/components/ui/Button'
+import NotificationBell from '@/components/layout/NotificationBell'
 
 const ANNOUNCEMENT_DISMISSED_KEY = 'lendly:announcement-dismissed'
 
@@ -178,6 +179,7 @@ export default function Navbar() {
                   <UserCog className="w-4 h-4" />
                 </Button>
               </Link>
+              <NotificationBell />
               {user?.is_admin && (
                 <div className="relative" ref={adminMenuRef}>
                   <button
@@ -247,6 +249,11 @@ export default function Navbar() {
           >
             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
+          {isAuthenticated && (
+            <div className="p-2">
+              <NotificationBell />
+            </div>
+          )}
           <button className="p-2 text-gray-700 dark:text-gray-200" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
