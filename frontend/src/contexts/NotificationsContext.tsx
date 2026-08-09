@@ -22,6 +22,11 @@ interface NotificationsContextType {
   markAllRead: () => void
   /** Marks one notification as read without touching the rest. */
   markRead: (id: string) => void
+  /** Deletes a single notification, read or not. */
+  deleteNotification: (id: string) => void
+  /** Bulk-deletes every already-read notification. Unread ones are never
+   * touched by this, on either side — see the backend's clear_read_notifications. */
+  clearRead: () => void
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null)
@@ -82,6 +87,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })),
           )
           setUnreadCount(0)
+        } else if (data.kind === 'deleted') {
+          setNotifications((prev) => prev.filter((n) => n.id !== data.id))
+          if (data.was_unread) setUnreadCount((prev) => Math.max(0, prev - 1))
+        } else if (data.kind === 'cleared_read') {
+          setNotifications((prev) => prev.filter((n) => !n.read_at))
         }
       }
       socket.onclose = () => {
@@ -96,6 +106,15 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       if (reconnectTimer) clearTimeout(reconnectTimer)
     }
   }, [isAuthenticated])
+
+  // Surfaces the unread count in the tab title, so it's visible even when
+  // Lendly is in a background tab. Always strips any prefix left by a
+  // previous run first, so this stays correct without tracking the "real"
+  // title separately.
+  useEffect(() => {
+    const base = document.title.replace(/^\(\d+\+?\)\s*/, '')
+    document.title = unreadCount > 0 ? `(${unreadCount > 99 ? '99+' : unreadCount}) ${base}` : base
+  }, [unreadCount])
 
   const markAllRead = useCallback(() => {
     if (unreadCountRef.current === 0) return
@@ -116,8 +135,22 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  const deleteNotification = useCallback((id: string) => {
+    const target = notificationsRef.current.find((n) => n.id === id)
+    notificationsService.delete(id)
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+    if (target && !target.read_at) setUnreadCount((prev) => Math.max(0, prev - 1))
+  }, [])
+
+  const clearRead = useCallback(() => {
+    notificationsService.clearRead()
+    setNotifications((prev) => prev.filter((n) => !n.read_at))
+  }, [])
+
   return (
-    <NotificationsContext.Provider value={{ notifications, unreadCount, markAllRead, markRead }}>
+    <NotificationsContext.Provider
+      value={{ notifications, unreadCount, markAllRead, markRead, deleteNotification, clearRead }}
+    >
       {children}
     </NotificationsContext.Provider>
   )

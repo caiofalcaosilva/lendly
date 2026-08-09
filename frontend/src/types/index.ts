@@ -74,6 +74,7 @@ export type NotificationType =
   | 'review_reminder'
   | 'group_vouch'
   | 'favorite_item_changed'
+  | 'new_login'
 
 // Named AppNotification, not Notification — the DOM lib already declares a
 // global `Notification` (the browser Notifications API), and shadowing it
