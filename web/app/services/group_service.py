@@ -1,6 +1,8 @@
 import secrets
 from typing import Any
 
+from fastapi import BackgroundTasks
+
 from app.models.group import Group, Vouch
 from app.models.item import Item
 from app.models.user import User
@@ -10,6 +12,7 @@ from app.schemas.group import (
     GroupResponse,
     GroupSummary,
 )
+from app.services import notification_service
 from app.utils import errors
 
 
@@ -194,7 +197,12 @@ def admin_remove_member(group_id: str, user_id: str) -> GroupResponse:
     return _to_response(group)
 
 
-def vouch_for_member(group_id: str, user_id: str, current_user: User) -> GroupResponse:
+def vouch_for_member(
+    group_id: str,
+    user_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> GroupResponse:
     """Confirms `current_user` personally knows the member at `user_id`,
     within this group. Idempotent — re-vouching is a no-op, not an error."""
     group = _get_as_member(group_id, current_user)
@@ -211,6 +219,15 @@ def vouch_for_member(group_id: str, user_id: str, current_user: User) -> GroupRe
     if not already:
         group.update(push__vouches=Vouch(voucher=current_user, vouched_for=target))
         group.reload()
+        if background_tasks:
+            background_tasks.add_task(
+                notification_service.create_notification,
+                target,
+                "group_vouch",
+                f"{current_user.name} confirmou que conhece você",
+                f"No grupo {group.name}",
+                f"/groups/{group.id}",
+            )
     return _to_response(group, viewer=current_user)
 
 

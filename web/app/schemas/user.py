@@ -98,6 +98,26 @@ class NotificationPreferencesSchema(BaseModel):
     review_reminder: bool = True
 
 
+class InAppNotificationPreferencesSchema(BaseModel):
+    request_status: bool = True
+    new_message: bool = True
+    verification_result: bool = True
+    item_available: bool = True
+    review_reminder: bool = True
+    group_vouch: bool = True
+    favorite_item_changed: bool = True
+
+
+class InAppNotificationPreferencesUpdate(BaseModel):
+    request_status: bool | None = None
+    new_message: bool | None = None
+    verification_result: bool | None = None
+    item_available: bool | None = None
+    review_reminder: bool | None = None
+    group_vouch: bool | None = None
+    favorite_item_changed: bool | None = None
+
+
 class NotificationPreferencesUpdate(BaseModel):
     request_status: bool | None = None
     new_message: bool | None = None
@@ -148,6 +168,9 @@ class UserResponse(BaseModel):
     whatsapp: str | None = None
     featured_item_ids: list[str] = []
     notification_prefs: NotificationPreferencesSchema = NotificationPreferencesSchema()
+    inapp_notification_prefs: InAppNotificationPreferencesSchema = (
+        InAppNotificationPreferencesSchema()
+    )
     created_at: datetime
 
 

@@ -36,6 +36,22 @@ class NotificationPreferences(EmbeddedDocument):
     review_reminder = BooleanField(default=True)
 
 
+class InAppNotificationPreferences(EmbeddedDocument):
+    """Same 5 categories as NotificationPreferences, but for the in-app
+    bell — deliberately a separate toggle set, so turning off email for a
+    category doesn't also mute the bell, and vice versa. Also has 2
+    bell-only categories with no email equivalent at all (see
+    app.utils.notifications._INAPP_ONLY_CATEGORIES)."""
+
+    request_status = BooleanField(default=True)
+    new_message = BooleanField(default=True)
+    verification_result = BooleanField(default=True)
+    item_available = BooleanField(default=True)
+    review_reminder = BooleanField(default=True)
+    group_vouch = BooleanField(default=True)
+    favorite_item_changed = BooleanField(default=True)
+
+
 class User(Document):
     name = StringField(required=True, max_length=100)
     email = EmailField(required=True, unique=True)
@@ -98,6 +114,9 @@ class User(Document):
     refresh_sessions = ListField(EmbeddedDocumentField(RefreshSession), default=list)
     notification_prefs = EmbeddedDocumentField(
         NotificationPreferences, default=NotificationPreferences
+    )
+    inapp_notification_prefs = EmbeddedDocumentField(
+        InAppNotificationPreferences, default=InAppNotificationPreferences
     )
     favorites = ListField(ReferenceField("Item"), default=list)
     average_rating = FloatField(default=0.0)

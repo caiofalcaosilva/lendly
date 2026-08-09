@@ -3,7 +3,7 @@ from fastapi import BackgroundTasks
 from app.models.message import Message
 from app.models.user import User
 from app.schemas.message import MessageResponse
-from app.services import email_service, loan_request_service
+from app.services import email_service, loan_request_service, notification_service
 from app.utils.notifications import should_notify
 from app.ws_manager import manager
 
@@ -46,6 +46,14 @@ def send_message(
             req.item.title,
             request_id,
         )
+    background_tasks.add_task(
+        notification_service.create_notification,
+        recipient,
+        "new_message",
+        f"Nova mensagem de {current_user.name}",
+        req.item.title,
+        f"/requests/{request_id}",
+    )
 
     return response
 

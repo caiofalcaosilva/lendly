@@ -5,6 +5,7 @@ from fastapi import Request
 
 from app.models.user import RefreshSession, User
 from app.schemas.user import (
+    InAppNotificationPreferencesSchema,
     NotificationPreferencesSchema,
     PublicUserResponse,
     UserResponse,
@@ -100,6 +101,15 @@ def user_to_response(user: User) -> UserResponse:
             verification_result=user.notification_prefs.verification_result,
             item_available=user.notification_prefs.item_available,
             review_reminder=user.notification_prefs.review_reminder,
+        ),
+        inapp_notification_prefs=InAppNotificationPreferencesSchema(
+            request_status=user.inapp_notification_prefs.request_status,
+            new_message=user.inapp_notification_prefs.new_message,
+            verification_result=user.inapp_notification_prefs.verification_result,
+            item_available=user.inapp_notification_prefs.item_available,
+            review_reminder=user.inapp_notification_prefs.review_reminder,
+            group_vouch=user.inapp_notification_prefs.group_vouch,
+            favorite_item_changed=user.inapp_notification_prefs.favorite_item_changed,
         ),
         created_at=user.created_at,
     )

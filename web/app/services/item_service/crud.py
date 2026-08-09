@@ -7,7 +7,7 @@ from app.models.group import Group
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
-from app.services import category_service, email_service
+from app.services import category_service, email_service, notification_service
 from app.services.item_service._common import get_owned_item, to_response
 from app.utils import errors
 from app.utils.notifications import should_notify
@@ -223,8 +223,15 @@ def list_items(
     ]
 
 
-def update_item(item_id: str, data: ItemUpdate, current_user: User) -> ItemResponse:
+def update_item(
+    item_id: str,
+    data: ItemUpdate,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> ItemResponse:
     item = get_owned_item(item_id, current_user)
+    old_daily_rate = item.daily_rate
+    old_availability_type = item.availability_type
 
     updates = data.model_dump(exclude_none=True)
     for enum_field in ("category", "availability_type"):
@@ -254,6 +261,26 @@ def update_item(item_id: str, data: ItemUpdate, current_user: User) -> ItemRespo
     updates["updated_at"] = utcnow()
     item.update(**updates)
     item.reload()
+
+    price_changed = "daily_rate" in updates and updates["daily_rate"] != old_daily_rate
+    availability_changed = (
+        "availability_type" in updates
+        and updates["availability_type"] != old_availability_type
+    )
+    if (price_changed or availability_changed) and background_tasks:
+        fans = User.objects(favorites=item, id__ne=current_user.id)
+        for fan in fans:
+            background_tasks.add_task(
+                notification_service.create_notification,
+                fan,
+                "favorite_item_changed",
+                f"{item.title} mudou",
+                "Preço ou forma de disponibilização atualizados."
+                if price_changed
+                else "Passou a ser gratuito ou pago.",
+                f"/items/{item.id}",
+            )
+
     return to_response(item)
 
 
@@ -289,6 +316,14 @@ def set_availability(
                     item.title,
                     str(item.id),
                 )
+            background_tasks.add_task(
+                notification_service.create_notification,
+                user,
+                "item_available",
+                f"{item.title} está disponível de novo!",
+                None,
+                f"/items/{item.id}",
+            )
 
     return to_response(item)
 

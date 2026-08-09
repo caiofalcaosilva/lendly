@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 
 from app.dependencies import get_current_user
 from app.models.user import User
@@ -56,12 +56,17 @@ def group_items(group_id: str, current_user: User = Depends(get_current_user)):
 
 @router.post("/{group_id}/members/{user_id}/vouch", response_model=GroupResponse)
 def vouch_for_member(
-    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+    group_id: str,
+    user_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ):
     """Confirms the logged-in user personally knows this fellow group
     member — a light trust signal scoped to people who already share a
     private, invite-only group."""
-    return group_service.vouch_for_member(group_id, user_id, current_user)
+    return group_service.vouch_for_member(
+        group_id, user_id, current_user, background_tasks
+    )
 
 
 @router.delete("/{group_id}/members/{user_id}/vouch", response_model=GroupResponse)

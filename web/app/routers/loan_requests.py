@@ -109,10 +109,16 @@ def force_finish(
 
 
 @router.patch("/{request_id}/cancel", response_model=LoanRequestResponse)
-def cancel(request_id: str, current_user: User = Depends(get_current_user)):
+def cancel(
+    request_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
     """Either party cancels before pickup. Only allowed while 'pending' or
     'accepted' — a held payment is fully refunded."""
-    return loan_request_service.cancel_request(request_id, current_user)
+    return loan_request_service.cancel_request(
+        request_id, current_user, background_tasks
+    )
 
 
 @router.get("/{request_id}/payment", response_model=PaymentResponse)
@@ -136,17 +142,29 @@ def extend(
 
 
 @router.patch("/{request_id}/extension/approve", response_model=LoanRequestResponse)
-def approve_extension(request_id: str, current_user: User = Depends(get_current_user)):
+def approve_extension(
+    request_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
     """Owner approves a pending extension, pushing back
     expected_return_date."""
-    return loan_request_service.approve_extension(request_id, current_user)
+    return loan_request_service.approve_extension(
+        request_id, current_user, background_tasks
+    )
 
 
 @router.patch("/{request_id}/extension/reject", response_model=LoanRequestResponse)
-def reject_extension(request_id: str, current_user: User = Depends(get_current_user)):
+def reject_extension(
+    request_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
     """Owner rejects a pending extension — the original return date
     stands."""
-    return loan_request_service.reject_extension(request_id, current_user)
+    return loan_request_service.reject_extension(
+        request_id, current_user, background_tasks
+    )
 
 
 # ── Chat ─────────────────────────────────────────────────────────────────────

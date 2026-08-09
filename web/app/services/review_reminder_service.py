@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from app.models.loan_request import LoanRequest
 from app.models.review import Review
-from app.services import email_service
+from app.services import email_service, notification_service
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
 
@@ -27,17 +27,23 @@ async def send_pending_review_reminders() -> int:
     sent = 0
     for req in candidates:
         for reviewer in (req.requester, req.owner):
-            if not should_notify(reviewer, "review_reminder"):
-                continue
             already_reviewed = Review.objects(
                 loan_request=req, reviewer=reviewer
             ).first()
             if already_reviewed:
                 continue
-            await email_service.send_review_reminder_email(
-                reviewer.email, reviewer.name, req.item.title, str(req.id)
+            if should_notify(reviewer, "review_reminder"):
+                await email_service.send_review_reminder_email(
+                    reviewer.email, reviewer.name, req.item.title, str(req.id)
+                )
+                sent += 1
+            await notification_service.create_notification(
+                reviewer,
+                "review_reminder",
+                "Que tal avaliar esse empréstimo?",
+                req.item.title,
+                f"/requests/{req.id}",
             )
-            sent += 1
         req.update(review_reminder_sent_at=utcnow())
 
     if candidates:

@@ -4,7 +4,10 @@ from fastapi import WebSocket
 
 
 class ConnectionManager:
-    """In-memory per-request WebSocket registry.
+    """In-memory WebSocket registry, keyed by an arbitrary room id — a
+    loan request id for chat, a user id for notifications (see the two
+    instances below). The key is just a string, so the same class serves
+    both without modification.
 
     Single-process only (no Redis pub/sub) — fine for this app's single
     uvicorn worker. Would need a shared broker if ever run with multiple
@@ -36,4 +39,7 @@ class ConnectionManager:
             self.disconnect(request_id, ws)
 
 
+# Chat (/requests/{id}/ws) — keyed by request_id.
 manager = ConnectionManager()
+# Notification bell (/notifications/ws) — keyed by user_id.
+notification_manager = ConnectionManager()

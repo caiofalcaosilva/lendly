@@ -6,7 +6,7 @@ from fastapi import BackgroundTasks, UploadFile
 from app.models.user import User
 from app.models.verification import VerificationSubmission
 from app.schemas.verification import VerificationResponse
-from app.services import email_service
+from app.services import email_service, notification_service
 from app.utils import errors
 from app.utils.images import load_and_resize
 from app.utils.notifications import should_notify
@@ -115,6 +115,14 @@ def approve_submission(
             sub.user.email,
             sub.user.name,
         )
+    background_tasks.add_task(
+        notification_service.create_notification,
+        sub.user,
+        "verification_result",
+        "Sua identidade foi verificada!",
+        "Agora você pode solicitar itens que exigem verificação.",
+        "/profile#identity-verification",
+    )
     return _to_response(sub)
 
 
@@ -140,4 +148,12 @@ def reject_submission(
             sub.user.name,
             reason or "",
         )
+    background_tasks.add_task(
+        notification_service.create_notification,
+        sub.user,
+        "verification_result",
+        "Não foi possível verificar sua identidade",
+        reason or None,
+        "/profile#identity-verification",
+    )
     return _to_response(sub)

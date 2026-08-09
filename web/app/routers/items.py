@@ -68,10 +68,13 @@ def create_item(data: ItemCreate, current_user: User = Depends(get_current_user)
 
 @router.put("/{item_id}", response_model=ItemResponse)
 def update_item(
-    item_id: str, data: ItemUpdate, current_user: User = Depends(get_current_user)
+    item_id: str,
+    data: ItemUpdate,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ):
     """Partial update of an item the logged-in user owns."""
-    return item_service.update_item(item_id, data, current_user)
+    return item_service.update_item(item_id, data, current_user, background_tasks)
 
 
 @router.delete("/{item_id}", status_code=204)

@@ -21,6 +21,7 @@ from app.routers import (
     groups,
     items,
     loan_requests,
+    notifications,
     reports,
     reviews,
     users,
@@ -126,6 +127,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(items.router)
 app.include_router(loan_requests.router)
+app.include_router(notifications.router)
 app.include_router(reviews.router)
 app.include_router(groups.router)
 app.include_router(reports.router)

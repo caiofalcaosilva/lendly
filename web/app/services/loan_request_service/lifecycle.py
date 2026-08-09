@@ -6,7 +6,7 @@ from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestCreate, LoanRequestResponse
-from app.services import email_service, payment_service
+from app.services import email_service, notification_service, payment_service
 from app.services.loan_request_service._common import (
     WEEKDAY_LABELS,
     assert_status,
@@ -23,18 +23,33 @@ from app.utils import errors
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
 
+_STATUS_NOTIFICATION_TITLES = {
+    "accepted": "Seu pedido foi aceito!",
+    "refused": "Seu pedido foi recusado",
+    "finished": "Empréstimo finalizado",
+}
+
 
 def _notify_status_change(req: LoanRequest, background_tasks: BackgroundTasks) -> None:
-    if not should_notify(req.requester, "request_status"):
-        return
-    background_tasks.add_task(
-        email_service.send_request_status_email,
-        req.requester.email,
-        req.requester.name,
-        req.item.title,
-        req.status,
-        str(req.id),
-    )
+    if should_notify(req.requester, "request_status"):
+        background_tasks.add_task(
+            email_service.send_request_status_email,
+            req.requester.email,
+            req.requester.name,
+            req.item.title,
+            req.status,
+            str(req.id),
+        )
+    title = _STATUS_NOTIFICATION_TITLES.get(req.status)
+    if title:
+        background_tasks.add_task(
+            notification_service.create_notification,
+            req.requester,
+            "request_status",
+            title,
+            req.item.title,
+            f"/requests/{req.id}",
+        )
 
 
 def create_request(data: LoanRequestCreate, current_user: User) -> LoanRequestResponse:
@@ -249,7 +264,9 @@ def force_return(
     return to_response(req)
 
 
-def cancel_request(request_id: str, current_user: User) -> LoanRequestResponse:
+def cancel_request(
+    request_id: str, current_user: User, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
     req = get_as_participant(request_id, current_user)
 
     if req.status not in ("pending", "accepted"):
@@ -263,4 +280,17 @@ def cancel_request(request_id: str, current_user: User) -> LoanRequestResponse:
     req.update(status="cancelled", cancelled_by=current_user, updated_at=utcnow())
     req.reload()
     recalculate_reliability(current_user)
+
+    other = (
+        req.owner if str(current_user.id) == str(req.requester.id) else req.requester
+    )
+    background_tasks.add_task(
+        notification_service.create_notification,
+        other,
+        "request_status",
+        "Solicitação cancelada",
+        req.item.title,
+        f"/requests/{req.id}",
+    )
+
     return to_response(req)

@@ -4,8 +4,11 @@ time — the requester can ask again after a rejection."""
 
 from datetime import UTC
 
+from fastapi import BackgroundTasks
+
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestExtend, LoanRequestResponse
+from app.services import notification_service
 from app.services.loan_request_service._common import (
     assert_status,
     get_as_owner,
@@ -44,7 +47,9 @@ def request_extension(
     return to_response(req)
 
 
-def approve_extension(request_id: str, current_user: User) -> LoanRequestResponse:
+def approve_extension(
+    request_id: str, current_user: User, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
     if req.extension_status != "pending":
         raise errors.conflict("No pending extension request")
@@ -56,14 +61,32 @@ def approve_extension(request_id: str, current_user: User) -> LoanRequestRespons
         updated_at=utcnow(),
     )
     req.reload()
+    background_tasks.add_task(
+        notification_service.create_notification,
+        req.requester,
+        "request_status",
+        "Prorrogação aprovada",
+        req.item.title,
+        f"/requests/{req.id}",
+    )
     return to_response(req)
 
 
-def reject_extension(request_id: str, current_user: User) -> LoanRequestResponse:
+def reject_extension(
+    request_id: str, current_user: User, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
     if req.extension_status != "pending":
         raise errors.conflict("No pending extension request")
 
     req.update(extension_status="rejected", updated_at=utcnow())
     req.reload()
+    background_tasks.add_task(
+        notification_service.create_notification,
+        req.requester,
+        "request_status",
+        "Prorrogação recusada",
+        req.item.title,
+        f"/requests/{req.id}",
+    )
     return to_response(req)
