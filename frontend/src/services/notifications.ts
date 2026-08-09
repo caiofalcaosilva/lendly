@@ -2,9 +2,12 @@ import api from '@/lib/api'
 import { AppNotification, InAppNotificationPreferences, User } from '@/types'
 
 export const notificationsService = {
-  list: (skip = 0, limit = 20) =>
+  // Cursor-based, not skip-based — pass the id of the last notification
+  // already loaded to get the page right after it. Stays correct even if
+  // new notifications arrive between page loads.
+  list: (beforeId?: string, limit = 20) =>
     api
-      .get<AppNotification[]>('/notifications/', { params: { skip, limit } })
+      .get<AppNotification[]>('/notifications/', { params: { before_id: beforeId, limit } })
       .then((r) => r.data),
 
   unreadCount: () =>

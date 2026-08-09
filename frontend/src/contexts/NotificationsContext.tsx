@@ -17,8 +17,11 @@ interface NotificationsContextType {
   notifications: AppNotification[]
   unreadCount: number
   /** Marks every notification as read — called when the bell panel opens,
-   * not via a manual button (see the roadmap decision this mirrors). */
+   * not via a manual button (see the roadmap decision this mirrors). Syncs
+   * to any other open tab/device via the same WebSocket connection. */
   markAllRead: () => void
+  /** Marks one notification as read without touching the rest. */
+  markRead: (id: string) => void
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null)
@@ -29,6 +32,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const unreadCountRef = useRef(0)
   unreadCountRef.current = unreadCount
+  const notificationsRef = useRef<AppNotification[]>([])
+  notificationsRef.current = notifications
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -41,21 +46,43 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let cancelled = false
 
-    notificationsService.list(0, RECENT_LIMIT).then((data) => {
-      if (!cancelled) setNotifications(data)
-    })
-    notificationsService.unreadCount().then((data) => {
-      if (!cancelled) setUnreadCount(data.count)
-    })
+    const resync = () => {
+      notificationsService.list(undefined, RECENT_LIMIT).then((data) => {
+        if (!cancelled) setNotifications(data)
+      })
+      notificationsService.unreadCount().then((data) => {
+        if (!cancelled) setUnreadCount(data.count)
+      })
+    }
 
     const connect = () => {
       const token = getAccessToken()
       if (!token || cancelled) return
       socket = new WebSocket(wsUrl(token))
+      // Covers both the very first connect and every reconnect after a
+      // dropped connection (laptop slept, tab backgrounded, flaky network)
+      // — without this, anything created while disconnected never shows
+      // up until some unrelated future push happens to refresh state.
+      socket.onopen = resync
       socket.onmessage = (event) => {
-        const notif: AppNotification = JSON.parse(event.data)
-        setNotifications((prev) => [notif, ...prev].slice(0, RECENT_LIMIT))
-        setUnreadCount((prev) => prev + 1)
+        const data = JSON.parse(event.data)
+        if (data.kind === 'notification') {
+          const { kind: _kind, ...notif } = data
+          setNotifications((prev) => [notif as AppNotification, ...prev].slice(0, RECENT_LIMIT))
+          setUnreadCount((prev) => prev + 1)
+        } else if (data.kind === 'read') {
+          const target = notificationsRef.current.find((n) => n.id === data.id)
+          const wasUnread = !!target && !target.read_at
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === data.id && !n.read_at ? { ...n, read_at: new Date().toISOString() } : n)),
+          )
+          if (wasUnread) setUnreadCount((prev) => Math.max(0, prev - 1))
+        } else if (data.kind === 'read_all') {
+          setNotifications((prev) =>
+            prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })),
+          )
+          setUnreadCount(0)
+        }
       }
       socket.onclose = () => {
         if (!cancelled) reconnectTimer = setTimeout(connect, 3000)
@@ -79,8 +106,18 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  const markRead = useCallback((id: string) => {
+    const target = notificationsRef.current.find((n) => n.id === id)
+    if (!target || target.read_at) return
+    notificationsService.markRead(id)
+    setUnreadCount((prev) => Math.max(0, prev - 1))
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)),
+    )
+  }, [])
+
   return (
-    <NotificationsContext.Provider value={{ notifications, unreadCount, markAllRead }}>
+    <NotificationsContext.Provider value={{ notifications, unreadCount, markAllRead, markRead }}>
       {children}
     </NotificationsContext.Provider>
   )
