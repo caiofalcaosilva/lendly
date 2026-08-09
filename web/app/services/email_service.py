@@ -129,6 +129,25 @@ _STATUS_COPY = {
 }
 
 
+async def send_new_request_email(
+    to: str, name: str, requester_name: str, item_title: str, request_id: str
+) -> None:
+    url = f"{settings.FRONTEND_URL}/requests/{request_id}"
+    html = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <h2 style="color:#16a34a">Nova solicitação recebida</h2>
+      <p>Olá, {name}! {requester_name} quer pegar emprestado o seu
+      <strong>{item_title}</strong>.</p>
+      <a href="{url}"
+         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Ver solicitação
+      </a>
+    </div>
+    """
+    await send_email(to, "Nova solicitação recebida — Lendly", html)
+
+
 async def send_request_status_email(
     to: str, name: str, item_title: str, request_status: str, request_id: str
 ) -> None:

@@ -41,10 +41,19 @@ def _notify_status_change(req: LoanRequest, background_tasks: BackgroundTasks) -
             str(req.id),
         )
     title = _STATUS_NOTIFICATION_TITLES.get(req.status)
-    if title:
+    if not title:
+        return
+    # accepted/refused only ever happen because the owner just acted on it —
+    # they already know. finished is mutual (either side can supply the
+    # closing confirmation), so both sides need to hear about it, not just
+    # whoever didn't happen to trigger it.
+    recipients = (
+        [req.owner, req.requester] if req.status == "finished" else [req.requester]
+    )
+    for recipient in recipients:
         background_tasks.add_task(
             notification_service.create_notification,
-            req.requester,
+            recipient,
             "request_status",
             title,
             req.item.title,
@@ -52,7 +61,11 @@ def _notify_status_change(req: LoanRequest, background_tasks: BackgroundTasks) -
         )
 
 
-def create_request(data: LoanRequestCreate, current_user: User) -> LoanRequestResponse:
+def create_request(
+    data: LoanRequestCreate,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> LoanRequestResponse:
     if current_user.is_admin:
         raise errors.bad_request(
             "Contas administrativas não podem solicitar itens",
@@ -101,6 +114,26 @@ def create_request(data: LoanRequestCreate, current_user: User) -> LoanRequestRe
         notes=data.notes,
     )
     req.save()
+
+    if background_tasks:
+        if should_notify(item.owner, "request_status"):
+            background_tasks.add_task(
+                email_service.send_new_request_email,
+                item.owner.email,
+                item.owner.name,
+                current_user.name,
+                item.title,
+                str(req.id),
+            )
+        background_tasks.add_task(
+            notification_service.create_notification,
+            item.owner,
+            "request_status",
+            "Nova solicitação recebida",
+            f"{current_user.name} quer {item.title}",
+            f"/requests/{req.id}",
+        )
+
     return to_response(req)
 
 

@@ -1,4 +1,11 @@
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from jose import JWTError
 
 from app.dependencies import get_current_user
@@ -18,12 +25,17 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 @router.get("/", response_model=list[NotificationResponse])
 def list_notifications(
-    skip: int = Query(0, ge=0),
+    before_id: str | None = Query(
+        None,
+        description="Id of the last notification seen — returns the page before it",
+    ),
     limit: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
 ):
-    """Paginated notification history for the logged-in user, newest first."""
-    return notification_service.list_notifications(current_user, skip, limit)
+    """Paginated notification history for the logged-in user, newest
+    first. Cursor-based via `before_id` rather than skip, so a page stays
+    stable even if new notifications arrive between page loads."""
+    return notification_service.list_notifications(current_user, before_id, limit)
 
 
 @router.get("/unread-count", response_model=UnreadCountResponse)
@@ -36,16 +48,28 @@ def unread_count(current_user: User = Depends(get_current_user)):
 
 
 @router.patch("/read-all", response_model=MarkAllReadResponse)
-def mark_all_read(current_user: User = Depends(get_current_user)):
+def mark_all_read(
+    background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user)
+):
     """Marks every unread notification as read — fired when the bell
-    panel opens, not via a manual button."""
-    return MarkAllReadResponse(marked=notification_service.mark_all_read(current_user))
+    panel opens, not via a manual button. Syncs to the same user's other
+    open tabs/devices over their own /notifications/ws connections."""
+    return MarkAllReadResponse(
+        marked=notification_service.mark_all_read(current_user, background_tasks)
+    )
 
 
 @router.patch("/{notification_id}/read", response_model=NotificationResponse)
-def mark_read(notification_id: str, current_user: User = Depends(get_current_user)):
-    """Marks a single notification as read."""
-    return notification_service.mark_read(notification_id, current_user)
+def mark_read(
+    notification_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Marks a single notification as read — same cross-tab/device sync
+    as /read-all."""
+    return notification_service.mark_read(
+        notification_id, current_user, background_tasks
+    )
 
 
 @router.put("/preferences", response_model=UserResponse)

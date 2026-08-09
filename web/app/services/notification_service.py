@@ -1,3 +1,5 @@
+from fastapi import BackgroundTasks
+
 from app.models.notification import Notification
 from app.models.user import InAppNotificationPreferences, User
 from app.schemas.notification import NotificationResponse
@@ -39,19 +41,34 @@ async def create_notification(
     )
     notif.save()
     await notification_manager.broadcast(
-        str(recipient.id), _to_response(notif).model_dump(mode="json")
+        str(recipient.id),
+        {"kind": "notification", **_to_response(notif).model_dump(mode="json")},
     )
+
+
+async def _broadcast_read_sync(user: User, payload: dict) -> None:
+    """Tells every other open tab/device of this user that some
+    notifications were just marked read, so their badge/list stays in
+    sync without a manual refresh — same channel create_notification
+    pushes over, distinguished by `kind`."""
+    await notification_manager.broadcast(str(user.id), payload)
 
 
 def list_notifications(
-    current_user: User, skip: int, limit: int
+    current_user: User, before_id: str | None, limit: int
 ) -> list[NotificationResponse]:
-    notifs = (
-        Notification.objects(recipient=current_user)
-        .order_by("-created_at")
-        .skip(skip)
-        .limit(limit)
-    )
+    """Cursor-based, not skip-based — passing the last-seen id as
+    `before_id` keeps pages stable even if new notifications land between
+    page loads. Sorts and filters on `id`, not `created_at` — ObjectId
+    only carries second-level timestamp precision, so two rows created in
+    the same second can tie on created_at; sorting by one field while
+    cursoring on another risks a row landing on both pages (or neither)
+    right at the boundary. Using id for both keeps them consistent, and
+    id still sorts newest-first the same way created_at would."""
+    qs = Notification.objects(recipient=current_user)
+    if before_id:
+        qs = qs.filter(id__lt=before_id)
+    notifs = qs.order_by("-id").limit(limit)
     return [_to_response(n) for n in notifs]
 
 
@@ -59,20 +76,37 @@ def get_unread_count(current_user: User) -> int:
     return Notification.objects(recipient=current_user, read_at=None).count()
 
 
-def mark_read(notification_id: str, current_user: User) -> NotificationResponse:
+def mark_read(
+    notification_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> NotificationResponse:
     notif = Notification.objects(id=notification_id, recipient=current_user).first()
     if not notif:
         raise errors.not_found("Notification not found")
     if not notif.read_at:
         notif.update(read_at=utcnow())
         notif.reload()
+        if background_tasks:
+            background_tasks.add_task(
+                _broadcast_read_sync,
+                current_user,
+                {"kind": "read", "id": str(notif.id)},
+            )
     return _to_response(notif)
 
 
-def mark_all_read(current_user: User) -> int:
-    return Notification.objects(recipient=current_user, read_at=None).update(
+def mark_all_read(
+    current_user: User, background_tasks: BackgroundTasks | None = None
+) -> int:
+    count = Notification.objects(recipient=current_user, read_at=None).update(
         read_at=utcnow()
     )
+    if background_tasks and count:
+        background_tasks.add_task(
+            _broadcast_read_sync, current_user, {"kind": "read_all"}
+        )
+    return count
 
 
 def update_inapp_prefs(

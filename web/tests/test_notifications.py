@@ -58,11 +58,14 @@ def test_accepting_request_notifies_requester(client, register_user):
     )
     assert unread.json()["count"] == 1
 
-    # The owner is a different user and shouldn't see the requester's notification.
+    # The owner is a different user and shouldn't see the requester's
+    # "accepted" notification — they do have their own "new request"
+    # notification from when the request first came in, though.
     owner_notifs = client.get(
         "/notifications/", headers={"Authorization": f"Bearer {owner_token}"}
-    )
-    assert owner_notifs.json() == []
+    ).json()
+    assert len(owner_notifs) == 1
+    assert owner_notifs[0]["title"] == "Nova solicitação recebida"
 
 
 def test_mark_single_notification_read(client, register_user):
@@ -191,9 +194,11 @@ def test_new_message_notifies_the_other_participant(client, register_user):
 
     notifs = client.get(
         "/notifications/", headers={"Authorization": f"Bearer {owner_token}"}
-    )
-    assert len(notifs.json()) == 1
-    assert notifs.json()[0]["type"] == "new_message"
+    ).json()
+    # The owner also has the "new request" notification from when the
+    # request was first created — the message notification is the newest.
+    assert len(notifs) == 2
+    assert notifs[0]["type"] == "new_message"
 
     # The sender doesn't notify themselves.
     sender_notifs = client.get(

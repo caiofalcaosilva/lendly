@@ -29,11 +29,13 @@ router = APIRouter(prefix="/requests", tags=["loan_requests"])
 
 @router.post("/", response_model=LoanRequestResponse, status_code=201)
 def create_request(
-    data: LoanRequestCreate, current_user: User = Depends(get_current_user)
+    data: LoanRequestCreate,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ):
     """Requests to borrow an item — starts in 'pending', awaiting the
-    owner's accept/refuse."""
-    return loan_request_service.create_request(data, current_user)
+    owner's accept/refuse. Notifies the owner."""
+    return loan_request_service.create_request(data, current_user, background_tasks)
 
 
 @router.get("/{request_id}", response_model=LoanRequestResponse)
