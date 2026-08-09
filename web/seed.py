@@ -1487,15 +1487,25 @@ def auth_header(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-def advance_request(req_id: str, owner_token: str) -> bool:
-    """accept → start → finish"""
-    for action in ("accept", "start", "finish"):
-        r = requests.patch(
-            f"{BASE}/requests/{req_id}/{action}", headers=auth_header(owner_token)
-        )
-        if r.status_code not in (200, 201):
-            print(f"    ✗ {action} failed: {r.status_code} {r.text[:80]}")
-            return False
+def advance_request(req_id: str, owner_token: str, requester_token: str) -> bool:
+    """accept → start (both sides confirm) → finish (both sides confirm) —
+    pickup/return each require confirmation from both owner and requester
+    since they became two-sided (see loan_request_service.lifecycle)."""
+    r = requests.patch(
+        f"{BASE}/requests/{req_id}/accept", headers=auth_header(owner_token)
+    )
+    if r.status_code not in (200, 201):
+        print(f"    ✗ accept failed: {r.status_code} {r.text[:80]}")
+        return False
+
+    for action in ("start", "finish"):
+        for token in (owner_token, requester_token):
+            r = requests.patch(
+                f"{BASE}/requests/{req_id}/{action}", headers=auth_header(token)
+            )
+            if r.status_code not in (200, 201):
+                print(f"    ✗ {action} failed: {r.status_code} {r.text[:80]}")
+                return False
     return True
 
 
@@ -1643,7 +1653,7 @@ def seed():
 
         loan_id = r.json()["id"]
 
-        if not advance_request(loan_id, tokens[owner_idx]):
+        if not advance_request(loan_id, tokens[owner_idx], tokens[requester_idx]):
             print(f"  ✗ não foi possível finalizar loan {loan_id}")
             continue
 
