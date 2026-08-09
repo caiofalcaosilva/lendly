@@ -6,7 +6,7 @@ from app.schemas.notification import NotificationResponse
 from app.schemas.user import InAppNotificationPreferencesUpdate, UserResponse
 from app.services.auth_service import user_to_response
 from app.utils import errors
-from app.utils.notifications import should_notify_inapp
+from app.utils.notifications import is_security_category, should_notify_inapp
 from app.utils.time import utcnow
 from app.ws_manager import notification_manager
 
@@ -33,8 +33,9 @@ async def create_notification(
     """Writes the notification and pushes it live over the recipient's
     /notifications/ws connection, if they have one open. A no-op if the
     recipient has this category turned off — same gate shape as the email
-    side, but a separate preference set (see should_notify_inapp)."""
-    if not should_notify_inapp(recipient, type_):
+    side, but a separate preference set (see should_notify_inapp). Security
+    categories (e.g. new_login) skip the gate entirely — not toggleable."""
+    if not is_security_category(type_) and not should_notify_inapp(recipient, type_):
         return
     notif = Notification(
         recipient=recipient, type=type_, title=title, body=body, link=link
@@ -46,16 +47,19 @@ async def create_notification(
     )
 
 
-async def _broadcast_read_sync(user: User, payload: dict) -> None:
-    """Tells every other open tab/device of this user that some
-    notifications were just marked read, so their badge/list stays in
-    sync without a manual refresh — same channel create_notification
+async def _broadcast_sync(user: User, payload: dict) -> None:
+    """Tells every other open tab/device of this user that something
+    changed (read, read-all, deleted, cleared), so their badge/list stays
+    in sync without a manual refresh — same channel create_notification
     pushes over, distinguished by `kind`."""
     await notification_manager.broadcast(str(user.id), payload)
 
 
 def list_notifications(
-    current_user: User, before_id: str | None, limit: int
+    current_user: User,
+    before_id: str | None,
+    limit: int,
+    type_: str | None = None,
 ) -> list[NotificationResponse]:
     """Cursor-based, not skip-based — passing the last-seen id as
     `before_id` keeps pages stable even if new notifications land between
@@ -66,6 +70,8 @@ def list_notifications(
     right at the boundary. Using id for both keeps them consistent, and
     id still sorts newest-first the same way created_at would."""
     qs = Notification.objects(recipient=current_user)
+    if type_:
+        qs = qs.filter(type=type_)
     if before_id:
         qs = qs.filter(id__lt=before_id)
     notifs = qs.order_by("-id").limit(limit)
@@ -89,7 +95,7 @@ def mark_read(
         notif.reload()
         if background_tasks:
             background_tasks.add_task(
-                _broadcast_read_sync,
+                _broadcast_sync,
                 current_user,
                 {"kind": "read", "id": str(notif.id)},
             )
@@ -103,8 +109,40 @@ def mark_all_read(
         read_at=utcnow()
     )
     if background_tasks and count:
+        background_tasks.add_task(_broadcast_sync, current_user, {"kind": "read_all"})
+    return count
+
+
+def delete_notification(
+    notification_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> None:
+    notif = Notification.objects(id=notification_id, recipient=current_user).first()
+    if not notif:
+        raise errors.not_found("Notification not found")
+    was_unread = notif.read_at is None
+    notif.delete()
+    if background_tasks:
         background_tasks.add_task(
-            _broadcast_read_sync, current_user, {"kind": "read_all"}
+            _broadcast_sync,
+            current_user,
+            {"kind": "deleted", "id": notification_id, "was_unread": was_unread},
+        )
+
+
+def clear_read_notifications(
+    current_user: User, background_tasks: BackgroundTasks | None = None
+) -> int:
+    """Bulk-removes every already-read notification — read_at=None ones are
+    deliberately untouched, so this can never delete something the user
+    hasn't seen yet even if called by mistake."""
+    qs = Notification.objects(recipient=current_user, read_at__ne=None)
+    count = qs.count()
+    qs.delete()
+    if background_tasks and count:
+        background_tasks.add_task(
+            _broadcast_sync, current_user, {"kind": "cleared_read"}
         )
     return count
 

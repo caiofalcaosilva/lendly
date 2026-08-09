@@ -78,9 +78,14 @@ def update_item(
 
 
 @router.delete("/{item_id}", status_code=204)
-def delete_item(item_id: str, current_user: User = Depends(get_current_user)):
-    """Deactivates (soft-deletes) an item the logged-in user owns."""
-    item_service.delete_item(item_id, current_user)
+def delete_item(
+    item_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Deactivates (soft-deletes) an item the logged-in user owns. Notifies
+    anyone who had it favorited."""
+    item_service.delete_item(item_id, current_user, background_tasks)
 
 
 @router.patch("/{item_id}/activate", response_model=ItemResponse)
@@ -95,9 +100,14 @@ def activate(
 
 
 @router.patch("/{item_id}/deactivate", response_model=ItemResponse)
-def deactivate(item_id: str, current_user: User = Depends(get_current_user)):
-    """Marks an item temporarily unavailable, without deleting it."""
-    return item_service.set_availability(item_id, False, current_user)
+def deactivate(
+    item_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Marks an item temporarily unavailable, without deleting it. Notifies
+    anyone who had it favorited."""
+    return item_service.set_availability(item_id, False, current_user, background_tasks)
 
 
 @router.post("/{item_id}/favorite", response_model=ItemResponse)

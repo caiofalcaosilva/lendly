@@ -10,7 +10,7 @@ from app.schemas.user import (
     TokenResponse,
     UserLogin,
 )
-from app.services import email_service, totp_service
+from app.services import email_service, notification_service, totp_service
 from app.services.auth_service._common import (
     add_trusted_device,
     client_info,
@@ -63,6 +63,14 @@ def login_user(
                 ip,
                 user_agent,
             )
+            background_tasks.add_task(
+                notification_service.create_notification,
+                user,
+                "new_login",
+                "Novo login detectado",
+                f"{user_agent} · {ip}" if user_agent else ip,
+                "/profile",
+            )
 
     return LoginResponse(
         access_token=make_access_token(user),
@@ -106,6 +114,14 @@ def complete_2fa(
     if background_tasks:
         background_tasks.add_task(
             email_service.send_new_login_email, user.email, user.name, ip, user_agent
+        )
+        background_tasks.add_task(
+            notification_service.create_notification,
+            user,
+            "new_login",
+            "Novo login detectado",
+            f"{user_agent} · {ip}" if user_agent else ip,
+            "/profile",
         )
     return TokenResponse(
         access_token=make_access_token(user),

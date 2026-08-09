@@ -18,6 +18,14 @@ _INAPP_ONLY_CATEGORIES = (
 
 _INAPP_CATEGORIES = _EMAIL_CATEGORIES + _INAPP_ONLY_CATEGORIES
 
+# Never gated by a preference, in-app or email — a new-login alert is a
+# security signal, not a convenience notification the user gets to mute.
+_SECURITY_CATEGORIES = ("new_login",)
+
+
+def is_security_category(category: str) -> bool:
+    return category in _SECURITY_CATEGORIES
+
 
 def should_notify(user: User, category: str) -> bool:
     """Whether `user` wants the given convenience-email category. Security

@@ -19,3 +19,7 @@ class UnreadCountResponse(BaseModel):
 
 class MarkAllReadResponse(BaseModel):
     marked: int
+
+
+class ClearReadResponse(BaseModel):
+    cleared: int

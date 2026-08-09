@@ -9,14 +9,17 @@ from fastapi import (
 from jose import JWTError
 
 from app.dependencies import get_current_user
+from app.models.notification import NOTIFICATION_TYPES
 from app.models.user import User
 from app.schemas.notification import (
+    ClearReadResponse,
     MarkAllReadResponse,
     NotificationResponse,
     UnreadCountResponse,
 )
 from app.schemas.user import InAppNotificationPreferencesUpdate, UserResponse
 from app.services import notification_service
+from app.utils import errors
 from app.utils.security import decode_token
 from app.ws_manager import notification_manager
 
@@ -30,12 +33,15 @@ def list_notifications(
         description="Id of the last notification seen — returns the page before it",
     ),
     limit: int = Query(20, ge=1, le=100),
+    type: str | None = Query(None, description="Filter to a single notification type"),
     current_user: User = Depends(get_current_user),
 ):
     """Paginated notification history for the logged-in user, newest
     first. Cursor-based via `before_id` rather than skip, so a page stays
     stable even if new notifications arrive between page loads."""
-    return notification_service.list_notifications(current_user, before_id, limit)
+    if type is not None and type not in NOTIFICATION_TYPES:
+        raise errors.bad_request(f"Invalid notification type '{type}'")
+    return notification_service.list_notifications(current_user, before_id, limit, type)
 
 
 @router.get("/unread-count", response_model=UnreadCountResponse)
@@ -68,6 +74,32 @@ def mark_read(
     """Marks a single notification as read — same cross-tab/device sync
     as /read-all."""
     return notification_service.mark_read(
+        notification_id, current_user, background_tasks
+    )
+
+
+@router.delete("/read", response_model=ClearReadResponse)
+def clear_read(
+    background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user)
+):
+    """Bulk-deletes every already-read notification — unread ones are
+    never touched, so this can't accidentally wipe something unseen.
+    Registered before /{notification_id} so "read" isn't parsed as an id."""
+    return ClearReadResponse(
+        cleared=notification_service.clear_read_notifications(
+            current_user, background_tasks
+        )
+    )
+
+
+@router.delete("/{notification_id}", status_code=204)
+def delete_notification(
+    notification_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Deletes a single notification, read or not."""
+    notification_service.delete_notification(
         notification_id, current_user, background_tasks
     )
 

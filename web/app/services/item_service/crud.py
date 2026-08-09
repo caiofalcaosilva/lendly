@@ -284,9 +284,40 @@ def update_item(
     return to_response(item)
 
 
-def delete_item(item_id: str, current_user: User) -> None:
+def _notify_fans_item_gone(
+    item: Item,
+    current_user: User,
+    title: str,
+    body: str,
+    background_tasks: BackgroundTasks,
+) -> None:
+    fans = User.objects(favorites=item, id__ne=current_user.id)
+    for fan in fans:
+        background_tasks.add_task(
+            notification_service.create_notification,
+            fan,
+            "favorite_item_changed",
+            title,
+            body,
+            None,
+        )
+
+
+def delete_item(
+    item_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> None:
     item = get_owned_item(item_id, current_user)
     item.update(is_active=False, updated_at=utcnow())
+    if background_tasks:
+        _notify_fans_item_gone(
+            item,
+            current_user,
+            f"{item.title} foi removido",
+            "O item deixou de estar disponível na plataforma.",
+            background_tasks,
+        )
 
 
 def set_availability(
@@ -298,6 +329,7 @@ def set_availability(
     item = get_owned_item(item_id, current_user)
 
     became_available = is_available and not item.is_available
+    became_unavailable = not is_available and item.is_available
     waiting = list(item.waitlist or [])
 
     updates = {"is_available": is_available, "updated_at": utcnow()}
@@ -305,6 +337,15 @@ def set_availability(
         updates["waitlist"] = []
     item.update(**updates)
     item.reload()
+
+    if became_unavailable and background_tasks:
+        _notify_fans_item_gone(
+            item,
+            current_user,
+            f"{item.title} foi pausado",
+            "O dono marcou o item como temporariamente indisponível.",
+            background_tasks,
+        )
 
     if became_available and waiting and background_tasks:
         for user in waiting:

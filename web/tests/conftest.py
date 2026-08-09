@@ -48,6 +48,7 @@ def register_user(client):
     (email, **overrides) -> (user_id, access_token)."""
 
     def _register(email: str, **overrides) -> tuple[str, str]:
+        from app.models.notification import Notification
         from app.models.user import User
 
         password = overrides.pop("password", "SenhaForte123!")
@@ -65,6 +66,11 @@ def register_user(client):
 
         login = client.post("/auth/login", json={"email": email, "password": password})
         assert login.status_code == 200, login.text
+        # This login is fixture plumbing, not something under test — it
+        # fires a real "new_login" notification (untoggleable security
+        # category) that would otherwise pollute every notification-count
+        # assertion in every test that uses this fixture.
+        Notification.objects(recipient=user_id).delete()
         return user_id, login.json()["access_token"]
 
     return _register
