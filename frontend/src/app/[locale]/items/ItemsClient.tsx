@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from '@/i18n/navigation'
-import { Package, List, Map as MapIcon, MapPin, LocateFixed } from 'lucide-react'
+import { Package, List, Map as MapIcon, MapPin, LocateFixed, AlertTriangle, RotateCw } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Category, Item } from '@/types'
 import { itemsService } from '@/services/items'
@@ -132,6 +132,8 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
   const [initialLoading, setInitialLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(initialItems.length === LIMIT)
+  const [error, setError] = useState(false)
+  const [retryTick, setRetryTick] = useState(0)
   const [nearbyItems, setNearbyItems] = useState<Item[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const loaderRef = useRef<HTMLDivElement>(null)
@@ -208,6 +210,10 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
       skipRef.current += data.length
       hasMoreRef.current = data.length === LIMIT
       setHasMore(data.length === LIMIT)
+    } catch {
+      hasMoreRef.current = false
+      setHasMore(false)
+      setError(true)
     } finally {
       isFetchingRef.current = false
       setLoadingMore(false)
@@ -237,10 +243,16 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
         const data = await itemsService.list(buildParams(0, limit) as any)
         if (cancelled) return
         setItems(data)
+        setError(false)
         skipRef.current = data.length
         const more = view === 'list' && data.length === LIMIT
         hasMoreRef.current = more
         setHasMore(more)
+      } catch {
+        if (cancelled) return
+        setItems([])
+        setHasMore(false)
+        setError(true)
       } finally {
         if (!cancelled) {
           isFetchingRef.current = false
@@ -254,7 +266,7 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [filters, view, buildParams])
+  }, [filters, view, buildParams, retryTick])
 
   // Keeps the URL in sync with the filters (excluding radius_km, which
   // depends on the visitor's own location and isn't meaningful to share) —
@@ -408,6 +420,13 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
               {Array.from({ length: LIMIT }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
           )
+        ) : error && items.length === 0 ? (
+          <EmptyState
+            icon={AlertTriangle}
+            title={t('errorTitle')}
+            description={t('errorDescription')}
+            action={{ label: t('retry'), onClick: () => setRetryTick((n) => n + 1) }}
+          />
         ) : items.length === 0 ? (
           <EmptyState
             icon={Package}
@@ -454,7 +473,21 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
             {/* Scroll trigger */}
             <div ref={loaderRef} className="h-4 mt-4" />
 
-            {!hasMore && items.length > LIMIT && (
+            {error && items.length > 0 && (
+              <div className="flex flex-col items-center gap-2 mt-6 text-sm text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" /> {t('loadMoreError')}
+                </span>
+                <button
+                  onClick={() => { setError(false); hasMoreRef.current = true; setHasMore(true); loadMore() }}
+                  className="flex items-center gap-1.5 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium"
+                >
+                  <RotateCw className="w-3.5 h-3.5" /> {t('retry')}
+                </button>
+              </div>
+            )}
+
+            {!error && !hasMore && items.length > LIMIT && (
               <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-6">
                 {t('allLoaded')}
               </p>

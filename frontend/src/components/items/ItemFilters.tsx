@@ -27,7 +27,9 @@ interface Props {
 // out) — a plain linear 100m–50km slider would make the sub-1km range
 // impossible to hit precisely with a mouse/finger.
 const DISTANCE_STOPS = [0.1, 0.25, 0.5, 0.75, 1, 2, 3, 5, 7, 10, 15, 20, 30, 40, 50]
-const DEFAULT_DISTANCE_INDEX = DISTANCE_STOPS.indexOf(5)
+// radius_km === 0 means "no filter" — the slider should sit at its max
+// stop (50 km) to represent that, not some arbitrary middle value.
+const MAX_DISTANCE_INDEX = DISTANCE_STOPS.length - 1
 
 function formatDistanceLabel(km: number) {
   return km < 1 ? `${Math.round(km * 1000)} m` : `${km} km`
@@ -59,11 +61,14 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
   // radius_km changes from outside (e.g. cleared via a filter chip).
   const [distanceIndex, setDistanceIndex] = useState(() => {
     const idx = DISTANCE_STOPS.indexOf(filters.radius_km)
-    return idx >= 0 ? idx : DEFAULT_DISTANCE_INDEX
+    return idx >= 0 ? idx : MAX_DISTANCE_INDEX
   })
 
   useEffect(() => {
-    if (filters.radius_km === 0) return
+    if (filters.radius_km === 0) {
+      setDistanceIndex(MAX_DISTANCE_INDEX)
+      return
+    }
     const idx = DISTANCE_STOPS.indexOf(filters.radius_km)
     if (idx >= 0) setDistanceIndex(idx)
   }, [filters.radius_km])
@@ -193,8 +198,10 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
         {userHasLocation ? (
           <div className="min-w-[200px]">
             <div className="flex items-center justify-between mb-1.5">
-              <FilterLabel>{t('distance')}</FilterLabel>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 -mt-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                {t('distance')}
+              </span>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                 {filters.radius_km > 0 ? t('upTo', { distance: formatDistanceLabel(filters.radius_km) }) : t('anyDistance')}
               </span>
             </div>

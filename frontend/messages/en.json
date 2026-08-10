@@ -479,6 +479,10 @@
     "emptyFilters": "No results for the applied filters. Try adjusting them.",
     "emptyNone": "No items listed yet. Be the first to list one!",
     "allLoaded": "All items have been loaded.",
+    "errorTitle": "Couldn't load items",
+    "errorDescription": "Something went wrong fetching items. Check your connection and try again.",
+    "loadMoreError": "Couldn't load more items.",
+    "retry": "Try again",
     "meta": {
       "defaultTitle": "Browse items — Lendly",
       "defaultDescription": "Find items available for loan or rent in your neighborhood on Lendly.",

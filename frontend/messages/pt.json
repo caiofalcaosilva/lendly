@@ -479,6 +479,10 @@
     "emptyFilters": "Nenhum resultado para os filtros aplicados. Tente ajustá-los.",
     "emptyNone": "Ainda não há itens cadastrados. Seja o primeiro a cadastrar um!",
     "allLoaded": "Todos os itens foram carregados.",
+    "errorTitle": "Não deu pra carregar os itens",
+    "errorDescription": "Algo falhou ao buscar os itens. Verifique sua conexão e tente de novo.",
+    "loadMoreError": "Não deu pra carregar mais itens.",
+    "retry": "Tentar novamente",
     "meta": {
       "defaultTitle": "Explorar itens — Lendly",
       "defaultDescription": "Encontre objetos disponíveis para empréstimo ou aluguel na sua vizinhança no Lendly.",
