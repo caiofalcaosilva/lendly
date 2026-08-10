@@ -1,8 +1,8 @@
 'use client'
 import { Link, usePathname, useRouter } from '@/i18n/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Leaf, Menu, X, LayoutDashboard, LogOut, Plus, UserCog, MailWarning, Sun, Moon, ShieldAlert, ShieldCheck, ShieldQuestion, BarChart3, Users, Package, Shield, ChevronDown, History, Settings as SettingsIcon, UsersRound, Megaphone, Download, Tags, Eye } from 'lucide-react'
+import { Leaf, Menu, X, Plus, MailWarning, Sun, Moon, ShieldQuestion, Megaphone, Eye } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { platformSettingsService } from '@/services/platformSettings'
@@ -10,21 +10,10 @@ import { getViewAsTargetId, exitViewAs, clearViewAsMarkers } from '@/lib/tokenSt
 import Button from '@/components/ui/Button'
 import NotificationBell from '@/components/layout/NotificationBell'
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher'
+import UserMenu from '@/components/layout/UserMenu'
+import { ADMIN_LINKS } from './adminLinks'
 
 const ANNOUNCEMENT_DISMISSED_KEY = 'lendly:announcement-dismissed'
-
-const ADMIN_LINKS = [
-  { href: '/admin/dashboard', key: 'dashboard', icon: BarChart3 },
-  { href: '/admin/users', key: 'users', icon: Users },
-  { href: '/admin/items', key: 'items', icon: Package },
-  { href: '/admin/groups', key: 'groups', icon: UsersRound },
-  { href: '/admin/moderation', key: 'moderation', icon: ShieldAlert },
-  { href: '/admin/verification', key: 'verification', icon: ShieldCheck },
-  { href: '/admin/actions', key: 'actions', icon: History },
-  { href: '/admin/settings', key: 'settings', icon: SettingsIcon },
-  { href: '/admin/export', key: 'export', icon: Download },
-  { href: '/admin/categories', key: 'categories', icon: Tags },
-] as const
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
@@ -33,8 +22,6 @@ export default function Navbar() {
   const pathname = usePathname()
   const t = useTranslations('Common.Navbar')
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false)
-  const adminMenuRef = useRef<HTMLDivElement>(null)
   const [announcement, setAnnouncement] = useState<string | null>(null)
 
   useEffect(() => {
@@ -67,17 +54,6 @@ export default function Navbar() {
     exitViewAs()
     window.location.href = '/admin/users'
   }
-
-  useEffect(() => {
-    if (!adminMenuOpen) return
-    const onClickOutside = (e: MouseEvent) => {
-      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
-        setAdminMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [adminMenuOpen])
 
   const handleLogout = () => {
     logout()
@@ -170,60 +146,18 @@ export default function Navbar() {
                   </Button>
                 </Link>
               )}
-              <Link href="/dashboard">
-                <Button size="sm" variant="ghost">
-                  <LayoutDashboard className="w-4 h-4" />
-                  {user?.name.split(' ')[0]}
-                </Button>
-              </Link>
-              <Link href="/profile" title={t('editProfile')}>
-                <Button size="sm" variant="ghost">
-                  <UserCog className="w-4 h-4" />
-                </Button>
-              </Link>
               <NotificationBell />
-              {user?.is_admin && (
-                <div className="relative" ref={adminMenuRef}>
-                  <button
-                    onClick={() => setAdminMenuOpen((v) => !v)}
-                    className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-blue-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    title={t('administration')}
-                  >
-                    <Shield className="w-4 h-4" />
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                  {adminMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1.5 z-50">
-                      {ADMIN_LINKS.map(({ href, key, icon: Icon }) => (
-                        <Link
-                          key={href}
-                          href={href}
-                          onClick={() => setAdminMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                          {t(`admin.${key}`)}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              <LanguageSwitcher />
-              <button
-                onClick={toggleTheme}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                title={theme === 'dark' ? t('lightMode') : t('darkMode')}
-              >
-                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-              <button
-                onClick={handleLogout}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                title={t('logout')}
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-3 pl-3 ml-1 border-l border-gray-200 dark:border-gray-700">
+                <LanguageSwitcher />
+                <button
+                  onClick={toggleTheme}
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  title={theme === 'dark' ? t('lightMode') : t('darkMode')}
+                >
+                  {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </button>
+                <UserMenu />
+              </div>
             </>
           ) : (
             <div className="flex items-center gap-3">
@@ -275,6 +209,7 @@ export default function Navbar() {
               {!user?.is_admin && (
                 <Link href="/items/new" className="block text-gray-700 dark:text-gray-200 py-2" onClick={() => setMobileOpen(false)}>{t('newItem')}</Link>
               )}
+              <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
               <Link href="/dashboard" className="block text-gray-700 dark:text-gray-200 py-2" onClick={() => setMobileOpen(false)}>{t('dashboardLink')}</Link>
               <Link href="/profile" className="block text-gray-700 dark:text-gray-200 py-2" onClick={() => setMobileOpen(false)}>{t('editProfile')}</Link>
               {user?.is_admin && ADMIN_LINKS.map(({ href, key }) => (
