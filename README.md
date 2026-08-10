@@ -61,7 +61,15 @@ web/
 
 ## Como rodar localmente
 
-### Com Docker Compose (recomendado)
+### Tudo de uma vez (backend + frontend)
+
+```bash
+make dev
+```
+
+Sobe o backend (Mongo + API + MailHog, via Docker Compose, em segundo plano) e o frontend (`next dev`, em primeiro plano). Gera `web/.env` e `frontend/.env` a partir dos `.env.example` no primeiro uso — já com `SECRET_KEY`/`ENCRYPTION_KEY` aleatórios e válidos, não os placeholders. `Ctrl+C` para o frontend; `make down` derruba os containers do backend. Outros alvos disponíveis no `Makefile` da raiz: `make backend` (só a API), `make frontend` (só o Next.js), `make logs`, `make seed`.
+
+### Com Docker Compose (só o backend)
 
 ```bash
 cd web
