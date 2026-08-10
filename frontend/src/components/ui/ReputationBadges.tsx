@@ -1,4 +1,5 @@
 import { HeartHandshake, Timer, Award, Sparkles, Zap } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 /// Qualitative reputation badges, distinct from the numeric ReliabilityBadge —
 /// each one recognizes a specific pattern of good behavior. Renders nothing
@@ -25,6 +26,7 @@ export default function ReputationBadges({
   responseCount?: number
   size?: 'sm' | 'md'
 }) {
+  const t = useTranslations('Common.ReputationBadges')
   const badges: { key: string; label: string; title: string; icon: typeof HeartHandshake; tone: string }[] = []
 
   // Makes newness visible instead of leaving it to be inferred from empty
@@ -34,8 +36,8 @@ export default function ReputationBadges({
   if (finishedLoansCount === 0 && ratingCount === 0) {
     badges.push({
       key: 'new',
-      label: 'Novo por aqui',
-      title: 'Ainda não completou nenhum empréstimo na plataforma',
+      label: t('new.label'),
+      title: t('new.title'),
       icon: Sparkles,
       tone: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800',
     })
@@ -44,8 +46,8 @@ export default function ReputationBadges({
   if (reliabilityScore != null && reliabilityScore >= 85 && reliabilityCount >= 5) {
     badges.push({
       key: 'trusted',
-      label: 'Vizinho confiável',
-      title: `${Math.round(reliabilityScore)}% de confiabilidade em ${reliabilityCount} empréstimos`,
+      label: t('trusted.label'),
+      title: t('trusted.title', { score: Math.round(reliabilityScore), count: reliabilityCount }),
       icon: HeartHandshake,
       tone: 'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800',
     })
@@ -54,8 +56,8 @@ export default function ReputationBadges({
   if (onTimeRate === 100 && finishedLoansCount >= 3) {
     badges.push({
       key: 'punctual',
-      label: 'Sempre pontual',
-      title: `Devolveu no prazo em ${finishedLoansCount} de ${finishedLoansCount} empréstimos`,
+      label: t('punctual.label'),
+      title: t('punctual.title', { count: finishedLoansCount }),
       icon: Timer,
       tone: 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
     })
@@ -64,8 +66,8 @@ export default function ReputationBadges({
   if (averageRating >= 4.5 && ratingCount >= 5) {
     badges.push({
       key: 'rated',
-      label: 'Bem avaliado',
-      title: `Nota média ${averageRating.toFixed(1)} em ${ratingCount} avaliações`,
+      label: t('rated.label'),
+      title: t('rated.title', { rating: averageRating.toFixed(1), count: ratingCount }),
       icon: Award,
       tone: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800',
     })
@@ -73,11 +75,11 @@ export default function ReputationBadges({
 
   if (avgResponseMinutes != null && avgResponseMinutes <= 60 && responseCount >= 3) {
     const responseLabel =
-      avgResponseMinutes < 1 ? 'menos de 1 min' : `${Math.round(avgResponseMinutes)} min`
+      avgResponseMinutes < 1 ? t('responsive.underOneMin') : t('responsive.minutes', { count: Math.round(avgResponseMinutes) })
     badges.push({
       key: 'responsive',
-      label: 'Responde rápido',
-      title: `Responde solicitações em ${responseLabel}, em média, nas últimas ${responseCount}`,
+      label: t('responsive.label'),
+      title: t('responsive.title', { response: responseLabel, count: responseCount }),
       icon: Zap,
       tone: 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-800',
     })

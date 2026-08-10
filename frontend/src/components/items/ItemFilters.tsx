@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { Search, X, SlidersHorizontal, MapPin, ChevronDown, ChevronUp, CornerDownRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Category } from '@/types'
 
 export interface Filters {
@@ -50,6 +51,7 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
 export default function ItemFilters({ filters, onChange, userHasLocation, userHasZip, isAuthenticated, categories }: Props) {
   const [showLocation, setShowLocation] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+  const t = useTranslations('Common.ItemFilters')
 
   // Slider thumb position is tracked separately from filters.radius_km so
   // it has somewhere sensible to sit before the user has touched it (0 km
@@ -93,7 +95,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
           ref={searchRef}
           value={filters.search}
           onChange={(e) => update('search', e.target.value)}
-          placeholder="Buscar por nome ou descrição..."
+          placeholder={t('searchPlaceholder')}
           className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
         />
         {filters.search && (
@@ -108,7 +110,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
 
       {/* Category */}
       <div>
-        <FilterLabel>Categoria</FilterLabel>
+        <FilterLabel>{t('category')}</FilterLabel>
         <div className="relative">
           <div className="flex gap-2 overflow-x-auto pb-0.5 pr-6 scrollbar-hide">
             <button
@@ -119,7 +121,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-green-400 dark:hover:border-green-600 hover:text-green-700 dark:hover:text-green-400'
               }`}
             >
-              Todos
+              {t('allCategories')}
             </button>
             {categories.map((c) => (
               <button
@@ -166,12 +168,12 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
       {/* Type + Distance + More filters */}
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
         <div>
-          <FilterLabel>Tipo</FilterLabel>
+          <FilterLabel>{t('type')}</FilterLabel>
           <div className="flex bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm text-xs font-medium">
             {[
-              { value: '', label: 'Qualquer tipo' },
-              { value: 'free', label: 'Gratuito' },
-              { value: 'paid', label: 'Pago' },
+              { value: '', label: t('anyType') },
+              { value: 'free', label: t('free') },
+              { value: 'paid', label: t('paid') },
             ].map((opt) => (
               <button
                 key={opt.value}
@@ -191,9 +193,9 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
         {userHasLocation ? (
           <div className="min-w-[200px]">
             <div className="flex items-center justify-between mb-1.5">
-              <FilterLabel>Distância</FilterLabel>
+              <FilterLabel>{t('distance')}</FilterLabel>
               <span className="text-xs font-medium text-gray-700 dark:text-gray-300 -mt-1.5">
-                {filters.radius_km > 0 ? `até ${formatDistanceLabel(filters.radius_km)}` : 'Qualquer distância'}
+                {filters.radius_km > 0 ? t('upTo', { distance: formatDistanceLabel(filters.radius_km) }) : t('anyDistance')}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -216,7 +218,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
                   type="button"
                   onClick={() => update('radius_km', 0)}
                   className="flex-shrink-0 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                  title="Limpar distância"
+                  title={t('clearDistance')}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -229,17 +231,17 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
           </div>
         ) : userHasZip ? (
           <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 pb-1.5">
-            <MapPin className="w-3 h-3" /> Calculando localização…
+            <MapPin className="w-3 h-3" /> {t('calculatingLocation')}
           </span>
         ) : isAuthenticated ? (
           <a href="/profile" className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 hover:text-green-600 dark:hover:text-green-400 transition-colors pb-1.5">
             <MapPin className="w-3 h-3" />
-            Adicione seu CEP para filtrar por distância
+            {t('addZipToFilter')}
           </a>
         ) : (
           <a href="/login?redirect=/items" className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 hover:text-green-600 dark:hover:text-green-400 transition-colors pb-1.5">
             <MapPin className="w-3 h-3" />
-            Entre para filtrar por distância
+            {t('loginToFilter')}
           </a>
         )}
 
@@ -253,7 +255,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
           }`}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
-          Mais filtros
+          {t('moreFilters')}
           {secondaryActiveCount > 0 && (
             <span className="bg-green-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
               {secondaryActiveCount}
@@ -267,20 +269,20 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
       {showLocation && (
         <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700">
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Bairro</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t('neighborhood')}</label>
             <input
               value={filters.neighborhood}
               onChange={(e) => update('neighborhood', e.target.value)}
-              placeholder="Ex: Vila Madalena"
+              placeholder={t('neighborhoodPlaceholder')}
               className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cidade</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t('city')}</label>
             <input
               value={filters.city}
               onChange={(e) => update('city', e.target.value)}
-              placeholder="Ex: São Paulo"
+              placeholder={t('cityPlaceholder')}
               className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
@@ -290,7 +292,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
       {/* Active filter chips */}
       {(filters.category || filters.subcategory || filters.availability_type || filters.neighborhood || filters.city || filters.radius_km > 0) && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-gray-400 dark:text-gray-500">Filtros:</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{t('filters')}</span>
           {filters.category && (
             <Chip
               label={`${CATEGORY_ICONS[filters.category] ?? DEFAULT_CATEGORY_ICON} ${categories.find((c) => c.key === filters.category)?.label ?? filters.category}`}
@@ -304,7 +306,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
             />
           )}
           {filters.availability_type && (
-            <Chip label={filters.availability_type === 'free' ? 'Gratuito' : 'Pago'} onRemove={() => update('availability_type', '')} />
+            <Chip label={filters.availability_type === 'free' ? t('free') : t('paid')} onRemove={() => update('availability_type', '')} />
           )}
           {filters.neighborhood && (
             <Chip label={filters.neighborhood} onRemove={() => update('neighborhood', '')} />
@@ -313,10 +315,10 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
             <Chip label={filters.city} onRemove={() => update('city', '')} />
           )}
           {filters.radius_km > 0 && (
-            <Chip label={`até ${formatDistanceLabel(filters.radius_km)}`} onRemove={() => update('radius_km', 0)} />
+            <Chip label={t('upTo', { distance: formatDistanceLabel(filters.radius_km) })} onRemove={() => update('radius_km', 0)} />
           )}
           <button onClick={reset} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 ml-1 transition-colors">
-            Limpar tudo
+            {t('clearAll')}
           </button>
         </div>
       )}

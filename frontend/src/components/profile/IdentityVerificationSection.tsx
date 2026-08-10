@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { BadgeCheck, Clock, ShieldAlert, ShieldQuestion, Upload } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { User, VerificationStatus } from '@/types'
 import { verificationService } from '@/services/verification'
 import { usersService } from '@/services/users'
@@ -22,6 +23,7 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
   const [document, setDocument] = useState<File | null>(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const t = useTranslations('Common.IdentityVerificationSection')
 
   useEffect(() => {
     verificationService.me().then(setStatus).finally(() => setLoading(false))
@@ -31,11 +33,11 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
     e.preventDefault()
     setError('')
     if (!isValidCpf(cpf)) {
-      setError('CPF inválido')
+      setError(t('errorInvalidCpf'))
       return
     }
     if (!selfie || !document) {
-      setError('Envie a selfie e a foto do documento')
+      setError(t('errorFilesRequired'))
       return
     }
     setSubmitting(true)
@@ -45,7 +47,7 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
       updateUser(fresh)
       setStatus({ identity_status: 'pending' })
     } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao enviar verificação')
+      setError(e.response?.data?.detail || t('errorGeneric'))
     } finally {
       setSubmitting(false)
     }
@@ -66,12 +68,12 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
           <ShieldQuestion className="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
         )}
         <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Verificação de identidade</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('title')}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {identityStatus === 'approved' && 'Identidade verificada — você pode solicitar itens que exigem verificação.'}
-            {identityStatus === 'pending' && 'Em análise — avisamos por e-mail assim que houver resposta.'}
-            {identityStatus === 'rejected' && 'Não aprovada. Você pode enviar novamente com documentos atualizados.'}
-            {identityStatus === 'none' && 'Envie CPF + selfie + documento pra poder solicitar itens que exigem verificação.'}
+            {identityStatus === 'approved' && t('approved')}
+            {identityStatus === 'pending' && t('pending')}
+            {identityStatus === 'rejected' && t('rejected')}
+            {identityStatus === 'none' && t('none')}
           </p>
         </div>
       </div>
@@ -82,7 +84,7 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           {identityStatus === 'rejected' && status?.rejection_reason && (
             <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg p-2 mb-3">
-              Motivo: {status.rejection_reason}
+              {t('rejectionReason', { reason: status.rejection_reason })}
             </p>
           )}
           <form onSubmit={onSubmit} className="space-y-3">
@@ -97,10 +99,10 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
             />
 
             <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Selfie</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('selfie')}</label>
               <label className="flex items-center gap-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:border-green-400 dark:hover:border-green-600">
                 <Upload className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate min-w-0">{selfie ? selfie.name : 'Escolher foto do rosto'}</span>
+                <span className="truncate min-w-0">{selfie ? selfie.name : t('chooseSelfie')}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -111,10 +113,10 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Documento com foto</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('documentWithPhoto')}</label>
               <label className="flex items-center gap-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:border-green-400 dark:hover:border-green-600">
                 <Upload className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate min-w-0">{document ? document.name : 'Escolher foto do RG/CNH'}</span>
+                <span className="truncate min-w-0">{document ? document.name : t('chooseDocument')}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -125,7 +127,7 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
             </div>
 
             <Button type="submit" size="sm" loading={submitting} className="w-full">
-              Enviar verificação
+              {t('submit')}
             </Button>
           </form>
         </div>

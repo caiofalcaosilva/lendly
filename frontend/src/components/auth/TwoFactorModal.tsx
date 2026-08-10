@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { ShieldCheck, Smartphone } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
@@ -18,6 +19,7 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const inputs = useRef<(HTMLInputElement | null)[]>([])
+  const t = useTranslations('Common.TwoFactorModal')
 
   useEffect(() => {
     inputs.current[0]?.focus()
@@ -47,14 +49,14 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
 
   const submit = async () => {
     const code = digits.join('')
-    if (code.length < 6) return setError('Digite os 6 dígitos')
+    if (code.length < 6) return setError(t('errorSixDigits'))
     setLoading(true)
     setError('')
     try {
       await completeTwoFactor(tempToken, code, trustDevice)
       onSuccess()
     } catch (e: any) {
-      setError(e.response?.data?.detail || 'Código inválido')
+      setError(e.response?.data?.detail || t('errorInvalidCode'))
       setDigits(['', '', '', '', '', ''])
       inputs.current[0]?.focus()
     } finally {
@@ -63,7 +65,7 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
   }
 
   return (
-    <Modal open onClose={onClose} title="Verificação em duas etapas">
+    <Modal open onClose={onClose} title={t('title')}>
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-3 py-2">
           <div className="w-14 h-14 bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center">
@@ -71,10 +73,10 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
           </div>
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Abra seu aplicativo autenticador e insira o código de 6 dígitos.
+              {t('instructions')}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 flex items-center justify-center gap-1">
-              <Smartphone className="w-3 h-3" /> Google Authenticator, Authy, etc.
+              <Smartphone className="w-3 h-3" /> {t('appExamples')}
             </p>
           </div>
         </div>
@@ -106,7 +108,7 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
             onChange={(e) => setTrustDevice(e.target.checked)}
             className="w-4 h-4 text-green-600 rounded border-gray-300 dark:border-gray-600"
           />
-          <span className="text-sm text-gray-600 dark:text-gray-400">Confiar neste dispositivo por 30 dias</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{t('trustDevice')}</span>
         </label>
 
         <div className="flex gap-3">
@@ -116,9 +118,9 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
             disabled={digits.join('').length < 6}
             className="flex-1"
           >
-            Verificar
+            {t('verify')}
           </Button>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>{t('cancel')}</Button>
         </div>
       </div>
     </Modal>

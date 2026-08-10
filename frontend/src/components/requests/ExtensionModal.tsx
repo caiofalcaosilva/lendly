@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { requestsService } from '@/services/requests'
 import { formatDate } from '@/lib/utils'
 import Modal from '@/components/ui/Modal'
@@ -19,30 +20,32 @@ export default function ExtensionModal({ requestId, currentExpectedReturnDate, o
   const [newDate, setNewDate] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const locale = useLocale() as 'pt' | 'en'
+  const t = useTranslations('Common.ExtensionModal')
 
   const submit = async () => {
-    if (!newDate) return setError('Escolha a nova data de devolução')
+    if (!newDate) return setError(t('errorChooseDate'))
     setLoading(true)
     setError('')
     try {
       await requestsService.requestExtension(requestId, new Date(newDate).toISOString())
       onSuccess()
     } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao pedir prorrogação')
+      setError(e.response?.data?.detail || t('errorGeneric'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open onClose={onClose} title="Pedir prorrogação">
+    <Modal open onClose={onClose} title={t('title')}>
       <div className="space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Devolução prevista atual: <strong>{formatDate(currentExpectedReturnDate)}</strong>
+          {t('currentReturnDate')} <strong>{formatDate(currentExpectedReturnDate, locale)}</strong>
         </p>
 
         <Input
-          label="Nova data de devolução"
+          label={t('newReturnDate')}
           type="date"
           min={minDate}
           value={newDate}
@@ -54,9 +57,9 @@ export default function ExtensionModal({ requestId, currentExpectedReturnDate, o
 
         <div className="flex gap-3 pt-2">
           <Button onClick={submit} loading={loading} disabled={!newDate} className="flex-1">
-            Enviar pedido
+            {t('submit')}
           </Button>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>{t('cancel')}</Button>
         </div>
       </div>
     </Modal>

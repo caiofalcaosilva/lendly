@@ -1,4 +1,5 @@
 import { ShieldCheck } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 /// Behavioral reliability score (0-100), distinct from the 1-5 star
 /// average_rating — based on on-time returns / late returns / refusals /
@@ -14,6 +15,8 @@ export default function ReliabilityBadge({
   count: number
   size?: 'sm' | 'md'
 }) {
+  const t = useTranslations('Common.ReliabilityBadge')
+
   if (!count || score == null) return null
 
   const tone =
@@ -29,7 +32,7 @@ export default function ReliabilityBadge({
   return (
     <span
       className={`inline-flex items-center rounded-full border font-medium flex-shrink-0 ${tone} ${sizeClasses}`}
-      title={`${Math.round(score)}% de confiabilidade em ${count} empréstimo${count > 1 ? 's' : ''}`}
+      title={t('tooltip', { score: Math.round(score), count })}
     >
       <ShieldCheck className={iconSize} />
       {Math.round(score)}%

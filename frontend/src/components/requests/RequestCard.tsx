@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Calendar, MessageCircle, Package, CalendarClock, Check, X as XIcon, Phone } from 'lucide-react'
-import { LoanRequest, PaymentStatus, REQUEST_STATUS_LABELS } from '@/types'
+import { useLocale, useTranslations } from 'next-intl'
+import { LoanRequest, PaymentStatus } from '@/types'
 import { requestsService } from '@/services/requests'
 import { formatDate } from '@/lib/utils'
 import Badge, { STATUS_COLORS } from '@/components/ui/Badge'
@@ -11,12 +12,12 @@ import ReviewModal from '@/components/reviews/ReviewModal'
 import ExtensionModal from '@/components/requests/ExtensionModal'
 import PixCheckout from '@/components/requests/PixCheckout'
 
-const PAYMENT_STATUS_LABELS: Partial<Record<PaymentStatus, string>> = {
-  processing: 'Aguardando pagamento',
-  held: 'Pagamento confirmado',
-  released: 'Pagamento repassado',
-  refunded: 'Pagamento estornado',
-  failed: 'Pagamento falhou',
+const PAYMENT_STATUS_KEYS: Partial<Record<PaymentStatus, string>> = {
+  processing: 'processing',
+  held: 'held',
+  released: 'released',
+  refunded: 'refunded',
+  failed: 'failed',
 }
 
 const PAYMENT_STATUS_COLORS: Partial<Record<PaymentStatus, 'green' | 'blue' | 'yellow' | 'red' | 'gray'>> = {
@@ -38,6 +39,9 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
   const [showReview, setShowReview] = useState(false)
   const [showExtension, setShowExtension] = useState(false)
   const [actionError, setActionError] = useState('')
+  const locale = useLocale() as 'pt' | 'en'
+  const t = useTranslations('Common.RequestCard')
+  const tStatus = useTranslations('Common.RequestStatus')
 
   const myPickupConfirmedAt = role === 'owner' ? req.pickup_confirmed_by_owner_at : req.pickup_confirmed_by_requester_at
   const myReturnConfirmedAt = role === 'owner' ? req.return_confirmed_by_owner_at : req.return_confirmed_by_requester_at
@@ -49,7 +53,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
       await action()
       onUpdate()
     } catch (e: any) {
-      setActionError(e.response?.data?.detail || 'Erro ao confirmar')
+      setActionError(e.response?.data?.detail || t('errorConfirming'))
     } finally {
       setLoading(null)
     }
@@ -64,7 +68,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
             <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{req.item_title}</span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {role === 'requester' ? `Dono: ${req.owner_name}` : `Solicitante: ${req.requester_name}`}
+            {role === 'requester' ? t('owner', { name: req.owner_name }) : t('requester', { name: req.requester_name })}
           </p>
           {(() => {
             const phone = role === 'requester' ? req.owner_phone : req.requester_phone
@@ -80,11 +84,11 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
         </div>
         <div className="flex flex-col gap-1 items-end">
           <Badge variant={STATUS_COLORS[req.status]}>
-            {REQUEST_STATUS_LABELS[req.status]}
+            {tStatus(req.status)}
           </Badge>
-          {req.payment_status !== 'unpaid' && PAYMENT_STATUS_LABELS[req.payment_status] && (
+          {req.payment_status !== 'unpaid' && PAYMENT_STATUS_KEYS[req.payment_status] && (
             <Badge variant={PAYMENT_STATUS_COLORS[req.payment_status]}>
-              {PAYMENT_STATUS_LABELS[req.payment_status]}
+              {t(`paymentStatus.${PAYMENT_STATUS_KEYS[req.payment_status]}`)}
             </Badge>
           )}
         </div>
@@ -93,9 +97,9 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
       <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-4">
         <span className="flex items-center gap-1">
           <Calendar className="w-3 h-3" />
-          Retirada: {formatDate(req.pickup_date)}
+          {t('pickup', { date: formatDate(req.pickup_date, locale) })}
         </span>
-        <span>Devolução: {formatDate(req.expected_return_date)}</span>
+        <span>{t('returnDate', { date: formatDate(req.expected_return_date, locale) })}</span>
       </div>
 
       {req.notes && (
@@ -108,16 +112,16 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           <div className="flex-1 min-w-0">
             <p className="text-sm text-blue-800 dark:text-blue-300">
               {role === 'owner'
-                ? `Pediu prorrogação até ${formatDate(req.requested_extension_date)}`
-                : `Prorrogação pedida até ${formatDate(req.requested_extension_date)} — aguardando resposta`}
+                ? t('extensionRequestedOwner', { date: formatDate(req.requested_extension_date, locale) })
+                : t('extensionRequestedRequester', { date: formatDate(req.requested_extension_date, locale) })}
             </p>
             {role === 'owner' && (
               <div className="flex gap-2 mt-2">
                 <Button size="sm" loading={loading === 'approveExt'} onClick={() => act(() => requestsService.approveExtension(req.id), 'approveExt')}>
-                  <Check className="w-3.5 h-3.5" /> Aprovar
+                  <Check className="w-3.5 h-3.5" /> {t('approve')}
                 </Button>
                 <Button size="sm" variant="outline" loading={loading === 'rejectExt'} onClick={() => act(() => requestsService.rejectExtension(req.id), 'rejectExt')}>
-                  <XIcon className="w-3.5 h-3.5" /> Recusar
+                  <XIcon className="w-3.5 h-3.5" /> {t('reject')}
                 </Button>
               </div>
             )}
@@ -135,10 +139,10 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
         {role === 'owner' && req.status === 'pending' && (
           <>
             <Button size="sm" loading={loading === 'accept'} onClick={() => act(() => requestsService.accept(req.id), 'accept')}>
-              Aceitar
+              {t('accept')}
             </Button>
             <Button size="sm" variant="danger" loading={loading === 'refuse'} onClick={() => act(() => requestsService.refuse(req.id), 'refuse')}>
-              Recusar
+              {t('refuse')}
             </Button>
           </>
         )}
@@ -147,23 +151,23 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           req.payment_status === 'processing' ? (
             role === 'owner' && (
               <span className="text-xs text-amber-600 dark:text-amber-400 self-center">
-                Aguardando o solicitante pagar pra liberar a retirada
+                {t('waitingForPayment')}
               </span>
             )
           ) : myPickupConfirmedAt ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-green-600 dark:text-green-400 self-center">
-                Você confirmou a retirada — aguardando {role === 'owner' ? 'o solicitante' : 'o dono'} confirmar
+                {role === 'owner' ? t('pickupConfirmedWaitingRequester') : t('pickupConfirmedWaitingOwner')}
               </span>
               {role === 'owner' && (
                 <Button size="sm" variant="outline" loading={loading === 'forceStart'} onClick={() => act(() => requestsService.startForce(req.id), 'forceStart')}>
-                  Forçar retirada
+                  {t('forcePickup')}
                 </Button>
               )}
             </div>
           ) : (
             <Button size="sm" variant="secondary" loading={loading === 'start'} onClick={() => act(() => requestsService.start(req.id), 'start')}>
-              Confirmar retirada
+              {t('confirmPickup')}
             </Button>
           )
         )}
@@ -172,36 +176,36 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           myReturnConfirmedAt ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-green-600 dark:text-green-400 self-center">
-                Você confirmou a devolução — aguardando {role === 'owner' ? 'o solicitante' : 'o dono'} confirmar
+                {role === 'owner' ? t('returnConfirmedWaitingRequester') : t('returnConfirmedWaitingOwner')}
               </span>
               {role === 'owner' && (
                 <Button size="sm" variant="outline" loading={loading === 'forceFinish'} onClick={() => act(() => requestsService.finishForce(req.id), 'forceFinish')}>
-                  Forçar devolução
+                  {t('forceReturn')}
                 </Button>
               )}
             </div>
           ) : (
             <Button size="sm" loading={loading === 'finish'} onClick={() => act(() => requestsService.finish(req.id), 'finish')}>
-              Confirmar devolução
+              {t('confirmReturn')}
             </Button>
           )
         )}
 
         {(req.status === 'pending' || req.status === 'accepted') && (
           <Button size="sm" variant="outline" loading={loading === 'cancel'} onClick={() => act(() => requestsService.cancel(req.id), 'cancel')}>
-            Cancelar
+            {t('cancel')}
           </Button>
         )}
 
         {req.status === 'finished' && (
           <Button size="sm" variant="secondary" onClick={() => setShowReview(true)}>
-            Avaliar
+            {t('review')}
           </Button>
         )}
 
         {role === 'requester' && req.status === 'in_progress' && req.extension_status !== 'pending' && (
           <Button size="sm" variant="outline" onClick={() => setShowExtension(true)}>
-            <CalendarClock className="w-3.5 h-3.5" /> Pedir prorrogação
+            <CalendarClock className="w-3.5 h-3.5" /> {t('requestExtension')}
           </Button>
         )}
 
@@ -209,7 +213,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           href={`/requests/${req.id}`}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
         >
-          <MessageCircle className="w-4 h-4" /> Ver conversa
+          <MessageCircle className="w-4 h-4" /> {t('viewConversation')}
         </Link>
       </div>
 

@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useMemo, useRef } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
+import { useLocale, useTranslations } from 'next-intl'
 import { Category, Item } from '@/types'
 import { formatCurrency, getCategoryLabel, formatDistance } from '@/lib/utils'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -159,6 +160,8 @@ function FocusItem({
 
 export default function ItemsMapView({ items, getDistance, homeLocation, liveLocation, radiusKm, categories, focusItem }: Props) {
   const { theme } = useTheme()
+  const locale = useLocale() as 'pt' | 'en'
+  const t = useTranslations('Common.ItemsMapView')
   const markersRef = useRef<Map<string, L.Marker>>(new Map())
   const clusterRef = useRef<{ zoomToShowLayer?: (layer: L.Layer, cb: () => void) => void } | null>(null)
 
@@ -200,7 +203,7 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
           {homeLocation && (
             <>
               <Marker position={[homeLocation.lat, homeLocation.lng]} icon={homeIcon()} zIndexOffset={1000}>
-                <Popup>Seu endereço cadastrado</Popup>
+                <Popup>{t('homeMarker')}</Popup>
               </Marker>
               {!!radiusKm && radiusKm > 0 && (
                 <Circle
@@ -215,7 +218,7 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
           {liveLocation && (
             <>
               <Marker position={[liveLocation.lat, liveLocation.lng]} icon={liveLocationIcon()} zIndexOffset={1000}>
-                <Popup>Sua localização atual</Popup>
+                <Popup>{t('liveMarker')}</Popup>
               </Marker>
               {!!radiusKm && radiusKm > 0 && (
                 <Circle
@@ -259,13 +262,13 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
                       <p className="font-semibold text-sm text-gray-900 leading-snug mb-1">{item.title}</p>
                       <p className="text-xs text-gray-600 mb-1">
                         {item.availability_type === 'free' ? (
-                          <span className="text-green-600 font-medium">Gratuito</span>
+                          <span className="text-green-600 font-medium">{t('free')}</span>
                         ) : (
-                          <>{formatCurrency(item.daily_rate ?? 0)}<span className="text-gray-400">/dia</span></>
+                          <>{formatCurrency(item.daily_rate ?? 0, locale)}<span className="text-gray-400">{t('perDay')}</span></>
                         )}
                         {distanceKm != null && <span className="text-gray-400"> · {formatDistance(distanceKm)}</span>}
                       </p>
-                      <span className="text-xs font-medium text-green-700">Ver detalhes →</span>
+                      <span className="text-xs font-medium text-green-700">{t('viewDetails')}</span>
                     </Link>
                   </Popup>
                 </Marker>
@@ -277,8 +280,7 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
 
       {itemsWithoutCoords > 0 && (
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-          {itemsWithoutCoords} item{itemsWithoutCoords !== 1 ? 's' : ''} sem localização não aparece
-          {itemsWithoutCoords !== 1 ? 'm' : ''} no mapa.
+          {t('withoutLocation', { count: itemsWithoutCoords })}
         </p>
       )}
     </div>

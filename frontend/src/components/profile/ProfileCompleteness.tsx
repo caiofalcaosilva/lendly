@@ -1,19 +1,21 @@
+'use client'
 import { CheckCircle2, Circle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { User } from '@/types'
 
-function buildChecks(user: User) {
+function buildChecks(user: User, t: ReturnType<typeof useTranslations>) {
   const checks = [
-    { key: 'avatar', label: 'Foto de perfil', done: !!user.avatar_url },
-    { key: 'bio', label: user.account_type === 'business' ? 'Sobre o negócio' : 'Bio', done: !!user.bio },
-    { key: 'phone', label: 'Telefone', done: !!user.phone },
-    { key: 'address', label: 'Endereço', done: !!user.zip_code },
-    { key: 'verified', label: 'E-mail verificado', done: user.is_verified },
-    { key: '2fa', label: 'Autenticação em duas etapas', done: user.totp_enabled },
+    { key: 'avatar', label: t('avatar'), done: !!user.avatar_url },
+    { key: 'bio', label: user.account_type === 'business' ? t('aboutBusiness') : t('bio'), done: !!user.bio },
+    { key: 'phone', label: t('phone'), done: !!user.phone },
+    { key: 'address', label: t('address'), done: !!user.zip_code },
+    { key: 'verified', label: t('emailVerified'), done: user.is_verified },
+    { key: '2fa', label: t('twoFactor'), done: user.totp_enabled },
   ]
   if (user.account_type === 'business') {
     checks.push({
       key: 'contact',
-      label: 'Site, Instagram ou WhatsApp',
+      label: t('contact'),
       done: !!(user.website || user.instagram || user.whatsapp),
     })
   }
@@ -23,7 +25,8 @@ function buildChecks(user: User) {
 // Hides itself once complete — a permanent 100% badge would be a
 // participation trophy, not a signal worth showing.
 export default function ProfileCompleteness({ user }: { user: User }) {
-  const checks = buildChecks(user)
+  const t = useTranslations('Common.ProfileCompleteness')
+  const checks = buildChecks(user, t)
   const doneCount = checks.filter((c) => c.done).length
   const percent = Math.round((doneCount / checks.length) * 100)
 
@@ -32,7 +35,7 @@ export default function ProfileCompleteness({ user }: { user: User }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 mb-6">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Perfil {percent}% completo</p>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('percentComplete', { percent })}</p>
         <span className="text-xs text-gray-400 dark:text-gray-500">{doneCount}/{checks.length}</span>
       </div>
       <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-3">

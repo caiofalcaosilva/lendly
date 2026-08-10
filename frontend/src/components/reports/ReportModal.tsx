@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { reportsService } from '@/services/reports'
-import { REPORT_REASON_LABELS, ReportReason } from '@/types'
+import { ReportReason } from '@/types'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 
@@ -20,9 +21,10 @@ export default function ReportModal({ itemId, reportedUserId, targetLabel, onClo
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const t = useTranslations('Common.ReportModal')
 
   const submit = async () => {
-    if (!reason) return setError('Selecione um motivo')
+    if (!reason) return setError(t('errorSelectReason'))
     setLoading(true)
     setError('')
     try {
@@ -34,37 +36,37 @@ export default function ReportModal({ itemId, reportedUserId, targetLabel, onClo
       })
       onSuccess()
     } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao enviar denúncia')
+      setError(e.response?.data?.detail || t('errorGeneric'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open onClose={onClose} title={`Denunciar ${targetLabel}`}>
+    <Modal open onClose={onClose} title={t('title', { target: targetLabel })}>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Motivo</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('reason')}</label>
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value as ReportReason)}
             className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            <option value="">Selecione...</option>
+            <option value="">{t('select')}</option>
             {REASONS.map((r) => (
-              <option key={r} value={r}>{REPORT_REASON_LABELS[r]}</option>
+              <option key={r} value={r}>{t(`reasons.${r}`)}</option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Detalhes (opcional)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('details')}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             maxLength={500}
-            placeholder="Descreva o que aconteceu..."
+            placeholder={t('detailsPlaceholder')}
             className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
@@ -73,9 +75,9 @@ export default function ReportModal({ itemId, reportedUserId, targetLabel, onClo
 
         <div className="flex gap-3">
           <Button onClick={submit} loading={loading} disabled={!reason} variant="danger" className="flex-1">
-            Enviar denúncia
+            {t('submit')}
           </Button>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>{t('cancel')}</Button>
         </div>
       </div>
     </Modal>

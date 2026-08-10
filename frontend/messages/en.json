@@ -1,0 +1,1102 @@
+{
+  "Metadata": {
+    "title": "Lendly — Borrow and rent between neighbors",
+    "description": "A community platform to share items with your neighbors."
+  },
+  "Common": {
+    "i18nCheck": "Internationalization working.",
+    "Navbar": {
+      "viewAsMode": "\"View as\" mode: {name} — read only",
+      "exit": "Exit",
+      "closeAnnouncement": "Close announcement",
+      "verifyEmail": "Verify your email to activate your account.",
+      "resendLink": "Resend link",
+      "identityPending": "Your identity verification is under review.",
+      "identityRejected": "Your identity verification was not approved.",
+      "identityNone": "Verify your identity to access items that require it.",
+      "identityResend": "Resend",
+      "identityVerifyNow": "Verify now",
+      "exploreItems": "Browse items",
+      "companies": "Businesses",
+      "groups": "Groups",
+      "newItem": "List an item",
+      "dashboardLink": "Dashboard",
+      "editProfile": "Edit profile",
+      "administration": "Administration",
+      "lightMode": "Light mode",
+      "darkMode": "Dark mode",
+      "logout": "Log out",
+      "login": "Log in",
+      "createAccount": "Sign up",
+      "admin": {
+        "dashboard": "Admin dashboard",
+        "users": "User management",
+        "items": "Item management",
+        "groups": "All groups",
+        "moderation": "Moderation",
+        "verification": "Identity verification",
+        "actions": "Action history",
+        "settings": "Platform settings",
+        "export": "Report export",
+        "categories": "Category management"
+      }
+    },
+    "Footer": {
+      "tagline": "Share with your neighbors. Reduce consumption. Strengthen your community.",
+      "explore": "Browse",
+      "dashboard": "Dashboard",
+      "createAccount": "Sign up"
+    },
+    "AddressFields": {
+      "zipCode": "ZIP code",
+      "autoFilled": "Address filled in automatically",
+      "zipNotFound": "ZIP code not found. Fill in the fields manually.",
+      "zipError": "Error looking up the ZIP code. Fill in the fields manually.",
+      "street": "Street",
+      "streetPlaceholder": "Street, avenue...",
+      "number": "Number",
+      "complement": "Complement",
+      "complementPlaceholder": "Apt 4B, Block C, House...",
+      "neighborhood": "Neighborhood",
+      "state": "State",
+      "stateAbbrev": "State",
+      "city": "City"
+    },
+    "ReliabilityBadge": {
+      "tooltip": "{score}% reliability across {count, plural, one {# loan} other {# loans}}"
+    },
+    "BusinessBadge": {
+      "label": "Business",
+      "tooltip": "Business account"
+    },
+    "ItemCard": {
+      "free": "Free",
+      "perDay": "/day",
+      "removeFavorite": "Remove from favorites",
+      "addFavorite": "Add to favorites",
+      "viewOnMap": "View on map",
+      "noLocation": "Location not provided"
+    },
+    "ItemFilters": {
+      "searchPlaceholder": "Search by name or description...",
+      "category": "Category",
+      "allCategories": "All",
+      "type": "Type",
+      "anyType": "Any type",
+      "free": "Free",
+      "paid": "Paid",
+      "distance": "Distance",
+      "upTo": "up to {distance}",
+      "anyDistance": "Any distance",
+      "clearDistance": "Clear distance",
+      "calculatingLocation": "Calculating location…",
+      "addZipToFilter": "Add your ZIP code to filter by distance",
+      "loginToFilter": "Log in to filter by distance",
+      "moreFilters": "More filters",
+      "neighborhood": "Neighborhood",
+      "neighborhoodPlaceholder": "E.g. Vila Madalena",
+      "city": "City",
+      "cityPlaceholder": "E.g. São Paulo",
+      "filters": "Filters:",
+      "clearAll": "Clear all"
+    },
+    "ItemForm": {
+      "errors": {
+        "minTitle": "Minimum 3 characters",
+        "selectCategory": "Select a category",
+        "enterValue": "Enter the value",
+        "dailyRateRequired": "Enter the daily rate for paid items",
+        "visibilityRequired": "Choose at least \"visible in public search\" or a group to share with.",
+        "connectMercadoPago": "Connect your Mercado Pago account before listing a paid item.",
+        "saveError": "Error saving item"
+      },
+      "title": "Title",
+      "description": "Description",
+      "descriptionPlaceholder": "Condition, included accessories, etc.",
+      "category": "Category",
+      "select": "Select...",
+      "subcategory": "Subcategory",
+      "none": "None",
+      "availabilityType": "Availability type",
+      "freeLoan": "Free (loan)",
+      "paidRental": "Paid (rental)",
+      "connectMercadoPagoNotice": "Connect your Mercado Pago account before listing a paid item.",
+      "connectNow": "Connect now",
+      "dailyRate": "Daily rate (R$)",
+      "availableDays": "Available on which days of the week",
+      "availableDaysHint": "— leave all unchecked to make it available every day",
+      "weekdays": { "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun" },
+      "requireVerification": "Require approved identity verification to borrow",
+      "usageRules": "Usage rules",
+      "usageRulesPlaceholder": "E.g. Return clean, no commercial use...",
+      "visibility": "Visibility",
+      "visibleInPublicSearch": "Visible in public search",
+      "alsoShareInGroups": "Also share in these groups:",
+      "itemLocation": "Item location",
+      "itemLocationHint": "— enter the ZIP code to fill in automatically",
+      "itemAddress": "Item address",
+      "useDefaultAddress": "Use my default address",
+      "otherAddress": "Other address",
+      "profileAddress": "Your profile's address",
+      "saveChanges": "Save changes",
+      "createItem": "List item",
+      "cancel": "Cancel"
+    },
+    "ItemsMapView": {
+      "homeMarker": "Your registered address",
+      "liveMarker": "Your current location",
+      "free": "Free",
+      "perDay": "/day",
+      "viewDetails": "View details →",
+      "withoutLocation": "{count, plural, one {# item without a location doesn't appear} other {# items without a location don't appear}} on the map."
+    },
+    "LocationFields": {
+      "zipCode": "ZIP code",
+      "zipCodePlaceholder": "00000-000 (fills in the fields automatically)",
+      "autoFilled": "Location filled in automatically",
+      "zipNotFound": "ZIP code not found. Fill in manually.",
+      "zipError": "Error looking up the ZIP code. Fill in manually.",
+      "neighborhood": "Neighborhood",
+      "state": "State",
+      "stateAbbrev": "State",
+      "city": "City"
+    },
+    "RequestStatus": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "refused": "Refused",
+      "in_progress": "In progress",
+      "finished": "Finished",
+      "cancelled": "Cancelled"
+    },
+    "RequestCard": {
+      "errorConfirming": "Error confirming",
+      "owner": "Owner: {name}",
+      "requester": "Requester: {name}",
+      "paymentStatus": {
+        "processing": "Awaiting payment",
+        "held": "Payment confirmed",
+        "released": "Payment released",
+        "refunded": "Payment refunded",
+        "failed": "Payment failed"
+      },
+      "pickup": "Pickup: {date}",
+      "returnDate": "Return: {date}",
+      "extensionRequestedOwner": "Requested an extension until {date}",
+      "extensionRequestedRequester": "Extension requested until {date} — awaiting response",
+      "approve": "Approve",
+      "reject": "Reject",
+      "waitingForPayment": "Waiting for the requester to pay before pickup can be released",
+      "pickupConfirmedWaitingRequester": "You confirmed the pickup — waiting for the requester to confirm",
+      "pickupConfirmedWaitingOwner": "You confirmed the pickup — waiting for the owner to confirm",
+      "forcePickup": "Force pickup",
+      "confirmPickup": "Confirm pickup",
+      "returnConfirmedWaitingRequester": "You confirmed the return — waiting for the requester to confirm",
+      "returnConfirmedWaitingOwner": "You confirmed the return — waiting for the owner to confirm",
+      "forceReturn": "Force return",
+      "confirmReturn": "Confirm return",
+      "cancel": "Cancel",
+      "review": "Review",
+      "requestExtension": "Request extension",
+      "viewConversation": "View conversation",
+      "accept": "Accept",
+      "refuse": "Refuse"
+    },
+    "ChatPanel": {
+      "errorLoading": "Could not load messages",
+      "errorSending": "Error sending message",
+      "title": "Conversation",
+      "loadingMessages": "Loading messages...",
+      "noMessages": "No messages yet. Say hi!",
+      "placeholder": "Write a message..."
+    },
+    "ExtensionModal": {
+      "errorChooseDate": "Choose the new return date",
+      "errorGeneric": "Error requesting extension",
+      "title": "Request extension",
+      "currentReturnDate": "Current expected return date:",
+      "newReturnDate": "New return date",
+      "submit": "Send request",
+      "cancel": "Cancel"
+    },
+    "PixCheckout": {
+      "payToConfirm": "Pay via Pix to confirm the request",
+      "qrCodeAlt": "Pix QR code",
+      "copied": "Copied!",
+      "copyCode": "Copy Pix code",
+      "autoUpdateNotice": "As soon as your bank confirms the payment, this screen updates automatically."
+    },
+    "RequestModal": {
+      "errors": {
+        "pickupDateRequired": "Enter the pickup date",
+        "returnDateRequired": "Enter the return date",
+        "returnAfterPickup": "The return must be after the pickup",
+        "pickupDayUnavailable": "This item isn't available for pickup on that day",
+        "returnDayUnavailable": "This item isn't available for return on that day"
+      },
+      "errorGeneric": "Error sending request",
+      "title": "Request item",
+      "freeLoan": "Free loan",
+      "paidRental": "Rental · {price}/day",
+      "owner": "Owner: {name}",
+      "availableDaysNotice": "This item is only available for pickup and return on: {days}",
+      "pickupDate": "Pickup date",
+      "expectedReturnDate": "Expected return date",
+      "notes": "Notes (optional)",
+      "notesPlaceholder": "Describe what you'll use it for, how you'll pick it up, etc.",
+      "submit": "Send request",
+      "cancel": "Cancel",
+      "weekdays": {
+        "monday": "Monday", "tuesday": "Tuesday", "wednesday": "Wednesday", "thursday": "Thursday",
+        "friday": "Friday", "saturday": "Saturday", "sunday": "Sunday"
+      }
+    },
+    "ReportModal": {
+      "errorSelectReason": "Select a reason",
+      "errorGeneric": "Error submitting report",
+      "title": "Report {target}",
+      "reason": "Reason",
+      "select": "Select...",
+      "reasons": {
+        "spam": "Spam",
+        "fake_item": "Fake or misleading item",
+        "inappropriate": "Inappropriate content",
+        "fraud": "Fraud",
+        "other": "Other"
+      },
+      "details": "Details (optional)",
+      "detailsPlaceholder": "Describe what happened...",
+      "submit": "Submit report",
+      "cancel": "Cancel"
+    },
+    "ReviewModal": {
+      "errorSelectRating": "Select a rating",
+      "errorGeneric": "Error submitting review",
+      "title": "Review {name}",
+      "subtitle": "How was your experience with {name}?",
+      "ratings": {
+        "veryBad": "Very bad",
+        "bad": "Bad",
+        "regular": "Okay",
+        "good": "Good",
+        "excellent": "Excellent"
+      },
+      "comment": "Comment (optional)",
+      "commentPlaceholder": "Tell us how it went...",
+      "submit": "Submit review",
+      "cancel": "Cancel"
+    },
+    "ReviewCard": {
+      "lent": "Lent",
+      "borrowed": "Borrowed",
+      "removeReview": "Remove review",
+      "product": "Item:",
+      "to": "To: {name}"
+    },
+    "DeleteAccountModal": {
+      "errorPasswordRequired": "Enter your password",
+      "errorGeneric": "Error deleting account",
+      "title": "Delete account",
+      "warning": "This action cannot be undone. Your personal data will be erased, your items deactivated, and you'll be removed from the groups you're part of. Reviews and loan history with other people remain, but show \"Removed user\" instead.",
+      "confirmPassword": "Confirm your password",
+      "submit": "Delete my account",
+      "cancel": "Cancel"
+    },
+    "ChangePasswordModal": {
+      "errorBothFields": "Fill in both fields",
+      "errorMinLength": "The new password needs at least 6 characters",
+      "errorGeneric": "Error changing password",
+      "title": "Change password",
+      "notice": "You'll be logged out of your other devices after changing your password.",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "Minimum 6 characters",
+      "cancel": "Cancel"
+    },
+    "ChangeEmailModal": {
+      "errorBothFields": "Fill in both fields",
+      "errorGeneric": "Error changing email",
+      "title": "Change email",
+      "notice": "You'll need to verify the new email before using the account normally again.",
+      "newEmail": "New email",
+      "confirmPassword": "Confirm your password",
+      "cancel": "Cancel"
+    },
+    "ProfileCompleteness": {
+      "avatar": "Profile photo",
+      "aboutBusiness": "About the business",
+      "bio": "Bio",
+      "phone": "Phone",
+      "address": "Address",
+      "emailVerified": "Verified email",
+      "twoFactor": "Two-factor authentication",
+      "contact": "Website, Instagram, or WhatsApp",
+      "percentComplete": "Profile {percent}% complete"
+    },
+    "IdentityVerificationSection": {
+      "errorInvalidCpf": "Invalid CPF",
+      "errorFilesRequired": "Upload the selfie and the document photo",
+      "errorGeneric": "Error submitting verification",
+      "title": "Identity verification",
+      "approved": "Identity verified — you can request items that require verification.",
+      "pending": "Under review — we'll notify you by email as soon as there's a response.",
+      "rejected": "Not approved. You can submit again with updated documents.",
+      "none": "Submit CPF + selfie + document to request items that require verification.",
+      "rejectionReason": "Reason: {reason}",
+      "selfie": "Selfie",
+      "chooseSelfie": "Choose a photo of your face",
+      "documentWithPhoto": "Photo ID",
+      "chooseDocument": "Choose a photo of your ID",
+      "submit": "Submit verification"
+    },
+    "MercadoPagoConnectSection": {
+      "title": "Mercado Pago account",
+      "connectedOn": "Connected on {date} — you can now list paid items.",
+      "connected": "Connected — you can now list paid items.",
+      "notConnected": "Connect your account to list paid items and receive payment via Pix when the item is picked up.",
+      "connectButton": "Connect Mercado Pago"
+    },
+    "SessionsSection": {
+      "title": "Connected devices",
+      "description": "Sessions that keep renewing your login automatically. Revoke any you don't recognize.",
+      "noOtherSessions": "No active sessions besides this one.",
+      "sessionInfo": "Connected on {created} · expires on {expires}",
+      "revoke": "Revoke session"
+    },
+    "LoginHistorySection": {
+      "title": "Login history",
+      "description": "Recent access to your account — if something here isn't you, change your password.",
+      "noHistory": "No logins recorded yet.",
+      "unknownDevice": "Unknown device",
+      "ended": "Ended"
+    },
+    "NotificationPreferencesSection": {
+      "title": "Email notifications",
+      "securityNotice": "Security emails (login, account verification, password reset) are not affected.",
+      "options": {
+        "request_status": "Status changes on my requests",
+        "new_message": "New chat messages",
+        "verification_result": "Identity verification result",
+        "item_available": "Waitlisted item became available",
+        "review_reminder": "Reminder to review a finished loan"
+      }
+    },
+    "InAppNotificationPreferencesSection": {
+      "title": "Bell notifications",
+      "independentNotice": "Independent from the email preferences above — turning one off doesn't turn off the other.",
+      "options": {
+        "request_status": "Status changes on my requests",
+        "new_message": "New chat messages",
+        "verification_result": "Identity verification result",
+        "item_available": "Waitlisted item became available",
+        "review_reminder": "Reminder to review a finished loan",
+        "group_vouch": "Someone confirmed they know you in a group",
+        "favorite_item_changed": "A favorited item's price or availability changed"
+      }
+    },
+    "AvatarUploader": {
+      "errorUpload": "Error uploading photo",
+      "errorRemove": "Error removing photo",
+      "changePhoto": "Change photo",
+      "removePhoto": "Remove photo"
+    },
+    "TotpSetupModal": {
+      "errorSetup": "Error starting setup",
+      "errorSixDigits": "Enter the 6-digit code",
+      "errorInvalidCode": "Invalid code. Try again.",
+      "title": "Set up two-factor authentication",
+      "scanInstructions": "Scan the QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.).",
+      "orEnterManually": "Or enter the key manually:",
+      "copy": "Copy",
+      "afterAdding": "After adding the account in the app, click <strong>Continue</strong> to confirm.",
+      "continue": "Continue",
+      "cancel": "Cancel",
+      "confirmInstructions": "Enter the 6-digit code generated by your app to confirm the setup.",
+      "verificationCode": "Verification code",
+      "activate2fa": "Enable 2FA",
+      "back": "Back"
+    },
+    "TwoFactorModal": {
+      "errorSixDigits": "Enter the 6 digits",
+      "errorInvalidCode": "Invalid code",
+      "title": "Two-factor verification",
+      "instructions": "Open your authenticator app and enter the 6-digit code.",
+      "appExamples": "Google Authenticator, Authy, etc.",
+      "trustDevice": "Trust this device for 30 days",
+      "verify": "Verify",
+      "cancel": "Cancel"
+    },
+    "ReputationBadges": {
+      "new": {
+        "label": "New here",
+        "title": "Hasn't completed a loan on the platform yet"
+      },
+      "trusted": {
+        "label": "Trusted neighbor",
+        "title": "{score}% reliability across {count} loans"
+      },
+      "punctual": {
+        "label": "Always on time",
+        "title": "Returned on time in {count} of {count} loans"
+      },
+      "rated": {
+        "label": "Highly rated",
+        "title": "Average rating {rating} across {count} reviews"
+      },
+      "responsive": {
+        "label": "Responds fast",
+        "title": "Responds to requests in {response}, on average, over the last {count}",
+        "underOneMin": "under 1 min",
+        "minutes": "{count} min"
+      }
+    },
+    "NotificationBell": {
+      "ariaLabelUnread": "Notifications, {count} unread",
+      "ariaLabel": "Notifications",
+      "unreadStatus": "{count} unread notifications",
+      "title": "Notifications",
+      "empty": "No notifications yet.",
+      "viewAll": "View all"
+    }
+  },
+  "Items": {
+    "loadingMap": "Loading map...",
+    "title": "Browse items",
+    "subtitleWithCity": "Find available items near you in {city}",
+    "subtitle": "Find items available for loan in your area",
+    "locating": "Locating you...",
+    "useMyLocation": "Use my current location",
+    "nearYou": "Near you",
+    "itemsLoaded": "{count, plural, one {# item loaded} other {# items loaded}}",
+    "itemsOnMap": "{count, plural, one {# item on the map} other {# items on the map}}",
+    "withinRadius": "within {km} km of you",
+    "listView": "List",
+    "mapView": "Map",
+    "loadingItems": "Loading items...",
+    "emptyTitle": "No items found",
+    "emptyRadius": "No items within {km} km of you. Try increasing the radius.",
+    "emptyFilters": "No results for the applied filters. Try adjusting them.",
+    "emptyNone": "No items listed yet. Be the first to list one!",
+    "allLoaded": "All items have been loaded.",
+    "meta": {
+      "defaultTitle": "Browse items — Lendly",
+      "defaultDescription": "Find items available for loan or rent in your neighborhood on Lendly.",
+      "searchTitle": "Search \"{search}\" — Lendly",
+      "searchDescription": "Results for \"{search}\" — items available for loan or rent on Lendly.",
+      "subcategoryTitle": "{subcategory} · {category} — Lendly",
+      "subcategoryDescription": "Find {subcategory} ({category}) available for loan or rent in your neighborhood.",
+      "categoryTitle": "{category} to borrow or rent — Lendly",
+      "categoryDescription": "Find {category} available for loan or rent in your neighborhood."
+    },
+    "New": {
+      "title": "List an item",
+      "subtitle": "Share an item with your neighbors"
+    },
+    "Id": {
+      "confirmDelete": "Remove this item?",
+      "notFound": "Item not found",
+      "backToItems": "Back to items",
+      "metaNotFoundTitle": "Item not found | Lendly",
+      "metaFallbackDescription": "{price} · {category} · Available on Lendly",
+      "free": "Free",
+      "rental": "Rental",
+      "perDay": "/day",
+      "description": "Description",
+      "availableOn": "Available: {days}",
+      "weekdays": { "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun" },
+      "usageRules": "Usage rules",
+      "listedBy": "Listed by",
+      "loginToRequest": "Log in to request",
+      "temporarilyUnavailable": "Item temporarily unavailable",
+      "cancelNotify": "Cancel notification",
+      "notifyWhenAvailable": "Notify me when available",
+      "requiresVerification": "This item requires approved identity verification.",
+      "verificationPending": "Verification under review",
+      "verifyIdentity": "Verify identity",
+      "requestLoan": "Request loan",
+      "requestRental": "Request rental",
+      "publishedOn": "Published on {date}",
+      "report": "Report",
+      "similarItems": "Similar items",
+      "reportTargetLabel": "item",
+      "reportSent": "Report sent. Thanks for helping keep the community safe.",
+      "Edit": {
+        "notFound": "Item not found",
+        "title": "Edit item"
+      }
+    }
+  },
+  "Admin": {
+    "Groups": {
+      "title": "All groups",
+      "subtitle": "Every group on the platform, even ones you're not part of.",
+      "emptyTitle": "No groups registered yet"
+    },
+    "Export": {
+      "title": "Report export",
+      "subtitle": "Download a CSV with all the data from each area, for offline analysis.",
+      "downloadCsv": "Download CSV",
+      "reports": {
+        "users": { "label": "Users", "description": "All users, with status, account type, and reputation." },
+        "items": { "label": "Items", "description": "All listed items, with owner, category, and status." },
+        "loanRequests": { "label": "Loans", "description": "All loan requests, with status and dates." }
+      }
+    },
+    "Moderation": {
+      "title": "Moderation",
+      "subtitle": "Item and profile reports, to review and act on.",
+      "pending": "Pending",
+      "resolved": "Resolved",
+      "emptyPending": "No pending reports",
+      "emptyResolved": "No resolved reports yet",
+      "emptyPendingDescription": "All quiet here.",
+      "statusPending": "Pending",
+      "statusRemoved": "Removed",
+      "statusDismissed": "Dismissed",
+      "reason": "Reason:",
+      "reportedBy": "Reported by {name} on {date}",
+      "reviewedBy": "Reviewed by {name} on {date}",
+      "remove": "Remove",
+      "dismiss": "Dismiss"
+    },
+    "Settings": {
+      "errorSaving": "Error saving settings",
+      "title": "Platform settings",
+      "subtitle": "Operational parameters — sensitive data (keys, email credentials) stays in .env only.",
+      "fields": {
+        "access_token_expire_minutes": { "label": "Session duration (minutes)", "helper": "Time until the access token expires and needs to be renewed." },
+        "refresh_token_expire_days": { "label": "Refresh token duration (days)", "helper": "How long the user stays logged in without needing to sign in again." },
+        "email_verification_expire_hours": { "label": "Email verification link expiration (hours)", "helper": "Deadline for the user to click the link before needing a new one." },
+        "login_rate_limit_per_minute": { "label": "Login attempt limit per minute", "helper": "Per IP — protects against brute force." },
+        "register_rate_limit_per_minute": { "label": "Registration limit per minute", "helper": "Per IP — protects against account-creation abuse." },
+        "complete_2fa_rate_limit_per_minute": { "label": "2FA confirmation limit per minute", "helper": "Per IP — protects against brute-forcing the authenticator code." },
+        "refresh_rate_limit_per_minute": { "label": "Session refresh limit per minute", "helper": "Per IP — exchanging a refresh token for a new token pair." },
+        "resend_verification_rate_limit_per_minute": { "label": "Verification resend limit per minute", "helper": "Per IP — protects against verification email spam." },
+        "chat_message_rate_limit_per_minute": { "label": "Chat message limit per minute", "helper": "Per user — protects the loan chat against flooding." },
+        "password_reset_rate_limit_per_minute": { "label": "Password reset request limit per minute", "helper": "Per IP — protects \"forgot my password\" against abuse." },
+        "handoff_confirmation_grace_hours": { "label": "Grace period to force pickup/return confirmation (hours)", "helper": "After this period since the owner's confirmation, they can force it even without the requester confirming." }
+      },
+      "announcement": "Platform announcement",
+      "announcementHint": "Banner visible to all visitors, logged in or not (e.g. scheduled maintenance).",
+      "announcementPlaceholder": "E.g.: Scheduled maintenance today at 10 PM — the site may be unstable.",
+      "announcementActive": "Announcement active",
+      "lastUpdated": "Last changed by {name} on {date}",
+      "saveChanges": "Save changes",
+      "saved": "Saved"
+    },
+    "Actions": {
+      "title": "Admin action history",
+      "subtitle": "Reports, verifications, and activations/deactivations — newest first. Only shows the most recent state of each user/item, not every intermediate change.",
+      "emptyTitle": "No actions recorded yet",
+      "actionLabels": {
+        "report_dismissed": "Dismissed a report about",
+        "report_actioned": "Removed over a report on",
+        "verification_approved": "Approved verification for",
+        "verification_rejected": "Rejected verification for",
+        "user_activated": "Reactivated user",
+        "user_deactivated": "Deactivated user",
+        "item_activated": "Reactivated item",
+        "item_deactivated": "Deactivated item",
+        "user_promoted": "Promoted to admin",
+        "user_demoted": "Removed admin from"
+      }
+    },
+    "Dashboard": {
+      "title": "Admin dashboard",
+      "subtitle": "Platform overview.",
+      "activeUsers": "Active users",
+      "activeItems": "Active items",
+      "pendingLoans": "Pending loans",
+      "inProgress": "In progress",
+      "finished": "Finished",
+      "cancelledOrRefused": "Cancelled / refused",
+      "pendingReports": "Pending reports",
+      "pendingVerifications": "Pending verifications",
+      "weeklySignups": "Signups per week",
+      "weekOf": "Week of {week}: {count} signups",
+      "topCategories": "Top categories",
+      "topCities": "Top cities"
+    },
+    "Verification": {
+      "selfie": "Selfie",
+      "document": "Document",
+      "title": "Identity verification",
+      "subtitle": "Queue of CPF + photo submissions, to review and approve or reject.",
+      "pending": "Pending",
+      "resolved": "Resolved",
+      "emptyPending": "No pending verifications",
+      "emptyResolved": "No resolved verifications yet",
+      "emptyPendingDescription": "All quiet here.",
+      "cpf": "CPF",
+      "statusPending": "Pending",
+      "statusApproved": "Approved",
+      "statusRejected": "Rejected",
+      "reason": "Reason: {reason}",
+      "submittedOn": "Submitted on {date}",
+      "reviewedBy": "Reviewed by {name} on {date}",
+      "viewPhotos": "View photos",
+      "rejectionReasonPlaceholder": "Rejection reason (optional)",
+      "confirmRejection": "Confirm rejection",
+      "cancel": "Cancel",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "Categories": {
+      "title": "Category management",
+      "subtitle": "Create, edit, or deactivate item categories and subcategories — deactivating only hides them from new listings, existing items keep their category.",
+      "errorCreatingCategory": "Error creating category",
+      "errorCreatingSubcategory": "Error creating subcategory",
+      "newCategory": "New category",
+      "newCategoryPlaceholder": "E.g.: Musical instruments",
+      "create": "Create",
+      "inactive": "Inactive",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "newSubcategoryPlaceholder": "New subcategory..."
+    },
+    "Users": {
+      "title": "User management",
+      "subtitle": "Search, activate, or deactivate accounts.",
+      "searchPlaceholder": "Search by name, email, or business name...",
+      "confirmActivate": "{count, plural, one {Activate # selected user?} other {Activate # selected users?}}",
+      "confirmDeactivate": "{count, plural, one {Deactivate # selected user?} other {Deactivate # selected users?}}",
+      "activatedSuccess": "{count, plural, one {# user activated} other {# users activated}} successfully.",
+      "deactivatedSuccess": "{count, plural, one {# user deactivated} other {# users deactivated}} successfully.",
+      "activatedWithFailures": "{succeeded, plural, one {# user activated} other {# users activated}}, {failed, plural, one {# failed} other {# failed}}: {reasons}",
+      "deactivatedWithFailures": "{succeeded, plural, one {# user deactivated} other {# users deactivated}}, {failed, plural, one {# failed} other {# failed}}: {reasons}",
+      "selectedCount": "{count, plural, one {# selected} other {# selected}}",
+      "activateSelected": "Activate selected",
+      "deactivateSelected": "Deactivate selected",
+      "clearSelection": "Clear selection",
+      "emptyTitle": "No users found",
+      "emptyDescription": "Try adjusting your search.",
+      "columnUser": "User",
+      "columnCity": "City",
+      "columnSignup": "Signed up",
+      "columnStatus": "Status",
+      "columnAction": "Action",
+      "statusActive": "Active",
+      "statusInactive": "Deactivated",
+      "adminBadge": "Admin",
+      "viewAs": "View as",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "removeAdmin": "Remove admin",
+      "promote": "Promote",
+      "loadMore": "Load more",
+      "errorUpdatingUser": "Error updating user",
+      "errorViewAs": "Error entering \"view as\" mode",
+      "confirmDemote": "Remove admin privileges from {name}?",
+      "confirmPromote": "Make {name} an administrator? The account will lose access to listing and renting items.",
+      "errorUpdatingAdminLevel": "Error updating admin level"
+    },
+    "Items": {
+      "title": "Item management",
+      "subtitle": "Search, activate, or deactivate platform items.",
+      "searchPlaceholder": "Search by title...",
+      "confirmActivate": "{count, plural, one {Activate # selected item?} other {Activate # selected items?}}",
+      "confirmDeactivate": "{count, plural, one {Deactivate # selected item?} other {Deactivate # selected items?}}",
+      "activatedSuccess": "{count, plural, one {# item activated} other {# items activated}} successfully.",
+      "deactivatedSuccess": "{count, plural, one {# item deactivated} other {# items deactivated}} successfully.",
+      "activatedWithFailures": "{succeeded, plural, one {# item activated} other {# items activated}}, {failed, plural, one {# failed} other {# failed}}: {reasons}",
+      "deactivatedWithFailures": "{succeeded, plural, one {# item deactivated} other {# items deactivated}}, {failed, plural, one {# failed} other {# failed}}: {reasons}",
+      "selectedCount": "{count, plural, one {# selected} other {# selected}}",
+      "activateSelected": "Activate selected",
+      "deactivateSelected": "Deactivate selected",
+      "clearSelection": "Clear selection",
+      "emptyTitle": "No items found",
+      "emptyDescription": "Try adjusting your search.",
+      "columnItem": "Item",
+      "columnOwner": "Owner",
+      "columnCity": "City",
+      "columnSignup": "Signed up",
+      "columnStatus": "Status",
+      "columnAction": "Action",
+      "statusActive": "Active",
+      "statusInactive": "Deactivated",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "loadMore": "Load more",
+      "errorUpdatingItem": "Error updating item"
+    }
+  },
+  "Users": {
+    "Id": {
+      "confirmDeleteReview": "Remove this review? The user's rating will be recalculated.",
+      "notFound": "User not found",
+      "backToItems": "Back to items",
+      "metaNotFoundTitle": "User not found | Lendly",
+      "metaDescriptionWithLocation": "{name} · {location} · Profile on Lendly",
+      "metaDescriptionNoLocation": "{name} · Profile on Lendly",
+      "memberSince": "Member since {date}",
+      "ratingCount": "{count, plural, one {# review} other {# reviews}}",
+      "favorited": "Favorited",
+      "favorite": "Favorite",
+      "report": "Report",
+      "availableItems": "Available items",
+      "noItems": "No items listed yet.",
+      "featured": "Featured",
+      "reviewsReceived": "Reviews received",
+      "noReviews": "No reviews yet.",
+      "reportTargetLabel": "user",
+      "reportSent": "Report sent. Thanks for helping keep the community safe."
+    }
+  },
+  "Home": {
+    "badge": "Sustainable community",
+    "heroTitlePrefix": "Lend, rent, and",
+    "heroTitleHighlight": "strengthen your neighborhood",
+    "heroSubtitle": "Lendly connects neighbors to share things. Fewer unnecessary purchases, more connection between people, and more money in your pocket.",
+    "getStarted": "Get started",
+    "exploreItems": "Browse items",
+    "howItWorksTitle": "How it works",
+    "howItWorks": {
+      "step1": { "title": "List your item", "desc": "Photo, description, and price. Available to the neighborhood in minutes." },
+      "step2": { "title": "Get requests", "desc": "Neighbors find your item and send a loan or rental request." },
+      "step3": { "title": "Share and review", "desc": "Arrange the handoff in person, lend it out, and review each other." }
+    },
+    "categoriesTitle": "What you can find",
+    "categories": {
+      "tools": "Tools",
+      "sports": "Sports",
+      "books": "Books",
+      "more": "And much more"
+    },
+    "features": {
+      "secure": { "title": "Secure", "desc": "Mutual reviews and history build trust in the community." },
+      "community": { "title": "Community-driven", "desc": "Strengthen ties with neighbors and build a real network of collaboration." },
+      "sustainable": { "title": "Sustainable", "desc": "Reduce consumption and waste in your area." }
+    },
+    "benefitsTitle": "Why use Lendly?",
+    "benefits": {
+      "benefit1": "Save money by avoiding unnecessary purchases",
+      "benefit2": "Earn extra income from items sitting idle at home",
+      "benefit3": "Get to know your neighbors and strengthen the community",
+      "benefit4": "Reduce the environmental impact of overconsumption"
+    },
+    "freeToStart": "free to get started",
+    "createFreeAccount": "Create a free account",
+    "noCreditCard": "No credit card required"
+  },
+  "Requests": {
+    "Id": {
+      "notFound": "Request not found",
+      "backToDashboard": "Back to dashboard"
+    }
+  },
+  "Dashboard": {
+    "onboarding": {
+      "title": "First steps",
+      "dismiss": "Dismiss",
+      "address": "Complete your address",
+      "item": "List your first item",
+      "request": "Make your first request"
+    },
+    "greeting": "Hi, {name} 👋",
+    "ratingCount": "{rating} ({count, plural, one {# review} other {# reviews}})",
+    "listItem": "List an item",
+    "cannotConnect": "Could not connect to the server. Check that the API is running at {url}.",
+    "errorLoadingStatus": "Error loading data ({status})",
+    "errorLoading": "Error loading data",
+    "retry": "Try again",
+    "exploreItems": "Browse items",
+    "perDay": "/day",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "removeFromFeatured": "Remove from featured",
+    "featureOnProfile": "Feature on profile (max. {max})",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "adminNoItems": "Administrative accounts don't list items.",
+    "owner": "Owner: {name}",
+    "requester": "Requester: {name}",
+    "stats": {
+      "myItems": "My items",
+      "received": "Requests received",
+      "inProgress": "In progress",
+      "reviews": "Reviews"
+    },
+    "tabs": {
+      "items": "My items",
+      "received": "Received",
+      "sent": "Sent",
+      "history": "History",
+      "favorites": "Favorites",
+      "given-reviews": "Reviews given",
+      "analytics": "Analytics"
+    },
+    "items": {
+      "emptyTitle": "No items listed",
+      "emptyDescription": "Start by listing an item for your neighbors."
+    },
+    "received": {
+      "emptyTitle": "No requests received",
+      "emptyDescription": "When someone requests one of your items, it'll show up here."
+    },
+    "sent": {
+      "totalSpent": "Total spent renting items",
+      "paymentsCount": "{count, plural, one {# payment} other {# payments}}",
+      "emptyTitle": "No requests sent",
+      "emptyDescription": "Browse available items and make your first request."
+    },
+    "history": {
+      "emptyTitle": "No history yet",
+      "emptyDescription": "Your loan and rental history will show up here.",
+      "reviewReceived": "Review received for this loan:"
+    },
+    "favorites": {
+      "emptyTitle": "No favorites yet",
+      "emptyDescription": "Save items you're interested in to find them easily later.",
+      "favoritePeople": "Favorite people and businesses"
+    },
+    "givenReviews": {
+      "emptyTitle": "No reviews given yet",
+      "emptyDescription": "After finishing a loan, review the other party on the request card."
+    },
+    "analytics": {
+      "emptyTitle": "No data yet",
+      "emptyDescription": "List items and get requests to see stats here.",
+      "totalRevenue": "Total revenue",
+      "finishedLoans": "Finished loans",
+      "averageOccupancy": "Average occupancy",
+      "mostPopularItem": "Most popular item",
+      "tableItem": "Item",
+      "tableLoans": "Loans",
+      "tableRevenue": "Revenue",
+      "tableOccupancy": "Occupancy"
+    }
+  },
+  "Profile": {
+    "errors": {
+      "minName": "Minimum 2 characters",
+      "maxBio": "Maximum 500 characters",
+      "invalidCnpj": "Invalid CNPJ",
+      "saveError": "Error saving profile",
+      "invalidCode": "Invalid code"
+    },
+    "confirmPause": "Pause your account? Your items disappear from search and stop receiving new requests until you reactivate.",
+    "title": "Edit profile",
+    "subtitle": "Keep your information up to date to make it easier for neighbors to reach you",
+    "ratingCount": "({count, plural, one {# review} other {# reviews}})",
+    "accountData": "Account data",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "downloadData": "Download my data",
+    "changeEmail": "Change email",
+    "changePassword": "Change password",
+    "emailUpdated": "Email updated — check the inbox of your new address.",
+    "passwordUpdated": "Password updated.",
+    "personalInfo": "Personal information",
+    "savedSuccess": "Profile updated successfully!",
+    "fullName": "Full name",
+    "phoneLabel": "Phone",
+    "phoneHelper": "Only visible to the other party in an accepted request",
+    "aboutBusiness": "About the business",
+    "aboutYou": "About you",
+    "bioPlaceholderBusiness": "Tell us a bit about what your business offers...",
+    "bioPlaceholderIndividual": "A brief introduction, visible on your public profile...",
+    "addressPrivacyHint": "— your exact address is never shown publicly",
+    "businessData": "Business data",
+    "companyName": "Legal company name",
+    "tradeName": "Trade name",
+    "businessCategory": "Business category",
+    "businessPhone": "Business phone",
+    "businessHours": "Business hours",
+    "website": "Website",
+    "saveChanges": "Save changes",
+    "back": "Back",
+    "security": "Security",
+    "emailVerification": "Email verification",
+    "emailVerified": "Your email has been verified.",
+    "emailNotVerified": "Email not verified yet. Check your inbox.",
+    "sent": "Sent",
+    "resend": "Resend",
+    "totpTitle": "Two-factor authentication (TOTP)",
+    "totpEnabled": "Enabled — logging in on new devices requires a code from the app.",
+    "totpDisabled": "Disabled — use Google Authenticator, Authy, or similar.",
+    "activate": "Enable",
+    "totpDisableHint": "To disable, confirm with the code from your app:",
+    "disable2fa": "Disable 2FA",
+    "accountPaused": "Account paused",
+    "pauseAccount": "Pause account",
+    "pausedDescription": "Your items are hidden from search and don't receive new requests. Reactivate whenever you want to come back.",
+    "pauseDescription": "Traveling or taking a break? Your items disappear from search and stop receiving requests, but your login and data stay intact — reversible at any time.",
+    "reactivateAccount": "Reactivate account",
+    "dangerZone": "Danger zone",
+    "deleteAccountNotice": "Deleting your account is permanent. Your items are deactivated and your personal data is erased.",
+    "deleteAccount": "Delete my account"
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "subtitle": "Full history — newest first.",
+    "markAllRead": "Mark all as read",
+    "clearRead": "Clear read",
+    "filterByType": "Filter by type",
+    "allTypes": "All types",
+    "types": {
+      "request_status": "Requests",
+      "new_message": "Messages",
+      "verification_result": "Verification",
+      "item_available": "Item available",
+      "review_reminder": "Reviews",
+      "group_vouch": "Group vouches",
+      "favorite_item_changed": "Favorites",
+      "new_login": "Security"
+    },
+    "emptyFilteredTitle": "Nothing here",
+    "emptyTitle": "No notifications yet",
+    "emptyFilteredDescription": "No notifications of that type yet.",
+    "emptyDescription": "Alerts about your requests, messages, and verifications show up here.",
+    "unreadPrefix": "Unread: ",
+    "deleteNotification": "Delete notification: {title}",
+    "loadMore": "Load more"
+  },
+  "Groups": {
+    "title": "My groups",
+    "subtitle": "Private, invite-only neighbor groups — share items only with people you trust.",
+    "createGroup": "Create group",
+    "emptyTitle": "You're not in any group yet",
+    "emptyDescription": "Create a group for your building or street, or ask for an invite link from someone who already has one.",
+    "memberCount": "{count, plural, one {# member} other {# members}}",
+    "New": {
+      "title": "Create group",
+      "subtitle": "A private, invite-only group — only people who join via the link see what's shared in it.",
+      "groupName": "Group name",
+      "groupNamePlaceholder": "E.g.: Garden View Condo",
+      "description": "Description",
+      "optional": "Optional",
+      "cancel": "Cancel",
+      "errorCreating": "Error creating group"
+    },
+    "Id": {
+      "confirmLeave": "Leave this group?",
+      "confirmDelete": "Delete this group? Items shared only with it become public again.",
+      "confirmAdminDelete": "Delete this group as admin? Items shared only with it become public again.",
+      "confirmRemoveMember": "Remove {name} from this group?",
+      "notFound": "Group not found — or you're not a member of it.",
+      "deleteGroup": "Delete group",
+      "leave": "Leave",
+      "copied": "Copied!",
+      "copyInvite": "Copy invite",
+      "memberCount": "{count, plural, one {# member} other {# members}}",
+      "vouchedTooltip": "You've confirmed you know this person",
+      "vouchTooltip": "Confirm you know this person",
+      "removeFromGroup": "Remove from group",
+      "groupItems": "Group items",
+      "emptyItemsTitle": "No items shared yet",
+      "emptyItemsDescription": "When listing or editing an item, check this group under 'Visibility' to share it here."
+    },
+    "Join": {
+      "Code": {
+        "invalidInvite": "Invalid invite",
+        "title": "You've been invited to a group",
+        "subtitle": "Log in to see and share items only with people in this group on Lendly.",
+        "loginToAccept": "Log in to accept the invite",
+        "joinGroup": "Join group"
+      }
+    }
+  },
+  "Empresas": {
+    "title": "Businesses",
+    "subtitle": "Local businesses registered on Lendly — rental shops, equipment stores, and other neighborhood businesses.",
+    "emptyTitle": "No businesses registered yet",
+    "emptyDescription": "Businesses that register on Lendly show up here."
+  },
+  "Login": {
+    "title": "Log in to Lendly",
+    "subtitle": "Welcome back!",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "forgotPassword": "Forgot my password",
+    "submit": "Log in",
+    "noAccount": "Don't have an account?",
+    "createFree": "Create a free account",
+    "errors": {
+      "invalidEmail": "Invalid email",
+      "passwordRequired": "Enter your password",
+      "genericError": "Incorrect email or password"
+    }
+  },
+  "Register": {
+    "title": "Create account",
+    "subtitle": "Join the Lendly community",
+    "step1Label": "Personal info",
+    "step2Label": "Address",
+    "accountType": "Account type",
+    "individual": "Individual",
+    "business": "Business",
+    "nameLabelBusiness": "Your name (account holder)",
+    "nameLabelIndividual": "Full name",
+    "companyName": "Legal company name",
+    "tradeName": "Trade name",
+    "tradeNamePlaceholder": "Optional — if different from the legal name",
+    "businessCategory": "Business category",
+    "businessCategoryPlaceholder": "E.g. Tools and equipment",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Minimum 6 characters",
+    "phoneLabel": "Phone",
+    "continue": "Continue",
+    "addressIntro": "Enter your address so neighbors can find you.",
+    "addressPrivacy": "Your exact address is never shown publicly.",
+    "back": "Back",
+    "submit": "Create account",
+    "haveAccount": "Already have an account?",
+    "login": "Log in",
+    "errors": {
+      "minChars": "Minimum {count} characters",
+      "invalidEmail": "Invalid email",
+      "companyNameRequired": "Enter the legal company name",
+      "invalidCnpj": "Invalid CNPJ",
+      "genericError": "Error creating account"
+    }
+  },
+  "ForgotPassword": {
+    "title": "Forgot my password",
+    "subtitle": "Enter your email and we'll send you a link to reset your password",
+    "sentMessage": "If that email is registered, you'll receive a password reset link shortly.",
+    "emailLabel": "Email",
+    "submit": "Send link",
+    "backToLogin": "Back to login",
+    "errors": {
+      "invalidEmail": "Invalid email",
+      "genericError": "Error sending the reset link"
+    }
+  },
+  "ResetPassword": {
+    "title": "Reset password",
+    "missingToken": "Invalid link — the reset token is missing.",
+    "success": "Password reset successfully. You can now log in with your new password.",
+    "goToLogin": "Go to login",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "Minimum 6 characters",
+    "submit": "Reset password",
+    "errors": {
+      "minChars": "Minimum {count} characters",
+      "invalidOrExpired": "Invalid or expired link"
+    }
+  },
+  "VerifyEmail": {
+    "loading": "Verifying your email…",
+    "successTitle": "Email verified!",
+    "successMessage": "Your account is active. You can now use all of Lendly's features.",
+    "goToDashboard": "Go to dashboard",
+    "errorTitle": "Invalid or expired link",
+    "errorMessageAuthenticated": "The verification link expired or was already used. Request a new one from your profile.",
+    "errorMessageAnonymous": "The verification link expired or was already used. Log in and request a new one.",
+    "goToProfile": "Go to profile",
+    "goToLogin": "Go to login"
+  },
+  "Mercadopago": {
+    "Callback": {
+      "incompleteLink": "Incomplete Mercado Pago return link.",
+      "errorConnecting": "Error connecting your Mercado Pago account.",
+      "connecting": "Connecting your Mercado Pago account...",
+      "successTitle": "Account connected successfully!",
+      "successDescription": "You can now list paid items.",
+      "errorTitle": "Couldn't connect",
+      "backToProfile": "Back to profile"
+    }
+  }
+}

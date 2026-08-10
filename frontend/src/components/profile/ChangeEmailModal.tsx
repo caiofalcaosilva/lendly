@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { usersService } from '@/services/users'
 import { User } from '@/types'
 import Modal from '@/components/ui/Modal'
@@ -16,30 +17,31 @@ export default function ChangeEmailModal({ onClose, onSuccess }: Props) {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const t = useTranslations('Common.ChangeEmailModal')
 
   const submit = async () => {
-    if (!newEmail || !password) return setError('Preencha os dois campos')
+    if (!newEmail || !password) return setError(t('errorBothFields'))
     setLoading(true)
     setError('')
     try {
       const updated = await usersService.changeEmail(newEmail, password)
       onSuccess(updated)
     } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao trocar o e-mail')
+      setError(e.response?.data?.detail || t('errorGeneric'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open onClose={onClose} title="Trocar e-mail">
+    <Modal open onClose={onClose} title={t('title')}>
       <div className="space-y-4">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Você vai precisar verificar o novo e-mail antes de usar a conta normalmente de novo.
+          {t('notice')}
         </p>
 
         <Input
-          label="Novo e-mail"
+          label={t('newEmail')}
           type="email"
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
@@ -47,7 +49,7 @@ export default function ChangeEmailModal({ onClose, onSuccess }: Props) {
           required
         />
         <Input
-          label="Confirme sua senha"
+          label={t('confirmPassword')}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -59,9 +61,9 @@ export default function ChangeEmailModal({ onClose, onSuccess }: Props) {
 
         <div className="flex gap-3 pt-2">
           <Button loading={loading} disabled={!newEmail || !password} onClick={submit} className="flex-1">
-            Trocar e-mail
+            {t('title')}
           </Button>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>{t('cancel')}</Button>
         </div>
       </div>
     </Modal>

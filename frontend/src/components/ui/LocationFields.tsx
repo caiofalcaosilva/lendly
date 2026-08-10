@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react'
 import { Control, Controller, UseFormRegister, UseFormSetValue, FieldErrors } from 'react-hook-form'
 import { CheckCircle2, XCircle, Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { resolveCoordinates } from '@/lib/geocode'
 import Input from './Input'
 import Spinner from './Spinner'
@@ -28,6 +29,7 @@ interface Props {
 
 export default function LocationFields({ control, register, setValue, errors }: Props) {
   const [status, setStatus] = useState<CepStatus>('idle')
+  const t = useTranslations('Common.LocationFields')
 
   const lookup = useCallback(
     async (raw: string) => {
@@ -66,7 +68,7 @@ export default function LocationFields({ control, register, setValue, errors }: 
     <div className="space-y-4">
       {/* CEP */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CEP</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('zipCode')}</label>
         <div className="relative">
           <Controller
             name="zip_code"
@@ -75,7 +77,7 @@ export default function LocationFields({ control, register, setValue, errors }: 
               <input
                 {...field}
                 value={field.value ?? ''}
-                placeholder="00000-000 (preenche os campos automaticamente)"
+                placeholder={t('zipCodePlaceholder')}
                 maxLength={9}
                 onChange={(e) => field.onChange(maskCEP(e.target.value))}
                 onBlur={(e) => { field.onBlur(); lookup(e.target.value) }}
@@ -94,14 +96,14 @@ export default function LocationFields({ control, register, setValue, errors }: 
         </div>
         {status === 'found' && (
           <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Localização preenchida automaticamente
+            <CheckCircle2 className="w-3 h-3" /> {t('autoFilled')}
           </p>
         )}
         {status === 'not_found' && (
-          <p className="text-xs text-red-500 dark:text-red-400 mt-1">CEP não encontrado. Preencha manualmente.</p>
+          <p className="text-xs text-red-500 dark:text-red-400 mt-1">{t('zipNotFound')}</p>
         )}
         {status === 'error' && (
-          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Erro ao consultar o CEP. Preencha manualmente.</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{t('zipError')}</p>
         )}
       </div>
 
@@ -109,19 +111,19 @@ export default function LocationFields({ control, register, setValue, errors }: 
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2">
           <Input
-            label="Bairro"
+            label={t('neighborhood')}
             {...register('neighborhood')}
             placeholder="Vila Madalena"
             error={errMsg('neighborhood')}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('state')}</label>
           <select
             {...register('state')}
             className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700"
           >
-            <option value="">UF</option>
+            <option value="">{t('stateAbbrev')}</option>
             {BR_STATES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -131,7 +133,7 @@ export default function LocationFields({ control, register, setValue, errors }: 
 
       {/* City */}
       <Input
-        label="Cidade"
+        label={t('city')}
         {...register('city')}
         placeholder="São Paulo"
         error={errMsg('city')}

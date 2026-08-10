@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter } from '@/i18n/navigation'
+import { Link } from '@/i18n/navigation'
 import { MapPin, AlertTriangle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Category, Item, GroupSummary } from '@/types'
 import { itemsService } from '@/services/items'
 import { groupsService } from '@/services/groups'
@@ -29,38 +30,7 @@ function formatAddressSummary(a: { neighborhood?: string; city?: string; state?:
   return parts.join(' · ')
 }
 
-const WEEKDAYS = [
-  { value: 0, label: 'Seg' },
-  { value: 1, label: 'Ter' },
-  { value: 2, label: 'Qua' },
-  { value: 3, label: 'Qui' },
-  { value: 4, label: 'Sex' },
-  { value: 5, label: 'Sáb' },
-  { value: 6, label: 'Dom' },
-]
-
-const schema = z
-  .object({
-    title: z.string().min(3, 'Mínimo 3 caracteres').max(100),
-    description: z.string().max(1000).optional(),
-    category: z.string().min(1, 'Selecione uma categoria'),
-    subcategory: z.string().optional().or(z.literal('')),
-    availability_type: z.enum(['free', 'paid']),
-    daily_rate: z.number({ invalid_type_error: 'Informe o valor' }).min(0.01).optional().nullable(),
-    usage_rules: z.string().max(500).optional(),
-    zip_code: z.string().max(9).optional().or(z.literal('')),
-    neighborhood: z.string().max(100).optional(),
-    city: z.string().max(100).optional(),
-    state: z.string().max(2).optional().or(z.literal('')),
-    latitude: z.number().optional(),
-    longitude: z.number().optional(),
-  })
-  .refine(
-    (d) => d.availability_type === 'free' || (d.daily_rate != null && d.daily_rate > 0),
-    { message: 'Informe o valor diário para itens pagos', path: ['daily_rate'] },
-  )
-
-type FormData = z.infer<typeof schema>
+const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
 function sameAddress(a: { zip_code?: string; neighborhood?: string; city?: string; state?: string }, b: { zip_code?: string; neighborhood?: string; city?: string; state?: string }) {
   return (a.zip_code || '') === (b.zip_code || '')
@@ -72,6 +42,7 @@ function sameAddress(a: { zip_code?: string; neighborhood?: string; city?: strin
 export default function ItemForm({ item }: { item?: Item }) {
   const router = useRouter()
   const { user } = useAuth()
+  const t = useTranslations('Common.ItemForm')
   const [photos, setPhotos] = useState<string[]>(item?.photos ?? [])
   const [stagedFiles, setStagedFiles] = useState<File[]>([])
   const [loading, setLoading] = useState(false)
@@ -134,6 +105,29 @@ export default function ItemForm({ item }: { item?: Item }) {
     )
   }
 
+  const schema = z
+    .object({
+      title: z.string().min(3, t('errors.minTitle')).max(100),
+      description: z.string().max(1000).optional(),
+      category: z.string().min(1, t('errors.selectCategory')),
+      subcategory: z.string().optional().or(z.literal('')),
+      availability_type: z.enum(['free', 'paid']),
+      daily_rate: z.number({ invalid_type_error: t('errors.enterValue') }).min(0.01).optional().nullable(),
+      usage_rules: z.string().max(500).optional(),
+      zip_code: z.string().max(9).optional().or(z.literal('')),
+      neighborhood: z.string().max(100).optional(),
+      city: z.string().max(100).optional(),
+      state: z.string().max(2).optional().or(z.literal('')),
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+    })
+    .refine(
+      (d) => d.availability_type === 'free' || (d.daily_rate != null && d.daily_rate > 0),
+      { message: t('errors.dailyRateRequired'), path: ['daily_rate'] },
+    )
+
+  type FormData = z.infer<typeof schema>
+
   const {
     register,
     handleSubmit,
@@ -176,11 +170,11 @@ export default function ItemForm({ item }: { item?: Item }) {
 
   const onSubmit = async (data: FormData) => {
     if (myGroups.length > 0 && !isPublic && selectedGroupIds.length === 0) {
-      setError('Escolha ao menos "visível na busca pública" ou um grupo pra compartilhar.')
+      setError(t('errors.visibilityRequired'))
       return
     }
     if (data.availability_type === 'paid' && !mpConnected) {
-      setError('Conecte sua conta Mercado Pago antes de anunciar um item pago.')
+      setError(t('errors.connectMercadoPago'))
       return
     }
     setLoading(true)
@@ -228,7 +222,7 @@ export default function ItemForm({ item }: { item?: Item }) {
         router.push('/dashboard')
       }
     } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao salvar item')
+      setError(e.response?.data?.detail || t('errors.saveError'))
     } finally {
       setLoading(false)
     }
@@ -238,27 +232,27 @@ export default function ItemForm({ item }: { item?: Item }) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {error && <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">{error}</div>}
 
-      <Input label="Título" {...register('title')} error={errors.title?.message} placeholder="Ex: Furadeira Bosch 650W" required />
+      <Input label={t('title')} {...register('title')} error={errors.title?.message} placeholder="Ex: Furadeira Bosch 650W" required />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descrição</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')}</label>
         <textarea
           {...register('description')}
           rows={3}
-          placeholder="Estado de conservação, acessórios incluídos, etc."
+          placeholder={t('descriptionPlaceholder')}
           className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Categoria <span className="text-red-500">*</span>
+          {t('category')} <span className="text-red-500">*</span>
         </label>
         <select
           {...register('category')}
           className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          <option value="">Selecione...</option>
+          <option value="">{t('select')}</option>
           {categories.map((c) => (
             <option key={c.key} value={c.key}>{c.label}</option>
           ))}
@@ -268,12 +262,12 @@ export default function ItemForm({ item }: { item?: Item }) {
 
       {subcategoryOptions.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subcategoria</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('subcategory')}</label>
           <select
             {...register('subcategory')}
             className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            <option value="">Nenhuma</option>
+            <option value="">{t('none')}</option>
             {subcategoryOptions.map((s) => (
               <option key={s.key} value={s.key}>{s.label}</option>
             ))}
@@ -288,12 +282,12 @@ export default function ItemForm({ item }: { item?: Item }) {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de disponibilidade</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('availabilityType')}</label>
         <div className="flex gap-6">
           {(['free', 'paid'] as const).map((val) => (
             <label key={val} className="flex items-center gap-2 cursor-pointer text-gray-900 dark:text-gray-100">
               <input type="radio" value={val} {...register('availability_type')} className="text-green-600" />
-              <span className="text-sm">{val === 'free' ? 'Gratuito (empréstimo)' : 'Pago (aluguel)'}</span>
+              <span className="text-sm">{val === 'free' ? t('freeLoan') : t('paidRental')}</span>
             </label>
           ))}
         </div>
@@ -303,15 +297,15 @@ export default function ItemForm({ item }: { item?: Item }) {
         <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-300">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>
-            Conecte sua conta Mercado Pago antes de anunciar um item pago.{' '}
-            <Link href="/profile" className="underline font-medium">Conectar agora</Link>
+            {t('connectMercadoPagoNotice')}{' '}
+            <Link href="/profile" className="underline font-medium">{t('connectNow')}</Link>
           </span>
         </div>
       )}
 
       {availType === 'paid' && (
         <Input
-          label="Valor diário (R$)"
+          label={t('dailyRate')}
           type="number"
           step="0.01"
           min="0.01"
@@ -324,24 +318,24 @@ export default function ItemForm({ item }: { item?: Item }) {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Disponível em quais dias da semana
+          {t('availableDays')}
           <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-2">
-            — deixe todos desmarcados para disponibilizar todo dia
+            {t('availableDaysHint')}
           </span>
         </label>
         <div className="flex flex-wrap gap-2">
-          {WEEKDAYS.map((d) => (
+          {WEEKDAY_KEYS.map((key, value) => (
             <button
-              key={d.value}
+              key={key}
               type="button"
-              onClick={() => toggleDay(d.value)}
+              onClick={() => toggleDay(value)}
               className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                selectedDays.includes(d.value)
+                selectedDays.includes(value)
                   ? 'bg-green-600 border-green-600 text-white'
                   : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
               }`}
             >
-              {d.label}
+              {t(`weekdays.${key}`)}
             </button>
           ))}
         </div>
@@ -354,22 +348,22 @@ export default function ItemForm({ item }: { item?: Item }) {
           onChange={(e) => setRequiresVerification(e.target.checked)}
           className="text-green-600 rounded"
         />
-        <span className="text-sm">Exigir verificação de identidade pra emprestar</span>
+        <span className="text-sm">{t('requireVerification')}</span>
       </label>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Regras de uso</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('usageRules')}</label>
         <textarea
           {...register('usage_rules')}
           rows={2}
-          placeholder="Ex: Devolver limpo, não usar para fins comerciais..."
+          placeholder={t('usageRulesPlaceholder')}
           className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
 
       {myGroups.length > 0 && (
         <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Visibilidade</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('visibility')}</p>
           <label className="flex items-center gap-2 cursor-pointer mb-2 text-gray-900 dark:text-gray-100">
             <input
               type="checkbox"
@@ -377,9 +371,9 @@ export default function ItemForm({ item }: { item?: Item }) {
               onChange={(e) => setIsPublic(e.target.checked)}
               className="text-green-600 rounded"
             />
-            <span className="text-sm">Visível na busca pública</span>
+            <span className="text-sm">{t('visibleInPublicSearch')}</span>
           </label>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Também compartilhar nestes grupos:</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">{t('alsoShareInGroups')}</p>
           <div className="space-y-1.5">
             {myGroups.map((g) => (
               <label key={g.id} className="flex items-center gap-2 cursor-pointer text-gray-900 dark:text-gray-100">
@@ -398,24 +392,24 @@ export default function ItemForm({ item }: { item?: Item }) {
 
       <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Localização do item
+          {t('itemLocation')}
           {addressMode === 'custom' && (
             <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-2">
-              — informe o CEP para preencher automaticamente
+              {t('itemLocationHint')}
             </span>
           )}
         </p>
 
         {hasProfileAddress && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Endereço do item</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('itemAddress')}</label>
             <select
               value={addressMode}
               onChange={(e) => setAddressMode(e.target.value as AddressMode)}
               className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="default">Usar meu endereço padrão</option>
-              <option value="custom">Outro endereço</option>
+              <option value="default">{t('useDefaultAddress')}</option>
+              <option value="custom">{t('otherAddress')}</option>
             </select>
           </div>
         )}
@@ -423,7 +417,7 @@ export default function ItemForm({ item }: { item?: Item }) {
         {addressMode === 'default' && user ? (
           <div className="flex items-start gap-2 p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg text-sm text-gray-600 dark:text-gray-300">
             <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
-            <span>{formatAddressSummary(user) || 'Endereço do seu perfil'}</span>
+            <span>{formatAddressSummary(user) || t('profileAddress')}</span>
           </div>
         ) : (
           <LocationFields
@@ -437,10 +431,10 @@ export default function ItemForm({ item }: { item?: Item }) {
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" loading={loading} className="flex-1">
-          {item ? 'Salvar alterações' : 'Cadastrar item'}
+          {item ? t('saveChanges') : t('createItem')}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
-          Cancelar
+          {t('cancel')}
         </Button>
       </div>
     </form>

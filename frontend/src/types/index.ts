@@ -153,14 +153,6 @@ export interface FavoriteUserSummary {
 export type ReportReason = 'spam' | 'fake_item' | 'inappropriate' | 'fraud' | 'other'
 export type ReportStatus = 'pending' | 'dismissed' | 'actioned'
 
-export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
-  spam: 'Spam',
-  fake_item: 'Item falso ou enganoso',
-  inappropriate: 'Conteúdo inadequado',
-  fraud: 'Fraude',
-  other: 'Outro',
-}
-
 export interface Report {
   id: string
   reporter_id: string
@@ -474,15 +466,6 @@ export type RequestStatus =
   | 'in_progress'
   | 'finished'
   | 'cancelled'
-
-export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
-  pending: 'Pendente',
-  accepted: 'Aceita',
-  refused: 'Recusada',
-  in_progress: 'Em andamento',
-  finished: 'Finalizada',
-  cancelled: 'Cancelada',
-}
 
 export type PaymentStatus = 'unpaid' | 'processing' | 'held' | 'released' | 'refunded' | 'failed'
 

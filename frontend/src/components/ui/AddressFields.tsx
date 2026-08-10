@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react'
 import { Control, Controller, UseFormRegister, UseFormSetValue, FieldErrors } from 'react-hook-form'
 import { CheckCircle2, XCircle, Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { resolveCoordinates } from '@/lib/geocode'
 import Input from './Input'
 import Spinner from './Spinner'
@@ -28,6 +29,7 @@ interface Props {
 
 export default function AddressFields({ control, register, setValue, errors }: Props) {
   const [status, setStatus] = useState<CepStatus>('idle')
+  const t = useTranslations('Common.AddressFields')
 
   const lookup = useCallback(
     async (raw: string) => {
@@ -68,7 +70,7 @@ export default function AddressFields({ control, register, setValue, errors }: P
       {/* CEP */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          CEP <span className="text-red-500">*</span>
+          {t('zipCode')} <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <Controller
@@ -100,14 +102,14 @@ export default function AddressFields({ control, register, setValue, errors }: P
 
         {status === 'found' && (
           <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Endereço preenchido automaticamente
+            <CheckCircle2 className="w-3 h-3" /> {t('autoFilled')}
           </p>
         )}
         {status === 'not_found' && (
-          <p className="text-xs text-red-500 dark:text-red-400 mt-1">CEP não encontrado. Preencha os campos manualmente.</p>
+          <p className="text-xs text-red-500 dark:text-red-400 mt-1">{t('zipNotFound')}</p>
         )}
         {status === 'error' && (
-          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Erro ao consultar o CEP. Preencha os campos manualmente.</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{t('zipError')}</p>
         )}
         {errMsg('zip_code') && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errMsg('zip_code')}</p>}
       </div>
@@ -116,14 +118,14 @@ export default function AddressFields({ control, register, setValue, errors }: P
       <div className="grid grid-cols-4 gap-3">
         <div className="col-span-3">
           <Input
-            label="Logradouro"
+            label={t('street')}
             {...register('street')}
-            placeholder="Rua, Avenida, Travessa..."
+            placeholder={t('streetPlaceholder')}
             error={errMsg('street')}
           />
         </div>
         <Input
-          label="Número"
+          label={t('number')}
           {...register('number')}
           placeholder="123"
           error={errMsg('number')}
@@ -132,9 +134,9 @@ export default function AddressFields({ control, register, setValue, errors }: P
 
       {/* Complement */}
       <Input
-        label="Complemento"
+        label={t('complement')}
         {...register('complement')}
-        placeholder="Apto 4B, Bloco C, Casa..."
+        placeholder={t('complementPlaceholder')}
         error={errMsg('complement')}
       />
 
@@ -142,19 +144,19 @@ export default function AddressFields({ control, register, setValue, errors }: P
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2">
           <Input
-            label="Bairro"
+            label={t('neighborhood')}
             {...register('neighborhood')}
             placeholder="Vila Madalena"
             error={errMsg('neighborhood')}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('state')}</label>
           <select
             {...register('state')}
             className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700"
           >
-            <option value="">UF</option>
+            <option value="">{t('stateAbbrev')}</option>
             {BR_STATES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -165,7 +167,7 @@ export default function AddressFields({ control, register, setValue, errors }: P
 
       {/* City */}
       <Input
-        label="Cidade"
+        label={t('city')}
         {...register('city')}
         placeholder="São Paulo"
         error={errMsg('city')}

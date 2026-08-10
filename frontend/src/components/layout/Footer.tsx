@@ -1,10 +1,12 @@
 'use client'
 import { Leaf } from 'lucide-react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function Footer() {
   const { isAuthenticated } = useAuth()
+  const t = useTranslations('Common.Footer')
 
   return (
     <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors">
@@ -13,15 +15,13 @@ export default function Footer() {
           <Leaf className="w-5 h-5" />
           Lendly
         </Link>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-          Compartilhe com seus vizinhos. Reduza o consumo. Fortaleça a comunidade.
-        </p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">{t('tagline')}</p>
         <div className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
-          <Link href="/items" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">Explorar</Link>
+          <Link href="/items" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">{t('explore')}</Link>
           {isAuthenticated ? (
-            <Link href="/dashboard" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">Painel</Link>
+            <Link href="/dashboard" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">{t('dashboard')}</Link>
           ) : (
-            <Link href="/register" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">Criar conta</Link>
+            <Link href="/register" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">{t('createAccount')}</Link>
           )}
         </div>
       </div>

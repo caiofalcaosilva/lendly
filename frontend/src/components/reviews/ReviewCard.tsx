@@ -1,5 +1,6 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Star, HandHelping, PackageCheck, Trash2 } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Review } from '@/types'
 import { formatDate } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
@@ -29,6 +30,8 @@ interface Props {
 
 export default function ReviewCard({ review, linkItem = true, onDelete, perspective = 'received' }: Props) {
   const isLender = review.reviewed_role === 'owner'
+  const locale = useLocale() as 'pt' | 'en'
+  const t = useTranslations('Common.ReviewCard')
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 space-y-3">
@@ -42,17 +45,17 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
           }`}
         >
           {isLender ? (
-            <><HandHelping className="w-3 h-3" /> Emprestou</>
+            <><HandHelping className="w-3 h-3" /> {t('lent')}</>
           ) : (
-            <><PackageCheck className="w-3 h-3" /> Pegou emprestado</>
+            <><PackageCheck className="w-3 h-3" /> {t('borrowed')}</>
           )}
         </span>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(review.created_at)}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(review.created_at, locale)}</span>
           {onDelete && (
             <button
               onClick={onDelete}
-              title="Remover avaliação"
+              title={t('removeReview')}
               className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -63,7 +66,7 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
 
       {/* Item name */}
       <div className="text-xs text-gray-500 dark:text-gray-400">
-        Produto:{' '}
+        {t('product')}{' '}
         {linkItem ? (
           <Link
             href={`/items/${review.item_id}`}
@@ -86,7 +89,7 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
 
       {/* Reviewer, or who it's about when viewing your own given reviews */}
       {perspective === 'given' ? (
-        <p className="text-xs text-gray-400 dark:text-gray-500">Para: {review.reviewed_name}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">{t('to', { name: review.reviewed_name })}</p>
       ) : (
         <div className="flex items-center gap-1.5">
           <Avatar name={review.reviewer_name} avatarUrl={review.reviewer_avatar_url} size="sm" />

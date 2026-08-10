@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Star } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { reviewsService } from '@/services/reviews'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
@@ -12,32 +13,35 @@ interface Props {
   onSuccess: () => void
 }
 
+const RATING_KEYS = ['', 'veryBad', 'bad', 'regular', 'good', 'excellent']
+
 export default function ReviewModal({ requestId, reviewedName, onClose, onSuccess }: Props) {
   const [rating, setRating] = useState(0)
   const [hovered, setHovered] = useState(0)
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const t = useTranslations('Common.ReviewModal')
 
   const submit = async () => {
-    if (!rating) return setError('Selecione uma nota')
+    if (!rating) return setError(t('errorSelectRating'))
     setLoading(true)
     setError('')
     try {
       await reviewsService.create(requestId, { rating, comment: comment || undefined })
       onSuccess()
     } catch (e: any) {
-      setError(e.response?.data?.detail || 'Erro ao enviar avaliação')
+      setError(e.response?.data?.detail || t('errorGeneric'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open onClose={onClose} title={`Avaliar ${reviewedName}`}>
+    <Modal open onClose={onClose} title={t('title', { name: reviewedName })}>
       <div className="space-y-5">
         <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Como foi a experiência com {reviewedName}?</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{t('subtitle', { name: reviewedName })}</p>
           <div className="flex gap-2 justify-center">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -56,19 +60,19 @@ export default function ReviewModal({ requestId, reviewedName, onClose, onSucces
           </div>
           {rating > 0 && (
             <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
-              {['', 'Muito ruim', 'Ruim', 'Regular', 'Bom', 'Excelente'][rating]}
+              {t(`ratings.${RATING_KEYS[rating]}`)}
             </p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comentário (opcional)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('comment')}</label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
             maxLength={500}
-            placeholder="Conte como foi a experiência..."
+            placeholder={t('commentPlaceholder')}
             className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
@@ -77,9 +81,9 @@ export default function ReviewModal({ requestId, reviewedName, onClose, onSucces
 
         <div className="flex gap-3">
           <Button onClick={submit} loading={loading} disabled={!rating} className="flex-1">
-            Enviar avaliação
+            {t('submit')}
           </Button>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>{t('cancel')}</Button>
         </div>
       </div>
     </Modal>

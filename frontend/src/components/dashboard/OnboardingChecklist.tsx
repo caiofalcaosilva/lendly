@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { CircleCheck, Circle, ListChecks, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 const DISMISS_KEY = 'onboarding_dismissed'
 
@@ -22,15 +23,16 @@ export default function OnboardingChecklist({
   hasSentRequest: boolean
 }) {
   const [dismissed, setDismissed] = useState(true) // starts hidden until localStorage is checked, avoids a flash
+  const t = useTranslations('Dashboard.onboarding')
 
   useEffect(() => {
     setDismissed(localStorage.getItem(DISMISS_KEY) === 'true')
   }, [])
 
   const steps: Step[] = [
-    { key: 'address', label: 'Complete seu endereço', href: '/profile', done: hasAddress },
-    { key: 'item', label: 'Anuncie seu primeiro item', href: '/items/new', done: hasItems },
-    { key: 'request', label: 'Faça sua primeira solicitação', href: '/items', done: hasSentRequest },
+    { key: 'address', label: t('address'), href: '/profile', done: hasAddress },
+    { key: 'item', label: t('item'), href: '/items/new', done: hasItems },
+    { key: 'request', label: t('request'), href: '/items', done: hasSentRequest },
   ]
   const allDone = steps.every((s) => s.done)
 
@@ -46,12 +48,12 @@ export default function OnboardingChecklist({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <ListChecks className="w-4 h-4 text-green-600 dark:text-green-400" />
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Primeiros passos</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('title')}</h2>
         </div>
         <button
           onClick={dismiss}
           className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          title="Dispensar"
+          title={t('dismiss')}
         >
           <X className="w-4 h-4" />
         </button>

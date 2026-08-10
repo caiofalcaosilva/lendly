@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Bell } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useNotifications } from '@/contexts/NotificationsContext'
 import { formatDate } from '@/lib/utils'
 
@@ -9,6 +10,8 @@ export default function NotificationBell() {
   const { notifications, unreadCount, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const locale = useLocale() as 'pt' | 'en'
+  const t = useTranslations('Common.NotificationBell')
 
   useEffect(() => {
     if (!open) return
@@ -34,7 +37,7 @@ export default function NotificationBell() {
       <button
         onClick={toggle}
         className="relative text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-        aria-label={unreadCount > 0 ? `Notificações, ${unreadCount} não lidas` : 'Notificações'}
+        aria-label={unreadCount > 0 ? t('ariaLabelUnread', { count: unreadCount }) : t('ariaLabel')}
         aria-expanded={open}
         aria-haspopup="true"
       >
@@ -48,7 +51,7 @@ export default function NotificationBell() {
           </span>
         )}
         <span className="sr-only" role="status" aria-live="polite">
-          {unreadCount > 0 ? `${unreadCount} notificações não lidas` : ''}
+          {unreadCount > 0 ? t('unreadStatus', { count: unreadCount }) : ''}
         </span>
       </button>
 
@@ -56,14 +59,14 @@ export default function NotificationBell() {
         <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 max-h-96 flex flex-col">
           <div className="px-3.5 py-2.5 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Notificações
+              {t('title')}
             </span>
           </div>
 
           <div className="overflow-y-auto">
             {notifications.length === 0 ? (
               <p className="px-3.5 py-8 text-sm text-gray-400 dark:text-gray-500 text-center">
-                Nenhuma notificação ainda.
+                {t('empty')}
               </p>
             ) : (
               notifications.map((n) => (
@@ -84,7 +87,7 @@ export default function NotificationBell() {
                     </p>
                   )}
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
-                    {formatDate(n.created_at)}
+                    {formatDate(n.created_at, locale)}
                   </p>
                 </Link>
               ))
@@ -96,7 +99,7 @@ export default function NotificationBell() {
             onClick={() => setOpen(false)}
             className="block px-3.5 py-2.5 text-center text-xs font-medium text-green-700 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors flex-shrink-0"
           >
-            Ver todas
+            {t('viewAll')}
           </Link>
         </div>
       )}

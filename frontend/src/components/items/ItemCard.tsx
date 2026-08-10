@@ -1,9 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { MapPin, Star, Package, Navigation, Heart, LocateFixed } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Category, Item } from '@/types'
 import { getCategoryLabel, getSubcategoryLabel, formatCurrency, formatDistance } from '@/lib/utils'
 import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
@@ -37,6 +38,8 @@ interface Props {
 export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate }: Props) {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
+  const locale = useLocale() as 'pt' | 'en'
+  const t = useTranslations('Common.ItemCard')
   const photo = item.photos?.[0]
   const categoryColor = CATEGORY_COLORS[item.category] ?? 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700'
   const [favorited, setFavorited] = useState(item.is_favorited)
@@ -96,11 +99,11 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
           <div className="absolute top-2.5 left-2.5">
             {item.availability_type === 'free' ? (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm">
-                Gratuito
+                {t('free')}
               </span>
             ) : (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 dark:bg-gray-900/90 text-gray-800 dark:text-gray-100 shadow-sm">
-                {formatCurrency(item.daily_rate ?? 0)}<span className="font-normal text-gray-500 dark:text-gray-400">/dia</span>
+                {formatCurrency(item.daily_rate ?? 0, locale)}<span className="font-normal text-gray-500 dark:text-gray-400">{t('perDay')}</span>
               </span>
             )}
           </div>
@@ -109,7 +112,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
           <button
             type="button"
             onClick={toggleFavorite}
-            aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+            aria-label={favorited ? t('removeFavorite') : t('addFavorite')}
             className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-colors"
           >
             <Heart
@@ -124,8 +127,8 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onLocate() }}
-              aria-label="Ver no mapa"
-              title="Ver no mapa"
+              aria-label={t('viewOnMap')}
+              title={t('viewOnMap')}
               className="absolute top-2.5 right-11 w-7 h-7 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-colors"
             >
               <LocateFixed className="w-4 h-4 text-white" />
@@ -165,7 +168,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
             <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 min-w-0">
               <MapPin className="w-3 h-3 flex-shrink-0 text-gray-400 dark:text-gray-500" />
               <span className="truncate">
-                {item.neighborhood || item.city || 'Local não informado'}
+                {item.neighborhood || item.city || t('noLocation')}
               </span>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
