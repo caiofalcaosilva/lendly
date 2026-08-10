@@ -7,6 +7,10 @@ from app.utils import errors
 
 
 def setup_totp(current_user: User) -> TotpSetupResponse:
+    if current_user.totp_enabled:
+        raise errors.bad_request(
+            "2FA já está ativado. Desative antes de gerar um novo QR code."
+        )
     secret = totp_service.generate_secret()
     current_user.update(totp_secret=secret)
     return TotpSetupResponse(

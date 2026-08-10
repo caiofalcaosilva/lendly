@@ -22,6 +22,8 @@ def get_current_user(
         user_id: str | None = payload.get("sub")
         if not user_id:
             raise exc
+        if payload.get("type") == "2fa_pending":
+            raise exc
     except JWTError as err:
         raise exc from err
 

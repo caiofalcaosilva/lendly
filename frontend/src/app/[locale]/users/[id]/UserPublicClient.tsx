@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { PublicUser, Item, Review } from '@/types'
 import { usersService } from '@/services/users'
 import { reviewsService } from '@/services/reviews'
-import { formatDate } from '@/lib/utils'
+import { formatDate, isHttpUrl } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import Spinner from '@/components/ui/Spinner'
 import ItemCard from '@/components/items/ItemCard'
@@ -158,7 +158,7 @@ export default function UserPublicClient() {
                 {user.business_phone && (
                   <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{user.business_phone}</span>
                 )}
-                {user.website && (
+                {user.website && isHttpUrl(user.website) && (
                   <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors min-w-0">
                     <Globe className="w-3.5 h-3.5 flex-shrink-0" /><span className="break-all">{user.website}</span>
                   </a>

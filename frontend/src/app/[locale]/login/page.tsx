@@ -12,12 +12,14 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import TwoFactorModal from '@/components/auth/TwoFactorModal'
+import { isSafeRedirect } from '@/lib/utils'
 
 function LoginForm() {
   const { login, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/dashboard'
+  const rawRedirect = searchParams.get('redirect')
+  const redirect = rawRedirect && isSafeRedirect(rawRedirect) ? rawRedirect : '/dashboard'
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [tempToken, setTempToken] = useState<string | null>(null)

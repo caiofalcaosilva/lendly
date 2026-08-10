@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
-from app.utils.validators import is_valid_cnpj
+from app.utils.validators import is_valid_cnpj, is_valid_website_url
 
 
 class UserCreate(BaseModel):
@@ -37,6 +37,8 @@ class UserCreate(BaseModel):
                 raise ValueError("company_name is required for business accounts")
             if not self.cnpj or not is_valid_cnpj(self.cnpj):
                 raise ValueError("A valid cnpj is required for business accounts")
+        if self.website and not is_valid_website_url(self.website):
+            raise ValueError("website must be an http(s) URL")
         return self
 
 
@@ -87,6 +89,8 @@ class UserUpdate(BaseModel):
     def _validate_cnpj(self):
         if self.cnpj and not is_valid_cnpj(self.cnpj):
             raise ValueError("Invalid cnpj")
+        if self.website and not is_valid_website_url(self.website):
+            raise ValueError("website must be an http(s) URL")
         return self
 
 

@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urlparse
 
 
 def _check_digit(digits: list, weights: list) -> int:
@@ -39,3 +40,10 @@ def is_valid_cpf(cpf: str) -> bool:
     if _check_digit(digits[:9], weights1) != digits[9]:
         return False
     return _check_digit(digits[:10], weights2) == digits[10]
+
+
+def is_valid_website_url(url: str) -> bool:
+    """Restricts profile website links to http(s) — rejects javascript:
+    and other schemes that would execute when rendered as a clickable
+    <a href> on another user's public profile."""
+    return urlparse(url).scheme in ("http", "https")
