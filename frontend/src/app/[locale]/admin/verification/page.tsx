@@ -16,6 +16,7 @@ type Tab = 'pending' | 'resolved'
 
 function PhotoPreview({ submissionId }: { submissionId: string }) {
   const [urls, setUrls] = useState<{ selfie: string; document: string } | null>(null)
+  const [expanded, setExpanded] = useState<'selfie' | 'document' | null>(null)
   const t = useTranslations('Admin.Verification')
 
   useEffect(() => {
@@ -35,15 +36,58 @@ function PhotoPreview({ submissionId }: { submissionId: string }) {
     }
   }, [submissionId])
 
+  useEffect(() => {
+    if (!expanded) return
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpanded(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [expanded])
+
   if (!urls) return <div className="flex justify-center py-6"><Spinner className="w-5 h-5 text-green-600" /></div>
 
   return (
-    <div className="flex gap-3">
-      {/* eslint-disable-next-line @next/next/no-img-element -- protected blob: preview, next/image can't fetch it */}
-      <img src={urls.selfie} alt={t('selfie')} className="w-28 h-28 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
-      {/* eslint-disable-next-line @next/next/no-img-element -- protected blob: preview, next/image can't fetch it */}
-      <img src={urls.document} alt={t('document')} className="w-28 h-28 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
-    </div>
+    <>
+      <div className="flex gap-3">
+        <button type="button" onClick={() => setExpanded('selfie')} className="cursor-zoom-in">
+          {/* eslint-disable-next-line @next/next/no-img-element -- protected blob: preview, next/image can't fetch it */}
+          <img src={urls.selfie} alt={t('selfie')} className="w-28 h-28 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:opacity-90 transition-opacity" />
+        </button>
+        <button type="button" onClick={() => setExpanded('document')} className="cursor-zoom-in">
+          {/* eslint-disable-next-line @next/next/no-img-element -- protected blob: preview, next/image can't fetch it */}
+          <img src={urls.document} alt={t('document')} className="w-28 h-28 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:opacity-90 transition-opacity" />
+        </button>
+      </div>
+
+      {expanded && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setExpanded(null)}
+        >
+          <div className="absolute inset-0 bg-black/80" />
+          <button
+            type="button"
+            onClick={() => setExpanded(null)}
+            aria-label={t('close')}
+            className="absolute top-4 right-4 p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors z-10"
+          >
+            <XIcon className="w-6 h-6" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element -- protected blob: preview, next/image can't fetch it */}
+          <img
+            src={urls[expanded]}
+            alt={t(expanded)}
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-full max-h-[90vh] object-contain rounded-lg"
+          />
+        </div>
+      )}
+    </>
   )
 }
 
@@ -186,10 +230,13 @@ export default function AdminVerificationPage() {
                 </button>
               )}
 
-              {sub.status === 'pending' && (
+              {(sub.status === 'pending' || sub.status === 'approved') && (
                 <div className="mt-4">
                   {rejecting === sub.id ? (
                     <div className="flex flex-col gap-2">
+                      {sub.status === 'approved' && (
+                        <p className="text-xs text-red-600 dark:text-red-400">{t('revokeWarning')}</p>
+                      )}
                       <input
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
@@ -198,14 +245,14 @@ export default function AdminVerificationPage() {
                       />
                       <div className="flex gap-2">
                         <Button size="sm" variant="danger" loading={busy === sub.id} onClick={() => confirmReject(sub.id)}>
-                          {t('confirmRejection')}
+                          {sub.status === 'approved' ? t('confirmRevocation') : t('confirmRejection')}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => { setRejecting(null); setReason('') }}>
                           {t('cancel')}
                         </Button>
                       </div>
                     </div>
-                  ) : (
+                  ) : sub.status === 'pending' ? (
                     <div className="flex gap-2">
                       <Button size="sm" loading={busy === sub.id} onClick={() => approve(sub.id)}>
                         <Check className="w-4 h-4" /> {t('approve')}
@@ -214,6 +261,10 @@ export default function AdminVerificationPage() {
                         <XIcon className="w-4 h-4" /> {t('reject')}
                       </Button>
                     </div>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => setRejecting(sub.id)}>
+                      <XIcon className="w-4 h-4" /> {t('revokeApproval')}
+                    </Button>
                   )}
                 </div>
               )}

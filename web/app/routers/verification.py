@@ -79,7 +79,8 @@ def reject_verification(
     background_tasks: BackgroundTasks,
     admin: User = Depends(get_current_admin),
 ):
-    """Admin — rejects a pending submission with an optional reason."""
+    """Admin — rejects a pending submission with an optional reason, or
+    revokes one already approved if a problem is found afterwards."""
     return verification_service.reject_submission(
         submission_id, data.reason, admin, background_tasks
     )

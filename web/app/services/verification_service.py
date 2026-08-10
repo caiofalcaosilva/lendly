@@ -84,11 +84,13 @@ def list_submissions(status_filter: str | None) -> list[VerificationResponse]:
     return [_to_response(s) for s in qs.order_by("-created_at")]
 
 
-def _get_pending_submission(submission_id: str) -> VerificationSubmission:
+def _get_submission_in_status(
+    submission_id: str, allowed_statuses: tuple[str, ...]
+) -> VerificationSubmission:
     sub = VerificationSubmission.objects(id=submission_id).first()
     if not sub:
         raise errors.not_found("Submission not found")
-    if sub.status != "pending":
+    if sub.status not in allowed_statuses:
         raise errors.bad_request("Already reviewed")
     return sub
 
@@ -105,7 +107,7 @@ def get_photo_path(submission_id: str, kind: str) -> str:
 def approve_submission(
     submission_id: str, admin: User, background_tasks: BackgroundTasks
 ) -> VerificationResponse:
-    sub = _get_pending_submission(submission_id)
+    sub = _get_submission_in_status(submission_id, ("pending",))
     sub.update(status="approved", reviewed_by=admin, reviewed_at=utcnow())
     sub.reload()
     sub.user.update(identity_status="approved")
@@ -132,7 +134,11 @@ def reject_submission(
     admin: User,
     background_tasks: BackgroundTasks,
 ) -> VerificationResponse:
-    sub = _get_pending_submission(submission_id)
+    """Rejects a pending submission, or revokes one that was already
+    approved if a problem turns up later (e.g. a doctored document
+    noticed after the fact) — either way the user's identity_status ends
+    up 'rejected' and loses access to items that require verification."""
+    sub = _get_submission_in_status(submission_id, ("pending", "approved"))
     sub.update(
         status="rejected",
         reviewed_by=admin,
