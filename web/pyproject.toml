@@ -1,5 +1,5 @@
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 line-length = 88
 
 [tool.ruff.lint]
@@ -31,7 +31,7 @@ known-first-party = ["app"]
 testpaths = ["tests"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 # Most third-party deps here (mongoengine, jose, mercadopago, PIL...) ship
 # no type stubs — without this every import of them fails on its own,
 # drowning the errors that actually matter under noise.
