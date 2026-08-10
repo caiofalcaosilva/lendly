@@ -52,8 +52,14 @@ api.interceptors.response.use(
     const config = error.config as RetriableConfig | undefined
     const isUnauthorized = error.response?.status === 401
     const isRefreshCall = config?.url?.includes('/auth/refresh')
+    // /auth/login and /auth/login/complete-2fa return 401 for plain "wrong
+    // credentials"/"wrong code" — an expected form error, not a dead
+    // session. Letting the eviction logic below run here would nuke
+    // whatever tokens exist and hard-redirect mid-submit, wiping the error
+    // the form just set before the user ever sees it.
+    const isPreAuthCall = config?.url?.includes('/auth/login')
 
-    if (!isUnauthorized || typeof window === 'undefined' || !config) {
+    if (!isUnauthorized || typeof window === 'undefined' || !config || isPreAuthCall) {
       return Promise.reject(error)
     }
 
