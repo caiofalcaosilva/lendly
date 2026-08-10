@@ -205,8 +205,9 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
                 {filters.radius_km > 0 ? t('upTo', { distance: formatDistanceLabel(filters.radius_km) }) : t('anyDistance')}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 h-[30px]">
               <MapPin className="w-3.5 h-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+              <span className="text-[10px] text-gray-300 dark:text-gray-600 flex-shrink-0">100 m</span>
               <input
                 type="range"
                 min={0}
@@ -220,6 +221,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
                 }}
                 className="w-full accent-green-600 cursor-pointer"
               />
+              <span className="text-[10px] text-gray-300 dark:text-gray-600 flex-shrink-0">50 km</span>
               {filters.radius_km > 0 && (
                 <button
                   type="button"
@@ -230,10 +232,6 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
-            </div>
-            <div className="flex justify-between text-[10px] text-gray-300 dark:text-gray-600 mt-0.5 px-5">
-              <span>100 m</span>
-              <span>50 km</span>
             </div>
           </div>
         ) : userHasZip ? (
