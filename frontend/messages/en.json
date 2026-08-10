@@ -21,6 +21,7 @@
       "groups": "Groups",
       "newItem": "List an item",
       "dashboardLink": "Dashboard",
+      "accountMenu": "Account menu",
       "editProfile": "Edit profile",
       "administration": "Administration",
       "lightMode": "Light mode",
@@ -639,7 +640,11 @@
       "confirmRejection": "Confirm rejection",
       "cancel": "Cancel",
       "approve": "Approve",
-      "reject": "Reject"
+      "reject": "Reject",
+      "close": "Close",
+      "revokeApproval": "Revoke approval",
+      "confirmRevocation": "Confirm revocation",
+      "revokeWarning": "This will revoke the already-approved verification and block the user from requesting items that require verified identity."
     },
     "Categories": {
       "title": "Category management",
@@ -746,26 +751,40 @@
     "badge": "Sustainable community",
     "heroTitlePrefix": "Lend, rent, and",
     "heroTitleHighlight": "strengthen your neighborhood",
-    "heroSubtitle": "Lendly connects neighbors to share things. Fewer unnecessary purchases, more connection between people, and more money in your pocket.",
+    "heroSubtitle": "Lendly connects neighbors and local businesses to share things safely — verified identity, mutual reviews, and Pix payments, all inside the app.",
     "getStarted": "Get started",
     "exploreItems": "Browse items",
+    "trustBar": {
+      "verified": "Verified identity",
+      "pix": "Pix payments",
+      "reviews": "Mutual reviews"
+    },
     "howItWorksTitle": "How it works",
     "howItWorks": {
       "step1": { "title": "List your item", "desc": "Photo, description, and price. Available to the neighborhood in minutes." },
-      "step2": { "title": "Get requests", "desc": "Neighbors find your item and send a loan or rental request." },
-      "step3": { "title": "Share and review", "desc": "Arrange the handoff in person, lend it out, and review each other." }
+      "step2": { "title": "Get requests", "desc": "Neighbors find your item, send a request, and pay via Pix to confirm it." },
+      "step3": { "title": "Sort it out in chat, then review", "desc": "Work out the details right in the app, lend it out, and review each other afterward." }
     },
     "categoriesTitle": "What you can find",
     "categories": {
-      "tools": "Tools",
-      "sports": "Sports",
-      "books": "Books",
-      "more": "And much more"
+      "viewAll": "View all"
     },
-    "features": {
-      "secure": { "title": "Secure", "desc": "Mutual reviews and history build trust in the community." },
-      "community": { "title": "Community-driven", "desc": "Strengthen ties with neighbors and build a real network of collaboration." },
-      "sustainable": { "title": "Sustainable", "desc": "Reduce consumption and waste in your area." }
+    "trustTitle": "Built to lend with peace of mind",
+    "trustSubtitle": "Real trust mechanisms, not just promises — so you feel safe lending and borrowing.",
+    "trust": {
+      "verification": { "title": "Verified identity", "desc": "ID, selfie, and document checked by an admin before unlocking items that require verification." },
+      "groups": { "title": "Trusted groups", "desc": "Create or join private, invite-only groups — your building, your street, your friends — and vouch for who you already know." },
+      "reviews": { "title": "Reputation with history", "desc": "Every request ends with a mutual review, building a public reliability score on each profile." },
+      "payments": { "title": "Pix payments", "desc": "Requests are paid via Pix right in the app, confirmed automatically as soon as your bank processes it." }
+    },
+    "chat": {
+      "title": "Work it all out in chat, without leaving the app",
+      "desc": "Every request gets its own conversation with the other side — sort out pickup time and place without swapping phone numbers."
+    },
+    "business": {
+      "title": "Local rental businesses are on Lendly too",
+      "desc": "Alongside neighbors, equipment and gear rental businesses show up with a verified business badge.",
+      "cta": "See businesses"
     },
     "benefitsTitle": "Why use Lendly?",
     "benefits": {

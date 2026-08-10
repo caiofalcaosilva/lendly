@@ -21,6 +21,7 @@
       "groups": "Grupos",
       "newItem": "Anunciar item",
       "dashboardLink": "Painel",
+      "accountMenu": "Menu da conta",
       "editProfile": "Editar perfil",
       "administration": "Administração",
       "lightMode": "Modo claro",
@@ -639,7 +640,11 @@
       "confirmRejection": "Confirmar rejeição",
       "cancel": "Cancelar",
       "approve": "Aprovar",
-      "reject": "Rejeitar"
+      "reject": "Rejeitar",
+      "close": "Fechar",
+      "revokeApproval": "Revogar aprovação",
+      "confirmRevocation": "Confirmar revogação",
+      "revokeWarning": "Isso vai revogar a verificação já aprovada e bloquear o usuário de solicitar itens que exigem identidade verificada."
     },
     "Categories": {
       "title": "Gerenciamento de categorias",
@@ -746,26 +751,40 @@
     "badge": "Comunidade sustentável",
     "heroTitlePrefix": "Empreste, alugue e",
     "heroTitleHighlight": "fortaleça sua vizinhança",
-    "heroSubtitle": "Lendly conecta vizinhos para compartilhar objetos. Menos compras desnecessárias, mais conexão entre pessoas e mais dinheiro no bolso.",
+    "heroSubtitle": "Lendly conecta vizinhos e negócios locais para compartilhar objetos com segurança — identidade verificada, avaliações mútuas e pagamento via Pix, tudo dentro do app.",
     "getStarted": "Começar agora",
     "exploreItems": "Explorar itens",
+    "trustBar": {
+      "verified": "Identidade verificada",
+      "pix": "Pagamento via Pix",
+      "reviews": "Avaliações mútuas"
+    },
     "howItWorksTitle": "Como funciona",
     "howItWorks": {
       "step1": { "title": "Cadastre seu item", "desc": "Foto, descrição e preço. Em minutos disponível para a vizinhança." },
-      "step2": { "title": "Receba solicitações", "desc": "Vizinhos encontram seu item e enviam pedido de empréstimo ou aluguel." },
-      "step3": { "title": "Compartilhe e avalie", "desc": "Combine pessoalmente, empreste e avaliem-se mutuamente." }
+      "step2": { "title": "Receba solicitações", "desc": "Vizinhos encontram seu item, enviam o pedido e pagam via Pix pra confirmar." },
+      "step3": { "title": "Combine pelo chat e avalie", "desc": "Acerte os detalhes direto no app, empreste e avaliem-se mutuamente ao final." }
     },
     "categoriesTitle": "O que você pode encontrar",
     "categories": {
-      "tools": "Ferramentas",
-      "sports": "Esportes",
-      "books": "Livros",
-      "more": "E muito mais"
+      "viewAll": "Ver tudo"
     },
-    "features": {
-      "secure": { "title": "Seguro", "desc": "Avaliações mútuas e histórico criam confiança na comunidade." },
-      "community": { "title": "Comunitário", "desc": "Fortaleça laços com vizinhos e crie uma rede de colaboração real." },
-      "sustainable": { "title": "Sustentável", "desc": "Reduza o consumo e o desperdício na sua região." }
+    "trustTitle": "Feito pra emprestar com tranquilidade",
+    "trustSubtitle": "Mecanismos reais de confiança, não só promessas — pra você sentir segurança em emprestar e em pedir emprestado.",
+    "trust": {
+      "verification": { "title": "Identidade verificada", "desc": "CPF, selfie e documento conferidos por um administrador antes de liberar itens que exigem verificação." },
+      "groups": { "title": "Grupos de confiança", "desc": "Crie ou entre em grupos privados por convite — condomínio, rua ou amigos — e confirme quem você já conhece." },
+      "reviews": { "title": "Reputação com histórico", "desc": "Toda solicitação termina com avaliação mútua, formando um índice de confiabilidade público no perfil." },
+      "payments": { "title": "Pagamento via Pix", "desc": "Pedido pago via Pix direto no app, com confirmação automática assim que o banco processa." }
+    },
+    "chat": {
+      "title": "Combine tudo pelo chat, sem sair do app",
+      "desc": "Cada solicitação tem uma conversa dedicada com o outro lado — combine local e horário de retirada sem trocar telefone."
+    },
+    "business": {
+      "title": "Locadoras e negócios locais também estão no Lendly",
+      "desc": "Além dos vizinhos, empresas de locação de equipamentos e produtos aparecem com selo de conta verificada.",
+      "cta": "Ver empresas"
     },
     "benefitsTitle": "Por que usar o Lendly?",
     "benefits": {
