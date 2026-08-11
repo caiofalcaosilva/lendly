@@ -8,6 +8,7 @@ import { routing } from '@/i18n/routing'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { NotificationsProvider } from '@/contexts/NotificationsContext'
+import { ToastProvider } from '@/contexts/ToastContext'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 
@@ -54,20 +55,26 @@ export default async function RootLayout({
 
   setRequestLocale(locale)
   const messages = await getMessages()
+  const t = await getTranslations({ locale, namespace: 'Common.SkipLink' })
 
   return (
     <html lang={locale === 'en' ? 'en' : 'pt-BR'}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col transition-colors`}>
+      <body className={`${inter.className} bg-bg text-ink min-h-screen flex flex-col transition-colors`}>
+        <a href="#main-content" className="skip-link bg-primary text-primary-on px-4 py-2 rounded-control text-sm font-medium">
+          {t('label')}
+        </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <AuthProvider>
               <NotificationsProvider>
-                <Navbar />
-                <main className="flex-1">{children}</main>
-                <Footer />
+                <ToastProvider>
+                  <Navbar />
+                  <main id="main-content" className="flex-1">{children}</main>
+                  <Footer />
+                </ToastProvider>
               </NotificationsProvider>
             </AuthProvider>
           </ThemeProvider>
