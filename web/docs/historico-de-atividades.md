@@ -49,6 +49,7 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `admin.group_deleted` | `group_service.py::admin_delete_group` | Todos os membros do grupo |
 | `admin.group_member_removed` | `group_service.py::admin_remove_member` | Membro removido |
 | `admin.review_deleted` | `admin_review_service.py::admin_delete_review` | Reviewer + Reviewed |
+| `admin.user_viewed` | `admin_view_as_service.py::create_view_as_token` | Usuário visualizado |
 
 ## Regras de design
 

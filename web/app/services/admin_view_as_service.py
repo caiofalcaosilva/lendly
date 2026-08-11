@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from app.models.user import User
 from app.schemas.view_as import ViewAsResponse
+from app.services import activity_service
 from app.services.auth_service import user_to_response
 from app.utils import errors
 from app.utils.security import create_access_token
@@ -27,5 +28,12 @@ def create_view_as_token(admin: User, target_user_id: str) -> ViewAsResponse:
     token = create_access_token(
         data={"sub": str(target.id), "type": "view_as", "admin_id": str(admin.id)},
         expires_delta=timedelta(minutes=VIEW_AS_EXPIRE_MINUTES),
+    )
+    activity_service.record(
+        recipient=target,
+        event="admin.user_viewed",
+        actor=admin,
+        resource_type="user",
+        resource_id=str(target.id),
     )
     return ViewAsResponse(access_token=token, user=user_to_response(target))

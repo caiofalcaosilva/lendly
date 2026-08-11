@@ -950,3 +950,19 @@ def test_admin_delete_review_records_activity_for_both_sides(client, register_us
     requester_events = [a["event"] for a in _activities(client, requester_token)]
     assert owner_events[0] == "admin.review_deleted"
     assert requester_events[0] == "admin.review_deleted"
+
+
+def test_admin_view_as_records_activity_for_target(client, register_user):
+    admin_id, admin_token = register_user("admin.viewas@example.com")
+    _make_admin(admin_id)
+    target_id, target_token = register_user("target.viewas@example.com")
+
+    resp = client.post(
+        f"/admin/users/{target_id}/view-as",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    events = _activities(client, target_token)
+    assert events[0]["event"] == "admin.user_viewed"
+    assert events[0]["actor"]["id"] == admin_id

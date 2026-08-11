@@ -51,6 +51,7 @@ ACTIVITY_EVENTS = [
     "admin.group_deleted",
     "admin.group_member_removed",
     "admin.review_deleted",
+    "admin.user_viewed",
 ]
 
 
