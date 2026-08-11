@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
-import { History, X } from 'lucide-react'
+import { Download, History, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   ACTIVITY_EVENTS,
@@ -13,7 +13,9 @@ import {
   AdminUserSummary,
 } from '@/types'
 import { adminActivitiesService } from '@/services/adminActivities'
+import { adminExportService } from '@/services/adminExport'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
 import { ACTIVITY_DOMAIN_ICONS, activityResourceHref } from '@/lib/activityDisplay'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -63,6 +65,9 @@ export default function AdminActivitiesPage() {
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Admin.Activities')
   const tEvents = useTranslations('Activities.events')
+  const tExport = useTranslations('Admin.Export')
+  const toast = useToast()
+  const [exporting, setExporting] = useState(false)
 
   const [recipient, setRecipient] = useState<AdminUserSummary | null>(null)
   const [actor, setActor] = useState<AdminUserSummary | null>(null)
@@ -117,6 +122,18 @@ export default function AdminActivitiesPage() {
     }
   }
 
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      await adminExportService.activities(buildFilters())
+      toast.success(tExport('started'))
+    } catch {
+      toast.error(tExport('error'))
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const clearFilters = () => {
     setRecipient(null)
     setActor(null)
@@ -139,9 +156,20 @@ export default function AdminActivitiesPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-2 mb-1">
-        <History className="w-6 h-6 text-info" />
-        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
+      <div className="flex items-start justify-between gap-4 mb-1">
+        <div className="flex items-center gap-2">
+          <History className="w-6 h-6 text-info" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          loading={exporting}
+          onClick={handleExport}
+          className="flex-shrink-0"
+        >
+          <Download className="w-3.5 h-3.5" /> {tExport('downloadCsv')}
+        </Button>
       </div>
       <p className="text-ink-muted text-sm mb-6">{t('subtitle')}</p>
 
