@@ -264,7 +264,7 @@ export default function ItemDetailClient() {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-lg">
+                <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                   <span className="text-sm font-semibold text-ink">{item.owner.average_rating.toFixed(1)}</span>
                 </div>
