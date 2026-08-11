@@ -5,10 +5,29 @@
   },
   "Common": {
     "i18nCheck": "Internacionalização funcionando.",
+    "Modal": {
+      "close": "Fechar"
+    },
+    "ConfirmDialog": {
+      "cancel": "Cancelar",
+      "confirm": "Confirmar"
+    },
+    "Toast": {
+      "dismiss": "Fechar notificação"
+    },
+    "SkipLink": {
+      "label": "Ir para o conteúdo"
+    },
+    "PasswordInput": {
+      "show": "Mostrar senha",
+      "hide": "Ocultar senha"
+    },
     "Navbar": {
       "viewAsMode": "Modo \"ver como\": {name} — somente leitura",
       "exit": "Sair",
       "closeAnnouncement": "Fechar aviso",
+      "openMenu": "Abrir menu",
+      "closeMenu": "Fechar menu",
       "verifyEmail": "Verifique seu e-mail para ativar a conta.",
       "resendLink": "Reenviar link",
       "identityPending": "Sua verificação de identidade está em análise.",
@@ -76,7 +95,8 @@
       "removeFavorite": "Remover dos favoritos",
       "addFavorite": "Adicionar aos favoritos",
       "viewOnMap": "Ver no mapa",
-      "noLocation": "Local não informado"
+      "noLocation": "Local não informado",
+      "favoriteError": "Não foi possível favoritar agora."
     },
     "ItemFilters": {
       "searchPlaceholder": "Buscar por nome ou descrição...",
@@ -89,6 +109,7 @@
       "distance": "Distância",
       "upTo": "até {distance}",
       "anyDistance": "Qualquer distância",
+      "clearSearch": "Limpar busca",
       "clearDistance": "Limpar distância",
       "calculatingLocation": "Calculando localização…",
       "addZipToFilter": "Adicione seu CEP para filtrar por distância",
@@ -99,7 +120,8 @@
       "city": "Cidade",
       "cityPlaceholder": "Ex: São Paulo",
       "filters": "Filtros:",
-      "clearAll": "Limpar tudo"
+      "clearAll": "Limpar tudo",
+      "removeFilter": "Remover filtro: {label}"
     },
     "ItemForm": {
       "errors": {
@@ -209,7 +231,8 @@
       "title": "Conversa",
       "loadingMessages": "Carregando mensagens...",
       "noMessages": "Nenhuma mensagem ainda. Diga oi!",
-      "placeholder": "Escreva uma mensagem..."
+      "placeholder": "Escreva uma mensagem...",
+      "send": "Enviar mensagem"
     },
     "ExtensionModal": {
       "errorChooseDate": "Escolha a nova data de devolução",
@@ -355,14 +378,16 @@
       "connectedOn": "Conectada em {date} — você já pode anunciar itens pagos.",
       "connected": "Conectada — você já pode anunciar itens pagos.",
       "notConnected": "Conecte sua conta pra poder anunciar itens pagos e receber o valor via Pix quando o item for retirado.",
-      "connectButton": "Conectar Mercado Pago"
+      "connectButton": "Conectar Mercado Pago",
+      "error": "Não foi possível conectar ao Mercado Pago."
     },
     "SessionsSection": {
       "title": "Dispositivos conectados",
       "description": "Sessões que continuam renovando seu login automaticamente. Revogue as que você não reconhece.",
       "noOtherSessions": "Nenhuma sessão ativa além desta.",
       "sessionInfo": "Conectado em {created} · expira em {expires}",
-      "revoke": "Revogar sessão"
+      "revoke": "Revogar sessão",
+      "error": "Não foi possível encerrar a sessão."
     },
     "LoginHistorySection": {
       "title": "Histórico de login",
@@ -374,6 +399,7 @@
     "NotificationPreferencesSection": {
       "title": "Notificações por e-mail",
       "securityNotice": "E-mails de segurança (login, verificação de conta, redefinição de senha) não são afetados.",
+      "error": "Não foi possível salvar a preferência.",
       "options": {
         "request_status": "Mudanças de status nas minhas solicitações",
         "new_message": "Novas mensagens no chat",
@@ -385,6 +411,7 @@
     "InAppNotificationPreferencesSection": {
       "title": "Notificações no sino",
       "independentNotice": "Independente das preferências de e-mail acima — desligar uma não desliga a outra.",
+      "error": "Não foi possível salvar a preferência.",
       "options": {
         "request_status": "Mudanças de status nas minhas solicitações",
         "new_message": "Novas mensagens no chat",
@@ -469,6 +496,7 @@
     "useMyLocation": "Usar minha localização atual",
     "nearYou": "Perto de você",
     "itemsLoaded": "{count, plural, one {# item carregado} other {# itens carregados}}",
+    "resultsHeading": "Resultados",
     "itemsOnMap": "{count, plural, one {# item no mapa} other {# itens no mapa}}",
     "withinRadius": "a até {km} km de você",
     "listView": "Lista",
@@ -499,6 +527,8 @@
     },
     "Id": {
       "confirmDelete": "Remover este item?",
+      "confirmDeleteTitle": "Remover item?",
+      "errorDeleting": "Não foi possível remover o item.",
       "notFound": "Item não encontrado",
       "backToItems": "Voltar aos itens",
       "metaNotFoundTitle": "Item não encontrado | Lendly",
@@ -541,6 +571,8 @@
       "title": "Exportação de relatórios",
       "subtitle": "Baixe um CSV com todos os dados de cada área, pra análise offline.",
       "downloadCsv": "Baixar CSV",
+      "started": "Exportação iniciada — o download deve começar em instantes.",
+      "error": "Não foi possível gerar a exportação.",
       "reports": {
         "users": { "label": "Usuários", "description": "Todos os usuários, com status, tipo de conta e reputação." },
         "items": { "label": "Itens", "description": "Todos os itens anunciados, com dono, categoria e status." },
@@ -562,7 +594,8 @@
       "reportedBy": "Denunciado por {name} em {date}",
       "reviewedBy": "Revisado por {name} em {date}",
       "remove": "Remover",
-      "dismiss": "Dispensar"
+      "dismiss": "Dispensar",
+      "error": "Não foi possível concluir a ação."
     },
     "Settings": {
       "errorSaving": "Erro ao salvar configurações",
@@ -661,7 +694,10 @@
       "inactive": "Inativa",
       "deactivate": "Desativar",
       "activate": "Ativar",
-      "newSubcategoryPlaceholder": "Nova subcategoria..."
+      "newSubcategoryPlaceholder": "Nova subcategoria...",
+      "addSubcategory": "Adicionar subcategoria",
+      "errorToggling": "Não foi possível salvar a mudança.",
+      "errorRenaming": "Não foi possível renomear."
     },
     "Users": {
       "title": "Gerenciamento de usuários",
@@ -732,6 +768,8 @@
   "Users": {
     "Id": {
       "confirmDeleteReview": "Remover esta avaliação? A nota do usuário será recalculada.",
+      "confirmDeleteReviewTitle": "Remover avaliação?",
+      "errorDeletingReview": "Não foi possível remover a avaliação.",
       "notFound": "Usuário não encontrado",
       "backToItems": "Voltar aos itens",
       "metaNotFoundTitle": "Usuário não encontrado | Lendly",
@@ -830,6 +868,7 @@
     "featureOnProfile": "Destacar no perfil (máx. {max})",
     "deactivate": "Desativar",
     "activate": "Ativar",
+    "editItem": "Editar item",
     "adminNoItems": "Contas administrativas não cadastram itens.",
     "owner": "Dono: {name}",
     "requester": "Solicitante: {name}",
@@ -898,6 +937,7 @@
       "invalidCode": "Código inválido"
     },
     "confirmPause": "Pausar sua conta? Seus itens somem da busca e não recebem novas solicitações até você reativar.",
+    "errorTogglingPause": "Não foi possível atualizar o status da conta.",
     "title": "Editar perfil",
     "subtitle": "Mantenha suas informações atualizadas para facilitar o contato com vizinhos",
     "ratingCount": "({count, plural, one {# avaliação} other {# avaliações}})",
@@ -997,6 +1037,7 @@
       "confirmDelete": "Excluir este grupo? Os itens compartilhados só com ele voltam a ser públicos.",
       "confirmAdminDelete": "Excluir este grupo como admin? Os itens compartilhados só com ele voltam a ser públicos.",
       "confirmRemoveMember": "Remover {name} deste grupo?",
+      "error": "Não foi possível concluir a ação.",
       "notFound": "Grupo não encontrado — ou você não faz parte dele.",
       "deleteGroup": "Excluir grupo",
       "leave": "Sair",

@@ -5,10 +5,29 @@
   },
   "Common": {
     "i18nCheck": "Internationalization working.",
+    "Modal": {
+      "close": "Close"
+    },
+    "ConfirmDialog": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "Toast": {
+      "dismiss": "Dismiss notification"
+    },
+    "SkipLink": {
+      "label": "Skip to content"
+    },
+    "PasswordInput": {
+      "show": "Show password",
+      "hide": "Hide password"
+    },
     "Navbar": {
       "viewAsMode": "\"View as\" mode: {name} — read only",
       "exit": "Exit",
       "closeAnnouncement": "Close announcement",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
       "verifyEmail": "Verify your email to activate your account.",
       "resendLink": "Resend link",
       "identityPending": "Your identity verification is under review.",
@@ -76,7 +95,8 @@
       "removeFavorite": "Remove from favorites",
       "addFavorite": "Add to favorites",
       "viewOnMap": "View on map",
-      "noLocation": "Location not provided"
+      "noLocation": "Location not provided",
+      "favoriteError": "Couldn't favorite this right now."
     },
     "ItemFilters": {
       "searchPlaceholder": "Search by name or description...",
@@ -89,6 +109,7 @@
       "distance": "Distance",
       "upTo": "up to {distance}",
       "anyDistance": "Any distance",
+      "clearSearch": "Clear search",
       "clearDistance": "Clear distance",
       "calculatingLocation": "Calculating location…",
       "addZipToFilter": "Add your ZIP code to filter by distance",
@@ -99,7 +120,8 @@
       "city": "City",
       "cityPlaceholder": "E.g. São Paulo",
       "filters": "Filters:",
-      "clearAll": "Clear all"
+      "clearAll": "Clear all",
+      "removeFilter": "Remove filter: {label}"
     },
     "ItemForm": {
       "errors": {
@@ -209,7 +231,8 @@
       "title": "Conversation",
       "loadingMessages": "Loading messages...",
       "noMessages": "No messages yet. Say hi!",
-      "placeholder": "Write a message..."
+      "placeholder": "Write a message...",
+      "send": "Send message"
     },
     "ExtensionModal": {
       "errorChooseDate": "Choose the new return date",
@@ -355,14 +378,16 @@
       "connectedOn": "Connected on {date} — you can now list paid items.",
       "connected": "Connected — you can now list paid items.",
       "notConnected": "Connect your account to list paid items and receive payment via Pix when the item is picked up.",
-      "connectButton": "Connect Mercado Pago"
+      "connectButton": "Connect Mercado Pago",
+      "error": "Couldn't connect to Mercado Pago."
     },
     "SessionsSection": {
       "title": "Connected devices",
       "description": "Sessions that keep renewing your login automatically. Revoke any you don't recognize.",
       "noOtherSessions": "No active sessions besides this one.",
       "sessionInfo": "Connected on {created} · expires on {expires}",
-      "revoke": "Revoke session"
+      "revoke": "Revoke session",
+      "error": "Couldn't end the session."
     },
     "LoginHistorySection": {
       "title": "Login history",
@@ -374,6 +399,7 @@
     "NotificationPreferencesSection": {
       "title": "Email notifications",
       "securityNotice": "Security emails (login, account verification, password reset) are not affected.",
+      "error": "Couldn't save the preference.",
       "options": {
         "request_status": "Status changes on my requests",
         "new_message": "New chat messages",
@@ -385,6 +411,7 @@
     "InAppNotificationPreferencesSection": {
       "title": "Bell notifications",
       "independentNotice": "Independent from the email preferences above — turning one off doesn't turn off the other.",
+      "error": "Couldn't save the preference.",
       "options": {
         "request_status": "Status changes on my requests",
         "new_message": "New chat messages",
@@ -469,6 +496,7 @@
     "useMyLocation": "Use my current location",
     "nearYou": "Near you",
     "itemsLoaded": "{count, plural, one {# item loaded} other {# items loaded}}",
+    "resultsHeading": "Results",
     "itemsOnMap": "{count, plural, one {# item on the map} other {# items on the map}}",
     "withinRadius": "within {km} km of you",
     "listView": "List",
@@ -499,6 +527,8 @@
     },
     "Id": {
       "confirmDelete": "Remove this item?",
+      "confirmDeleteTitle": "Remove item?",
+      "errorDeleting": "Couldn't remove the item.",
       "notFound": "Item not found",
       "backToItems": "Back to items",
       "metaNotFoundTitle": "Item not found | Lendly",
@@ -541,6 +571,8 @@
       "title": "Report export",
       "subtitle": "Download a CSV with all the data from each area, for offline analysis.",
       "downloadCsv": "Download CSV",
+      "started": "Export started — the download should begin shortly.",
+      "error": "Couldn't generate the export.",
       "reports": {
         "users": { "label": "Users", "description": "All users, with status, account type, and reputation." },
         "items": { "label": "Items", "description": "All listed items, with owner, category, and status." },
@@ -562,7 +594,8 @@
       "reportedBy": "Reported by {name} on {date}",
       "reviewedBy": "Reviewed by {name} on {date}",
       "remove": "Remove",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "error": "Couldn't complete the action."
     },
     "Settings": {
       "errorSaving": "Error saving settings",
@@ -661,7 +694,10 @@
       "inactive": "Inactive",
       "deactivate": "Deactivate",
       "activate": "Activate",
-      "newSubcategoryPlaceholder": "New subcategory..."
+      "newSubcategoryPlaceholder": "New subcategory...",
+      "addSubcategory": "Add subcategory",
+      "errorToggling": "Couldn't save the change.",
+      "errorRenaming": "Couldn't rename it."
     },
     "Users": {
       "title": "User management",
@@ -732,6 +768,8 @@
   "Users": {
     "Id": {
       "confirmDeleteReview": "Remove this review? The user's rating will be recalculated.",
+      "confirmDeleteReviewTitle": "Remove review?",
+      "errorDeletingReview": "Couldn't remove the review.",
       "notFound": "User not found",
       "backToItems": "Back to items",
       "metaNotFoundTitle": "User not found | Lendly",
@@ -830,6 +868,7 @@
     "featureOnProfile": "Feature on profile (max. {max})",
     "deactivate": "Deactivate",
     "activate": "Activate",
+    "editItem": "Edit item",
     "adminNoItems": "Administrative accounts don't list items.",
     "owner": "Owner: {name}",
     "requester": "Requester: {name}",
@@ -898,6 +937,7 @@
       "invalidCode": "Invalid code"
     },
     "confirmPause": "Pause your account? Your items disappear from search and stop receiving new requests until you reactivate.",
+    "errorTogglingPause": "Couldn't update the account status.",
     "title": "Edit profile",
     "subtitle": "Keep your information up to date to make it easier for neighbors to reach you",
     "ratingCount": "({count, plural, one {# review} other {# reviews}})",
@@ -997,6 +1037,7 @@
       "confirmDelete": "Delete this group? Items shared only with it become public again.",
       "confirmAdminDelete": "Delete this group as admin? Items shared only with it become public again.",
       "confirmRemoveMember": "Remove {name} from this group?",
+      "error": "Couldn't complete the action.",
       "notFound": "Group not found — or you're not a member of it.",
       "deleteGroup": "Delete group",
       "leave": "Leave",
