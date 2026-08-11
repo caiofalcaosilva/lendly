@@ -46,6 +46,9 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `admin.user_activated` / `deactivated` / `promoted` / `demoted` | `admin_user_service.py` | Usuário alvo |
 | `admin.item_activated` / `deactivated` | `admin_item_service.py` | Owner do item |
 | `admin.report_dismissed` / `actioned` | `report_service.py` | Reporter |
+| `admin.group_deleted` | `group_service.py::admin_delete_group` | Todos os membros do grupo |
+| `admin.group_member_removed` | `group_service.py::admin_remove_member` | Membro removido |
+| `admin.review_deleted` | `admin_review_service.py::admin_delete_review` | Reviewer + Reviewed |
 
 ## Regras de design
 

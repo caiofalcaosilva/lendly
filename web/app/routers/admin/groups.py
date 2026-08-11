@@ -18,7 +18,7 @@ def list_all_groups(admin: User = Depends(get_current_admin)):
 @router.delete("/{group_id}", status_code=204)
 def admin_delete_group(group_id: str, admin: User = Depends(get_current_admin)):
     """Admin — moderation deletion of any group, regardless of creator."""
-    group_service.admin_delete_group(group_id)
+    group_service.admin_delete_group(group_id, admin)
 
 
 @router.delete("/{group_id}/members/{user_id}", response_model=GroupResponse)
@@ -27,4 +27,4 @@ def admin_remove_member(
 ):
     """Admin — removes a member from a group. The creator can't be removed
     this way (delete the group instead)."""
-    return group_service.admin_remove_member(group_id, user_id)
+    return group_service.admin_remove_member(group_id, user_id, admin)

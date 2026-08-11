@@ -847,3 +847,106 @@ def test_export_data_records_activity(client, register_user):
 
     events = [a["event"] for a in _activities(client, token)]
     assert events[0] == "account.data_exported"
+
+
+# --- Second follow-up: admin group/review moderation actions -------------
+
+
+def test_admin_remove_member_records_activity_for_target(client, register_user):
+    admin_id, admin_token = register_user("admin.groupremove@example.com")
+    _make_admin(admin_id)
+    _, creator_token = register_user("creator.groupremove@example.com")
+    resp = client.post(
+        "/groups/",
+        json={"name": "Grupo Moderado"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    group = resp.json()
+    _, member_token = register_user("member.groupremove@example.com")
+    client.post(
+        "/groups/join",
+        json={"invite_code": group["invite_code"]},
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    member_id = client.get(
+        "/users/me", headers={"Authorization": f"Bearer {member_token}"}
+    ).json()["id"]
+
+    resp = client.delete(
+        f"/admin/groups/{group['id']}/members/{member_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    events = _activities(client, member_token)
+    assert events[0]["event"] == "admin.group_member_removed"
+    assert events[0]["resource"]["title"] == "Grupo Moderado"
+    assert events[0]["actor"]["id"] == admin_id
+
+
+def test_admin_delete_group_records_activity_for_creator(client, register_user):
+    admin_id, admin_token = register_user("admin.groupdelete@example.com")
+    _make_admin(admin_id)
+    _, creator_token = register_user("creator.groupdelete@example.com")
+    resp = client.post(
+        "/groups/",
+        json={"name": "Grupo pra Apagar"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    group = resp.json()
+
+    resp = client.delete(
+        f"/admin/groups/{group['id']}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 204, resp.text
+
+    events = _activities(client, creator_token)
+    assert events[0]["event"] == "admin.group_deleted"
+    assert events[0]["resource"]["title"] == "Grupo pra Apagar"
+
+
+def test_admin_delete_review_records_activity_for_both_sides(client, register_user):
+    admin_id, admin_token = register_user("admin.reviewdelete@example.com")
+    _make_admin(admin_id)
+    _, owner_token = register_user("owner.reviewdelete@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("requester.reviewdelete@example.com")
+    req = _create_request(client, requester_token, item["id"])
+    client.patch(
+        f"/requests/{req['id']}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{req['id']}/start",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{req['id']}/start",
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    client.patch(
+        f"/requests/{req['id']}/finish",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{req['id']}/finish",
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    resp = client.post(
+        f"/reviews/request/{req['id']}",
+        json={"rating": 5, "comment": "Ótimo!"},
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    review = resp.json()
+
+    resp = client.delete(
+        f"/admin/reviews/{review['id']}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 204, resp.text
+
+    owner_events = [a["event"] for a in _activities(client, owner_token)]
+    requester_events = [a["event"] for a in _activities(client, requester_token)]
+    assert owner_events[0] == "admin.review_deleted"
+    assert requester_events[0] == "admin.review_deleted"

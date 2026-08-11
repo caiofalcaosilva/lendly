@@ -11,4 +11,4 @@ router = APIRouter(prefix="/reviews")
 def admin_delete_review(review_id: str, admin: User = Depends(get_current_admin)):
     """Admin — deletes a review and recalculates the reviewed user's
     rating."""
-    admin_review_service.admin_delete_review(review_id)
+    admin_review_service.admin_delete_review(review_id, admin)

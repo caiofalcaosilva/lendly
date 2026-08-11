@@ -48,6 +48,9 @@ ACTIVITY_EVENTS = [
     "admin.item_deactivated",
     "admin.report_dismissed",
     "admin.report_actioned",
+    "admin.group_deleted",
+    "admin.group_member_removed",
+    "admin.review_deleted",
 ]
 
 

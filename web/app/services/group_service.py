@@ -165,18 +165,29 @@ def delete_group(group_id: str, current_user: User) -> None:
     group.delete()
 
 
-def admin_delete_group(group_id: str) -> None:
+def admin_delete_group(group_id: str, admin: User) -> None:
     """Moderation action — deletes any group regardless of creator, unlike
     delete_group above which only the creator can invoke."""
     group = Group.objects(id=group_id).first()
     if not group:
         raise errors.not_found("Group not found")
-    for member in group.members:
+    members = list(group.members)
+    group_name = group.name
+    for member in members:
         _strip_group_from_items(group, member)
     group.delete()
+    for member in members:
+        activity_service.record(
+            recipient=member,
+            event="admin.group_deleted",
+            actor=admin,
+            resource_type="group",
+            resource_id=group_id,
+            resource_title=group_name,
+        )
 
 
-def admin_remove_member(group_id: str, user_id: str) -> GroupResponse:
+def admin_remove_member(group_id: str, user_id: str, admin: User) -> GroupResponse:
     """Moderation action — kicks a member out of a group. The creator can't
     be removed this way (mirrors leave_group's block); delete the group
     instead."""
@@ -194,6 +205,14 @@ def admin_remove_member(group_id: str, user_id: str) -> GroupResponse:
     _strip_vouches(group, member)
     group.update(pull__members=member)
     group.reload()
+    activity_service.record(
+        recipient=member,
+        event="admin.group_member_removed",
+        actor=admin,
+        resource_type="group",
+        resource_id=str(group.id),
+        resource_title=group.name,
+    )
     return _to_response(group)
 
 
