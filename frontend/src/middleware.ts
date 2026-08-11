@@ -5,7 +5,7 @@ import { routing } from '@/i18n/routing'
 
 const intlMiddleware = createMiddleware(routing)
 
-const PROTECTED = ['/dashboard', '/items/new', '/profile', '/requests', '/groups', '/notifications']
+const PROTECTED = ['/dashboard', '/items/new', '/profile', '/requests', '/groups', '/notifications', '/activities']
 
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl

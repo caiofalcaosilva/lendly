@@ -222,6 +222,7 @@ export default function Navbar() {
               <div className="border-t border-border my-1" />
               <Link href="/dashboard" className="block text-ink-muted py-2" onClick={() => setMobileOpen(false)}>{t('dashboardLink')}</Link>
               <Link href="/profile" className="block text-ink-muted py-2" onClick={() => setMobileOpen(false)}>{t('editProfile')}</Link>
+              <Link href="/activities" className="block text-ink-muted py-2" onClick={() => setMobileOpen(false)}>{t('activityHistory')}</Link>
               {user?.is_admin && ADMIN_LINKS.map(({ href, key }) => (
                 <Link key={href} href={href} className="block text-ink-muted py-2" onClick={() => setMobileOpen(false)}>{t(`admin.${key}`)}</Link>
               ))}

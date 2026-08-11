@@ -42,6 +42,7 @@
       "dashboardLink": "Dashboard",
       "accountMenu": "Account menu",
       "editProfile": "Edit profile",
+      "activityHistory": "Activity History",
       "administration": "Administration",
       "lightMode": "Light mode",
       "darkMode": "Dark mode",
@@ -1014,6 +1015,91 @@
     "unreadPrefix": "Unread: ",
     "deleteNotification": "Delete notification: {title}",
     "loadMore": "Load more"
+  },
+  "Activities": {
+    "title": "Activity History",
+    "subtitle": "Everything that happened with your requests, items, payments and account — newest first.",
+    "you": "You",
+    "emptyTitle": "No activity yet",
+    "emptyDescription": "Whatever happens with your requests, items and account shows up here.",
+    "loadMore": "Load more",
+    "viewAll": "View full activity history",
+    "events": {
+      "item": {
+        "created": "{actor} listed {resource}",
+        "updated": "{actor} updated {resource}",
+        "paused": "{actor} paused {resource}",
+        "resumed": "{actor} resumed {resource}",
+        "removed": "{actor} removed {resource}"
+      },
+      "rental": {
+        "requested": "{actor} requested {resource}",
+        "accepted": "{actor} accepted the request for {resource}",
+        "refused": "{actor} declined the request for {resource}",
+        "pickup_confirmed": "{actor} confirmed pickup of {resource}",
+        "started": "Loan of {resource} started",
+        "pickup_forced": "{actor} forced pickup of {resource}",
+        "return_confirmed": "{actor} confirmed return of {resource}",
+        "finished": "Loan of {resource} finished",
+        "return_forced": "{actor} forced return of {resource}",
+        "cancelled": "{actor} cancelled the request for {resource}",
+        "extension_requested": "{actor} requested an extension for {resource}",
+        "extension_approved": "{actor} approved the extension for {resource}",
+        "extension_rejected": "{actor} rejected the extension for {resource}"
+      },
+      "payment": {
+        "held": "Payment for {resource} confirmed, awaiting pickup",
+        "released": "Payment for {resource} released",
+        "refunded": "Payment for {resource} refunded",
+        "failed": "Payment for {resource} failed"
+      },
+      "review": {
+        "submitted": "{actor} reviewed {resource}"
+      },
+      "verification": {
+        "submitted": "You submitted your identity verification",
+        "approved": "{actor} approved your identity verification",
+        "rejected": "{actor} didn't approve your identity verification"
+      },
+      "group": {
+        "created": "{actor} created the group {resource}",
+        "joined": "{actor} joined the group {resource}",
+        "left": "{actor} left the group {resource}",
+        "deleted": "{actor} deleted the group {resource}",
+        "vouch_received": "{actor} confirmed they know you, in {resource}",
+        "vouch_withdrawn": "{actor} withdrew their vouch, in {resource}"
+      },
+      "report": {
+        "filed": "You reported {resource}"
+      },
+      "account": {
+        "new_login": "New login detected",
+        "password_changed": "You changed your password",
+        "email_changed": "You changed your email",
+        "paused": "You paused your account",
+        "resumed": "You resumed your account",
+        "2fa_enabled": "You turned on two-factor authentication",
+        "2fa_disabled": "You turned off two-factor authentication",
+        "password_reset": "Your password was reset",
+        "session_revoked": "You disconnected a device",
+        "mercadopago_connected": "You connected your Mercado Pago account",
+        "data_exported": "You downloaded your data"
+      },
+      "admin": {
+        "user_activated": "{actor} reactivated your account",
+        "user_deactivated": "{actor} deactivated your account",
+        "user_promoted": "{actor} granted your account admin access",
+        "user_demoted": "{actor} removed your admin access",
+        "item_activated": "{actor} reactivated {resource}",
+        "item_deactivated": "{actor} deactivated {resource}",
+        "report_dismissed": "{actor} dismissed your report about {resource}",
+        "report_actioned": "{actor} removed {resource} following your report",
+        "group_deleted": "{actor} deleted the group {resource}",
+        "group_member_removed": "{actor} removed you from the group {resource}",
+        "review_deleted": "{actor} removed the review about {resource}",
+        "user_viewed": "{actor} viewed your account (support mode)"
+      }
+    }
   },
   "Groups": {
     "title": "My groups",

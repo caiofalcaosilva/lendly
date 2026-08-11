@@ -42,6 +42,7 @@
       "dashboardLink": "Painel",
       "accountMenu": "Menu da conta",
       "editProfile": "Editar perfil",
+      "activityHistory": "Histórico de atividades",
       "administration": "Administração",
       "lightMode": "Modo claro",
       "darkMode": "Modo escuro",
@@ -1014,6 +1015,91 @@
     "unreadPrefix": "Não lida: ",
     "deleteNotification": "Excluir notificação: {title}",
     "loadMore": "Carregar mais"
+  },
+  "Activities": {
+    "title": "Histórico de atividades",
+    "subtitle": "Tudo que aconteceu com seus pedidos, itens, pagamentos e conta — mais recente primeiro.",
+    "you": "Você",
+    "emptyTitle": "Nenhuma atividade ainda",
+    "emptyDescription": "O que acontecer com seus pedidos, itens e conta vai aparecer aqui.",
+    "loadMore": "Carregar mais",
+    "viewAll": "Ver histórico completo de atividades",
+    "events": {
+      "item": {
+        "created": "{actor} anunciou {resource}",
+        "updated": "{actor} atualizou {resource}",
+        "paused": "{actor} pausou {resource}",
+        "resumed": "{actor} reativou {resource}",
+        "removed": "{actor} removeu {resource}"
+      },
+      "rental": {
+        "requested": "{actor} solicitou {resource}",
+        "accepted": "{actor} aceitou o pedido de {resource}",
+        "refused": "{actor} recusou o pedido de {resource}",
+        "pickup_confirmed": "{actor} confirmou a retirada de {resource}",
+        "started": "Empréstimo de {resource} iniciado",
+        "pickup_forced": "{actor} forçou a retirada de {resource}",
+        "return_confirmed": "{actor} confirmou a devolução de {resource}",
+        "finished": "Empréstimo de {resource} finalizado",
+        "return_forced": "{actor} forçou a devolução de {resource}",
+        "cancelled": "{actor} cancelou o pedido de {resource}",
+        "extension_requested": "{actor} pediu prorrogação de {resource}",
+        "extension_approved": "{actor} aprovou a prorrogação de {resource}",
+        "extension_rejected": "{actor} recusou a prorrogação de {resource}"
+      },
+      "payment": {
+        "held": "Pagamento de {resource} confirmado, aguardando retirada",
+        "released": "Pagamento de {resource} liberado",
+        "refunded": "Pagamento de {resource} estornado",
+        "failed": "Pagamento de {resource} falhou"
+      },
+      "review": {
+        "submitted": "{actor} avaliou {resource}"
+      },
+      "verification": {
+        "submitted": "Você enviou sua verificação de identidade",
+        "approved": "{actor} aprovou sua verificação de identidade",
+        "rejected": "{actor} não aprovou sua verificação de identidade"
+      },
+      "group": {
+        "created": "{actor} criou o grupo {resource}",
+        "joined": "{actor} entrou no grupo {resource}",
+        "left": "{actor} saiu do grupo {resource}",
+        "deleted": "{actor} excluiu o grupo {resource}",
+        "vouch_received": "{actor} confirmou que conhece você, no grupo {resource}",
+        "vouch_withdrawn": "{actor} retirou a confirmação, no grupo {resource}"
+      },
+      "report": {
+        "filed": "Você denunciou {resource}"
+      },
+      "account": {
+        "new_login": "Novo login detectado",
+        "password_changed": "Você alterou sua senha",
+        "email_changed": "Você alterou seu e-mail",
+        "paused": "Você pausou sua conta",
+        "resumed": "Você reativou sua conta",
+        "2fa_enabled": "Você ativou a verificação em duas etapas",
+        "2fa_disabled": "Você desativou a verificação em duas etapas",
+        "password_reset": "Sua senha foi redefinida",
+        "session_revoked": "Você desconectou um dispositivo",
+        "mercadopago_connected": "Você conectou sua conta Mercado Pago",
+        "data_exported": "Você baixou seus dados"
+      },
+      "admin": {
+        "user_activated": "{actor} reativou sua conta",
+        "user_deactivated": "{actor} desativou sua conta",
+        "user_promoted": "{actor} concedeu acesso de administrador à sua conta",
+        "user_demoted": "{actor} removeu seu acesso de administrador",
+        "item_activated": "{actor} reativou {resource}",
+        "item_deactivated": "{actor} desativou {resource}",
+        "report_dismissed": "{actor} dispensou sua denúncia sobre {resource}",
+        "report_actioned": "{actor} removeu {resource} após sua denúncia",
+        "group_deleted": "{actor} excluiu o grupo {resource}",
+        "group_member_removed": "{actor} removeu você do grupo {resource}",
+        "review_deleted": "{actor} removeu a avaliação sobre {resource}",
+        "user_viewed": "{actor} visualizou sua conta (modo suporte)"
+      }
+    }
   },
   "Groups": {
     "title": "Meus grupos",

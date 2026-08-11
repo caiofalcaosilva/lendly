@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
-import { ChevronDown, LayoutDashboard, LogOut, Shield, UserCog } from 'lucide-react'
+import { ChevronDown, History, LayoutDashboard, LogOut, Shield, UserCog } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import Avatar from '@/components/ui/Avatar'
 import { useEscapeKey } from '@/lib/useEscapeKey'
@@ -82,6 +82,14 @@ export default function UserMenu() {
             >
               <UserCog className="w-4 h-4 text-ink-subtle flex-shrink-0" />
               {t('editProfile')}
+            </Link>
+            <Link
+              href="/activities"
+              onClick={close}
+              className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-ink-muted hover:bg-surface-2 transition-colors"
+            >
+              <History className="w-4 h-4 text-ink-subtle flex-shrink-0" />
+              {t('activityHistory')}
             </Link>
           </div>
 

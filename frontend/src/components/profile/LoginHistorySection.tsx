@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { History } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { usersService } from '@/services/users'
 import { LoginHistoryEntry } from '@/types'
 import { formatDate } from '@/lib/utils'
@@ -39,6 +40,7 @@ export default function LoginHistorySection() {
   const [loading, setLoading] = useState(true)
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Common.LoginHistorySection')
+  const tActivities = useTranslations('Activities')
 
   useEffect(() => {
     usersService.getLoginHistory().then(setHistory).finally(() => setLoading(false))
@@ -75,6 +77,13 @@ export default function LoginHistorySection() {
           ))}
         </div>
       )}
+
+      <Link
+        href="/activities"
+        className="inline-block text-xs font-medium text-primary hover:underline mt-3"
+      >
+        {tActivities('viewAll')}
+      </Link>
     </div>
   )
 }
