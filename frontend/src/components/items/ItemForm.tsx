@@ -14,6 +14,8 @@ import { categoriesService } from '@/services/categories'
 import { paymentsService } from '@/services/payments'
 import { useAuth } from '@/contexts/AuthContext'
 import Input from '@/components/ui/Input'
+import Textarea from '@/components/ui/Textarea'
+import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import LocationFields from '@/components/ui/LocationFields'
 import ItemPhotoUploader from '@/components/items/ItemPhotoUploader'
@@ -230,49 +232,36 @@ export default function ItemForm({ item }: { item?: Item }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {error && <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">{error}</div>}
+      {error && <div className="p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">{error}</div>}
 
       <Input label={t('title')} {...register('title')} error={errors.title?.message} placeholder="Ex: Furadeira Bosch 650W" required />
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')}</label>
-        <textarea
-          {...register('description')}
-          rows={3}
-          placeholder={t('descriptionPlaceholder')}
-          className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-      </div>
+      <Textarea
+        label={t('description')}
+        {...register('description')}
+        rows={3}
+        placeholder={t('descriptionPlaceholder')}
+      />
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('category')} <span className="text-red-500">*</span>
-        </label>
-        <select
-          {...register('category')}
-          className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          <option value="">{t('select')}</option>
-          {categories.map((c) => (
-            <option key={c.key} value={c.key}>{c.label}</option>
-          ))}
-        </select>
-        {errors.category && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.category.message}</p>}
-      </div>
+      <Select
+        label={t('category')}
+        required
+        {...register('category')}
+        error={errors.category?.message}
+      >
+        <option value="">{t('select')}</option>
+        {categories.map((c) => (
+          <option key={c.key} value={c.key}>{c.label}</option>
+        ))}
+      </Select>
 
       {subcategoryOptions.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('subcategory')}</label>
-          <select
-            {...register('subcategory')}
-            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">{t('none')}</option>
-            {subcategoryOptions.map((s) => (
-              <option key={s.key} value={s.key}>{s.label}</option>
-            ))}
-          </select>
-        </div>
+        <Select label={t('subcategory')} {...register('subcategory')}>
+          <option value="">{t('none')}</option>
+          {subcategoryOptions.map((s) => (
+            <option key={s.key} value={s.key}>{s.label}</option>
+          ))}
+        </Select>
       )}
 
       {item ? (
@@ -282,11 +271,11 @@ export default function ItemForm({ item }: { item?: Item }) {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('availabilityType')}</label>
+        <label className="block text-sm font-medium text-ink-muted mb-2">{t('availabilityType')}</label>
         <div className="flex gap-6">
           {(['free', 'paid'] as const).map((val) => (
-            <label key={val} className="flex items-center gap-2 cursor-pointer text-gray-900 dark:text-gray-100">
-              <input type="radio" value={val} {...register('availability_type')} className="text-green-600" />
+            <label key={val} className="flex items-center gap-2 cursor-pointer text-ink">
+              <input type="radio" value={val} {...register('availability_type')} className="text-primary" />
               <span className="text-sm">{val === 'free' ? t('freeLoan') : t('paidRental')}</span>
             </label>
           ))}
@@ -294,7 +283,7 @@ export default function ItemForm({ item }: { item?: Item }) {
       </div>
 
       {availType === 'paid' && !mpConnected && (
-        <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-300">
+        <div className="flex items-start gap-2 bg-warning-subtle border border-warning/30 rounded-control p-3 text-sm text-warning">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>
             {t('connectMercadoPagoNotice')}{' '}
@@ -317,9 +306,9 @@ export default function ItemForm({ item }: { item?: Item }) {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-ink-muted mb-2">
           {t('availableDays')}
-          <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-2">
+          <span className="text-xs font-normal text-ink-subtle ml-2">
             {t('availableDaysHint')}
           </span>
         </label>
@@ -329,10 +318,10 @@ export default function ItemForm({ item }: { item?: Item }) {
               key={key}
               type="button"
               onClick={() => toggleDay(value)}
-              className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+              className={`px-3 py-1.5 rounded-control text-sm border transition-colors ${
                 selectedDays.includes(value)
-                  ? 'bg-green-600 border-green-600 text-white'
-                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                  ? 'bg-primary border-primary text-primary-on'
+                  : 'bg-surface border-border text-ink-muted'
               }`}
             >
               {t(`weekdays.${key}`)}
@@ -341,47 +330,44 @@ export default function ItemForm({ item }: { item?: Item }) {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 cursor-pointer text-gray-900 dark:text-gray-100">
+      <label className="flex items-center gap-2 cursor-pointer text-ink">
         <input
           type="checkbox"
           checked={requiresVerification}
           onChange={(e) => setRequiresVerification(e.target.checked)}
-          className="text-green-600 rounded"
+          className="text-primary rounded"
         />
         <span className="text-sm">{t('requireVerification')}</span>
       </label>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('usageRules')}</label>
-        <textarea
-          {...register('usage_rules')}
-          rows={2}
-          placeholder={t('usageRulesPlaceholder')}
-          className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-      </div>
+      <Textarea
+        label={t('usageRules')}
+        {...register('usage_rules')}
+        rows={2}
+        placeholder={t('usageRulesPlaceholder')}
+      />
 
       {myGroups.length > 0 && (
-        <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('visibility')}</p>
-          <label className="flex items-center gap-2 cursor-pointer mb-2 text-gray-900 dark:text-gray-100">
+        <div className="pt-4 border-t border-border">
+          <p className="text-sm font-medium text-ink-muted mb-3">{t('visibility')}</p>
+          <label className="flex items-center gap-2 cursor-pointer mb-2 text-ink">
             <input
               type="checkbox"
               checked={isPublic}
               onChange={(e) => setIsPublic(e.target.checked)}
-              className="text-green-600 rounded"
+              className="text-primary rounded"
             />
             <span className="text-sm">{t('visibleInPublicSearch')}</span>
           </label>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">{t('alsoShareInGroups')}</p>
+          <p className="text-xs text-ink-subtle mb-2">{t('alsoShareInGroups')}</p>
           <div className="space-y-1.5">
             {myGroups.map((g) => (
-              <label key={g.id} className="flex items-center gap-2 cursor-pointer text-gray-900 dark:text-gray-100">
+              <label key={g.id} className="flex items-center gap-2 cursor-pointer text-ink">
                 <input
                   type="checkbox"
                   checked={selectedGroupIds.includes(g.id)}
                   onChange={() => toggleGroup(g.id)}
-                  className="text-green-600 rounded"
+                  className="text-primary rounded"
                 />
                 <span className="text-sm">{g.name}</span>
               </label>
@@ -390,11 +376,11 @@ export default function ItemForm({ item }: { item?: Item }) {
         </div>
       )}
 
-      <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+      <div className="pt-4 border-t border-border">
+        <p className="text-sm font-medium text-ink-muted mb-3">
           {t('itemLocation')}
           {addressMode === 'custom' && (
-            <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-2">
+            <span className="text-xs font-normal text-ink-subtle ml-2">
               {t('itemLocationHint')}
             </span>
           )}
@@ -402,21 +388,20 @@ export default function ItemForm({ item }: { item?: Item }) {
 
         {hasProfileAddress && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('itemAddress')}</label>
-            <select
+            <Select
+              label={t('itemAddress')}
               value={addressMode}
               onChange={(e) => setAddressMode(e.target.value as AddressMode)}
-              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="default">{t('useDefaultAddress')}</option>
               <option value="custom">{t('otherAddress')}</option>
-            </select>
+            </Select>
           </div>
         )}
 
         {addressMode === 'default' && user ? (
-          <div className="flex items-start gap-2 p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg text-sm text-gray-600 dark:text-gray-300">
-            <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 p-3 bg-surface-2 rounded-control text-sm text-ink-muted">
+            <MapPin className="w-4 h-4 text-ink-subtle flex-shrink-0 mt-0.5" />
             <span>{formatAddressSummary(user) || t('profileAddress')}</span>
           </div>
         ) : (

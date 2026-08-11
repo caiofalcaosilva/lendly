@@ -29,9 +29,9 @@ export default function Avatar({
 
   return (
     <div
-      className={`${sizeClasses} bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center flex-shrink-0 ${className}`}
+      className={`${sizeClasses} bg-primary-subtle rounded-full flex items-center justify-center flex-shrink-0 ${className}`}
     >
-      <span className="font-bold text-green-600 dark:text-green-400">
+      <span className="font-bold text-primary">
         {name.charAt(0).toUpperCase()}
       </span>
     </div>

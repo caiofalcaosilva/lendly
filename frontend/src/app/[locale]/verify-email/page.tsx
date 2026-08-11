@@ -2,10 +2,11 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
-import { CheckCircle2, XCircle, Loader2, Leaf } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { authService } from '@/services/auth'
 import { useAuth } from '@/contexts/AuthContext'
+import { LogoMark } from '@/components/ui/Logo'
 
 type State = 'loading' | 'success' | 'error'
 
@@ -30,27 +31,25 @@ function VerifyEmailContent() {
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-xl mb-6">
-          <Leaf className="w-6 h-6 text-green-600 dark:text-green-400" />
-        </div>
+        <LogoMark className="w-12 h-12 mb-6 mx-auto" />
 
         {state === 'loading' && (
           <>
-            <Loader2 className="w-10 h-10 text-green-500 animate-spin mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('loading')}</h1>
+            <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-4" />
+            <h1 className="text-xl font-semibold text-ink">{t('loading')}</h1>
           </>
         )}
 
         {state === 'success' && (
           <>
-            <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('successTitle')}</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+            <CheckCircle2 className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-ink mb-2">{t('successTitle')}</h1>
+            <p className="text-ink-muted text-sm mb-6">
               {t('successMessage')}
             </p>
             <Link
               href="/dashboard"
-              className="inline-block bg-green-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              className="inline-block bg-primary text-primary-on px-6 py-2.5 rounded-control font-medium hover:bg-primary-hover transition-colors"
             >
               {t('goToDashboard')}
             </Link>
@@ -59,14 +58,14 @@ function VerifyEmailContent() {
 
         {state === 'error' && (
           <>
-            <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('errorTitle')}</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+            <XCircle className="w-12 h-12 text-danger mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-ink mb-2">{t('errorTitle')}</h1>
+            <p className="text-ink-muted text-sm mb-6">
               {isAuthenticated ? t('errorMessageAuthenticated') : t('errorMessageAnonymous')}
             </p>
             <Link
               href={isAuthenticated ? '/profile' : '/login'}
-              className="inline-block bg-green-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              className="inline-block bg-primary text-primary-on px-6 py-2.5 rounded-control font-medium hover:bg-primary-hover transition-colors"
             >
               {isAuthenticated ? t('goToProfile') : t('goToLogin')}
             </Link>

@@ -12,11 +12,12 @@ import { haversineKm } from '@/lib/utils'
 import ItemCard from '@/components/items/ItemCard'
 import ItemFilters, { Filters } from '@/components/items/ItemFilters'
 import EmptyState from '@/components/ui/EmptyState'
+import Skeleton from '@/components/ui/Skeleton'
 
 function MapLoading() {
   const t = useTranslations('Items')
   return (
-    <div className="h-[600px] flex items-center justify-center text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-2xl">
+    <div className="h-[600px] flex items-center justify-center text-ink-subtle bg-surface-2 rounded-panel">
       {t('loadingMap')}
     </div>
   )
@@ -102,15 +103,15 @@ const INITIAL_FILTERS: Filters = {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm animate-pulse">
-      <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-700" />
+    <div className="bg-surface rounded-panel border border-border overflow-hidden">
+      <Skeleton className="aspect-[4/3] rounded-none" />
       <div className="p-3.5 space-y-2.5">
-        <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded-md" />
-        <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-between">
-          <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
-          <div className="h-3 w-8 bg-gray-200 dark:bg-gray-700 rounded" />
+        <Skeleton className="h-4 w-20 rounded-md" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+        <div className="pt-2 border-t border-border flex justify-between">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-8" />
         </div>
       </div>
     </div>
@@ -168,6 +169,7 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
       if (!cancelled) setNearbyItems(results)
     })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `user` intentionally narrowed to lat/lng: refetch only when location actually changes, not on unrelated user updates
   }, [hasAnyLocation, userHasLocation, user?.latitude, user?.longitude, liveLocation])
 
   const buildParams = useCallback((skip: number, limit: number) => {
@@ -323,25 +325,25 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
     filters.availability_type || filters.neighborhood || filters.city || filters.radius_km > 0)
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-bg">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t('title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink mb-1">{t('title')}</h1>
+          <p className="text-ink-muted text-sm">
             {userHasLocation && user?.city
               ? t('subtitleWithCity', { city: user.city })
               : t('subtitle')}
           </p>
           {liveLocationStatus === 'loading' && (
-            <p className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+            <p className="flex items-center gap-1.5 text-xs text-ink-subtle mt-1.5">
               <LocateFixed className="w-3.5 h-3.5 animate-pulse" /> {t('locating')}
             </p>
           )}
           {(liveLocationStatus === 'denied' || liveLocationStatus === 'unsupported') && (
             <button
               onClick={retryLiveLocation}
-              className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 transition-colors mt-1.5"
+              className="flex items-center gap-1.5 text-xs text-ink-subtle hover:text-primary transition-colors mt-1.5"
             >
               <LocateFixed className="w-3.5 h-3.5" /> {t('useMyLocation')}
             </button>
@@ -351,8 +353,8 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
         {/* Nearby feed — personalized, doesn't react to the filters below */}
         {nearbyItems.length > 0 && (
           <div className="mb-8">
-            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" /> {t('nearYou')}
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted mb-3">
+              <MapPin className="w-4 h-4 text-primary" /> {t('nearYou')}
             </h2>
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
               {nearbyItems.map((item) => (
@@ -377,23 +379,24 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
         </div>
 
         {/* Results header + view toggle */}
+        <h2 className="sr-only">{t('resultsHeading')}</h2>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-gray-400 dark:text-gray-500">
+          <p className="text-sm text-ink-subtle">
             {!initialLoading && items.length > 0 && (
               <>
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{items.length}</span>{' '}
+                <span className="text-ink-muted font-medium">{items.length}</span>{' '}
                 {view === 'list' ? t('itemsLoaded', { count: items.length }) : t('itemsOnMap', { count: items.length })}
                 {filters.radius_km > 0 && (
-                  <span className="text-green-600 dark:text-green-400"> · {t('withinRadius', { km: filters.radius_km })}</span>
+                  <span className="text-primary"> · {t('withinRadius', { km: filters.radius_km })}</span>
                 )}
               </>
             )}
           </p>
-          <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-0.5 shrink-0">
+          <div className="inline-flex rounded-control border border-border bg-surface p-0.5 shrink-0">
             <button
               onClick={() => setView('list')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                view === 'list' ? 'bg-green-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                view === 'list' ? 'bg-primary text-primary-on' : 'text-ink-muted hover:text-ink'
               }`}
             >
               <List className="w-4 h-4" /> {t('listView')}
@@ -401,7 +404,7 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
             <button
               onClick={() => setView('map')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                view === 'map' ? 'bg-green-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                view === 'map' ? 'bg-primary text-primary-on' : 'text-ink-muted hover:text-ink'
               }`}
             >
               <MapIcon className="w-4 h-4" /> {t('mapView')}
@@ -412,7 +415,7 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
         {/* Results */}
         {initialLoading ? (
           view === 'map' ? (
-            <div className="h-[600px] flex items-center justify-center text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse">
+            <div className="h-[600px] flex items-center justify-center text-ink-subtle bg-surface-2 rounded-panel animate-pulse">
               {t('loadingItems')}
             </div>
           ) : (
@@ -474,13 +477,13 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
             <div ref={loaderRef} className="h-4 mt-4" />
 
             {error && items.length > 0 && (
-              <div className="flex flex-col items-center gap-2 mt-6 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex flex-col items-center gap-2 mt-6 text-sm text-ink-muted">
                 <span className="flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-500" /> {t('loadMoreError')}
+                  <AlertTriangle className="w-4 h-4 text-warning" /> {t('loadMoreError')}
                 </span>
                 <button
                   onClick={() => { setError(false); hasMoreRef.current = true; setHasMore(true); loadMore() }}
-                  className="flex items-center gap-1.5 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium"
+                  className="flex items-center gap-1.5 text-primary hover:text-primary-hover font-medium"
                 >
                   <RotateCw className="w-3.5 h-3.5" /> {t('retry')}
                 </button>
@@ -488,7 +491,7 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
             )}
 
             {!error && !hasMore && items.length > LIMIT && (
-              <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-6">
+              <p className="text-center text-sm text-ink-subtle mt-6">
                 {t('allLoaded')}
               </p>
             )}

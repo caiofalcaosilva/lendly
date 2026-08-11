@@ -12,16 +12,16 @@ import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
 
 const ACTION_ICONS: Record<AdminActionType, { icon: any; color: string }> = {
-  report_dismissed: { icon: Flag, color: 'text-gray-400 dark:text-gray-500' },
-  report_actioned: { icon: Ban, color: 'text-red-500' },
-  verification_approved: { icon: ShieldCheck, color: 'text-green-500' },
-  verification_rejected: { icon: ShieldX, color: 'text-red-500' },
-  user_activated: { icon: CheckCircle2, color: 'text-green-500' },
-  user_deactivated: { icon: Ban, color: 'text-red-500' },
-  item_activated: { icon: CheckCircle2, color: 'text-green-500' },
-  item_deactivated: { icon: Ban, color: 'text-red-500' },
-  user_promoted: { icon: ShieldPlus, color: 'text-purple-500' },
-  user_demoted: { icon: ShieldMinus, color: 'text-gray-400 dark:text-gray-500' },
+  report_dismissed: { icon: Flag, color: 'text-ink-subtle' },
+  report_actioned: { icon: Ban, color: 'text-danger' },
+  verification_approved: { icon: ShieldCheck, color: 'text-primary' },
+  verification_rejected: { icon: ShieldX, color: 'text-danger' },
+  user_activated: { icon: CheckCircle2, color: 'text-primary' },
+  user_deactivated: { icon: Ban, color: 'text-danger' },
+  item_activated: { icon: CheckCircle2, color: 'text-primary' },
+  item_deactivated: { icon: Ban, color: 'text-danger' },
+  user_promoted: { icon: ShieldPlus, color: 'text-accent' },
+  user_demoted: { icon: ShieldMinus, color: 'text-ink-subtle' },
 }
 
 export default function AdminActionsPage() {
@@ -44,21 +44,21 @@ export default function AdminActionsPage() {
   }, [user?.is_admin])
 
   if (authLoading || !user?.is_admin) {
-    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-green-600" /></div>
+    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-primary" /></div>
   }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center gap-2 mb-1">
-        <History className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
+        <History className="w-6 h-6 text-info" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
       </div>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
+      <p className="text-ink-muted text-sm mb-8">
         {t('subtitle')}
       </p>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-green-600" /></div>
+        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-primary" /></div>
       ) : entries.length === 0 ? (
         <EmptyState icon={History} title={t('emptyTitle')} />
       ) : (
@@ -67,19 +67,19 @@ export default function AdminActionsPage() {
             const { icon: Icon, color } = ACTION_ICONS[e.action_type]
             const href = e.target_kind === 'user' ? `/users/${e.target_id}` : `/items/${e.target_id}`
             return (
-              <div key={i} className="flex items-start gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div key={i} className="flex items-start gap-3 bg-surface rounded-panel border border-border p-4">
                 <Icon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${color}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{e.actor_name}</span>
+                  <p className="text-sm text-ink-muted">
+                    <span className="font-medium text-ink">{e.actor_name}</span>
                     {' '}{t(`actionLabels.${e.action_type}`)}{' '}
-                    <Link href={href} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+                    <Link href={href} className="font-medium text-ink hover:text-primary transition-colors">
                       {e.target_label}
                     </Link>
                   </p>
-                  {e.detail && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{e.detail}</p>}
+                  {e.detail && <p className="text-xs text-ink-subtle mt-0.5">{e.detail}</p>}
                 </div>
-                <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">{formatDate(e.occurred_at, locale)}</span>
+                <span className="text-xs text-ink-subtle flex-shrink-0">{formatDate(e.occurred_at, locale)}</span>
               </div>
             )
           })}

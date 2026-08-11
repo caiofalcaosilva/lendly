@@ -49,7 +49,7 @@ export default function LandingPage() {
   if (authLoading || isAuthenticated) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
-        <Spinner className="w-8 h-8 text-green-600" />
+        <Spinner className="w-8 h-8 text-primary" />
       </div>
     )
   }
@@ -57,37 +57,37 @@ export default function LandingPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-20 sm:py-24">
+      <section className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-bg dark:via-bg dark:to-surface-2 py-20 sm:py-24">
         <div className="max-w-5xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary-subtle text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-6">
             <Leaf className="w-4 h-4" />
             {t('badge')}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink mb-6 leading-[1.1]">
             {t('heroTitlePrefix')}{' '}
-            <span className="text-green-600 dark:text-green-400">{t('heroTitleHighlight')}</span>
+            <span className="text-primary">{t('heroTitleHighlight')}</span>
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto">
+          <p className="text-xl text-ink-muted mb-10 max-w-2xl mx-auto">
             {t('heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
             <Link
               href="/register"
-              className="inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-8 py-3 rounded-lg hover:bg-green-700 transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-primary text-primary-on font-semibold px-8 py-3 rounded-control hover:bg-primary-hover transition-colors"
             >
               {t('getStarted')} <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
               href="/items"
-              className="inline-flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold px-8 py-3 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center justify-center gap-2 border border-border text-ink-muted font-semibold px-8 py-3 rounded-control hover:bg-surface-2 transition-colors"
             >
               {t('exploreItems')}
             </Link>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-ink-muted">
             {TRUST_BAR_KEYS.map((key) => (
               <span key={key} className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                 {t(`trustBar.${key}`)}
               </span>
             ))}
@@ -96,17 +96,17 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-20 bg-white dark:bg-gray-900">
+      <section className="py-20 bg-surface">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-12">{t('howItWorksTitle')}</h2>
+          <h2 className="text-3xl font-bold text-center text-ink mb-12">{t('howItWorksTitle')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {HOW_IT_WORKS_KEYS.map((key, i) => (
               <div key={key} className="text-center">
-                <div className="w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                <div className="w-12 h-12 bg-primary text-primary-on rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
                   {i + 1}
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">{t(`howItWorks.${key}.title`)}</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">{t(`howItWorks.${key}.desc`)}</p>
+                <h3 className="text-lg font-semibold mb-2 text-ink">{t(`howItWorks.${key}.title`)}</h3>
+                <p className="text-ink-muted text-sm">{t(`howItWorks.${key}.desc`)}</p>
               </div>
             ))}
           </div>
@@ -115,9 +115,9 @@ export default function LandingPage() {
 
       {/* Categories — pulled live from the platform's category catalog, so this
           section can't silently drift out of sync the way a hardcoded list did. */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-800">
+      <section className="py-20 bg-surface-2">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-12">{t('categoriesTitle')}</h2>
+          <h2 className="text-3xl font-bold text-center text-ink mb-12">{t('categoriesTitle')}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {categories.slice(0, MAX_CATEGORY_TILES).map((category) => {
               const Icon = CATEGORY_ICONS[category.key] ?? Package
@@ -125,19 +125,19 @@ export default function LandingPage() {
                 <Link
                   key={category.key}
                   href={`/items?category=${category.key}`}
-                  className="bg-white dark:bg-gray-900 rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group"
+                  className="bg-surface rounded-panel p-6 text-center border border-border hover:shadow-elevated hover:-translate-y-0.5 transition-all group"
                 >
-                  <Icon className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                  <span className="font-medium text-gray-800 dark:text-gray-200 text-sm">{category.label}</span>
+                  <Icon className="w-8 h-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
+                  <span className="font-medium text-ink text-sm">{category.label}</span>
                 </Link>
               )
             })}
             <Link
               href="/items"
-              className="bg-white dark:bg-gray-900 rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow group"
+              className="bg-surface rounded-panel p-6 text-center border border-border hover:shadow-elevated hover:-translate-y-0.5 transition-all group"
             >
-              <Package className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-              <span className="font-medium text-gray-800 dark:text-gray-200 text-sm">{t('categories.viewAll')}</span>
+              <Package className="w-8 h-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
+              <span className="font-medium text-ink text-sm">{t('categories.viewAll')}</span>
             </Link>
           </div>
         </div>
@@ -145,18 +145,18 @@ export default function LandingPage() {
 
       {/* Trust & safety — the concrete mechanisms (not just adjectives) that
           make lending to someone you just met on the app feel safe. */}
-      <section className="py-20 bg-white dark:bg-gray-900">
+      <section className="py-20 bg-surface">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-3">{t('trustTitle')}</h2>
-          <p className="text-center text-gray-500 dark:text-gray-400 mb-12 max-w-2xl mx-auto">{t('trustSubtitle')}</p>
+          <h2 className="text-3xl font-bold text-center text-ink mb-3">{t('trustTitle')}</h2>
+          <p className="text-center text-ink-muted mb-12 max-w-2xl mx-auto">{t('trustSubtitle')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {TRUST_ITEMS.map(({ icon: Icon, key }) => (
               <div key={key} className="text-center">
-                <div className="w-14 h-14 bg-green-50 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Icon className="w-7 h-7 text-green-600 dark:text-green-400" />
+                <div className="w-14 h-14 bg-primary-subtle rounded-panel flex items-center justify-center mx-auto mb-4">
+                  <Icon className="w-7 h-7 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">{t(`trust.${key}.title`)}</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">{t(`trust.${key}.desc`)}</p>
+                <h3 className="text-lg font-semibold mb-2 text-ink">{t(`trust.${key}.title`)}</h3>
+                <p className="text-ink-muted text-sm">{t(`trust.${key}.desc`)}</p>
               </div>
             ))}
           </div>
@@ -164,31 +164,31 @@ export default function LandingPage() {
       </section>
 
       {/* Coordination, in-app */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-800">
+      <section className="py-16 bg-surface-2">
         <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
-          <div className="w-14 h-14 bg-white dark:bg-gray-900 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
-            <MessageCircle className="w-7 h-7 text-green-600 dark:text-green-400" />
+          <div className="w-14 h-14 bg-surface rounded-panel flex items-center justify-center flex-shrink-0 border border-border">
+            <MessageCircle className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{t('chat.title')}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('chat.desc')}</p>
+            <h2 className="text-lg font-semibold text-ink mb-1">{t('chat.title')}</h2>
+            <p className="text-ink-muted text-sm">{t('chat.desc')}</p>
           </div>
         </div>
       </section>
 
       {/* Businesses */}
-      <section className="py-16 bg-white dark:bg-gray-900">
+      <section className="py-16 bg-surface">
         <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
-          <div className="w-14 h-14 bg-green-50 dark:bg-green-900/30 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Store className="w-7 h-7 text-green-600 dark:text-green-400" />
+          <div className="w-14 h-14 bg-primary-subtle rounded-panel flex items-center justify-center flex-shrink-0">
+            <Store className="w-7 h-7 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{t('business.title')}</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('business.desc')}</p>
+            <h2 className="text-lg font-semibold text-ink mb-1">{t('business.title')}</h2>
+            <p className="text-ink-muted text-sm">{t('business.desc')}</p>
           </div>
           <Link
             href="/empresas"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 dark:text-green-400 hover:underline flex-shrink-0"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline flex-shrink-0"
           >
             {t('business.cta')} <ArrowRight className="w-4 h-4" />
           </Link>
@@ -196,33 +196,33 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits */}
-      <section className="py-20 bg-green-50 dark:bg-gray-800">
+      <section className="py-20 bg-primary-subtle">
         <div className="max-w-4xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+              <h2 className="text-3xl font-bold text-ink mb-6">
                 {t('benefitsTitle')}
               </h2>
               <ul className="space-y-4">
                 {BENEFIT_KEYS.map((key) => (
                   <li key={key} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700 dark:text-gray-300">{t(`benefits.${key}`)}</span>
+                    <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-ink-muted">{t(`benefits.${key}`)}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm">
+            <div className="bg-surface rounded-panel p-8 shadow-elevated">
               <div className="text-center">
-                <div className="text-5xl font-bold text-green-600 dark:text-green-400 mb-2">100%</div>
-                <div className="text-gray-600 dark:text-gray-400 font-medium mb-6">{t('freeToStart')}</div>
+                <div className="text-5xl font-extrabold tracking-tight text-primary mb-2">100%</div>
+                <div className="text-ink-muted font-medium mb-6">{t('freeToStart')}</div>
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-700 transition-colors w-full"
+                  className="inline-flex items-center justify-center gap-2 bg-primary text-primary-on font-semibold px-6 py-3 rounded-control hover:bg-primary-hover transition-colors w-full"
                 >
                   {t('createFreeAccount')} <ArrowRight className="w-5 h-5" />
                 </Link>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">{t('noCreditCard')}</p>
+                <p className="text-xs text-ink-subtle mt-3">{t('noCreditCard')}</p>
               </div>
             </div>
           </div>

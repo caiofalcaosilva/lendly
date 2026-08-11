@@ -42,23 +42,23 @@ export default function JoinGroupPage() {
   if (!isLoading && isAuthenticated && user?.is_admin && !error) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <Spinner className="w-8 h-8 text-green-600" />
+        <Spinner className="w-8 h-8 text-primary" />
       </div>
     )
   }
 
   return (
     <div className="max-w-md mx-auto px-4 py-16 text-center">
-      <div className="w-16 h-16 bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-        <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
+      <div className="w-16 h-16 bg-primary-subtle rounded-full flex items-center justify-center mx-auto mb-4">
+        <Users className="w-8 h-8 text-primary" />
       </div>
-      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('title')}</h1>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+      <h1 className="text-xl font-extrabold tracking-tight text-ink mb-2">{t('title')}</h1>
+      <p className="text-ink-muted text-sm mb-6">
         {t('subtitle')}
       </p>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
+        <div className="mb-4 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
           {error}
         </div>
       )}

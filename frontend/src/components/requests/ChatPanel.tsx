@@ -95,25 +95,25 @@ export default function ChatPanel({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col h-[480px]">
-      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('title')}</h2>
+    <div className="bg-surface rounded-panel border border-border flex flex-col h-[480px]">
+      <div className="px-4 py-3 border-b border-border">
+        <h2 className="text-sm font-semibold text-ink">{t('title')}</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {loading && <p className="text-sm text-gray-400 dark:text-gray-500">{t('loadingMessages')}</p>}
+        {loading && <p className="text-sm text-ink-subtle">{t('loadingMessages')}</p>}
         {!loading && messages.length === 0 && (
-          <p className="text-sm text-gray-400 dark:text-gray-500">{t('noMessages')}</p>
+          <p className="text-sm text-ink-subtle">{t('noMessages')}</p>
         )}
         {messages.map((m) => {
           const mine = m.sender_id === currentUserId
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[75%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
-                {!mine && <span className="text-xs text-gray-400 dark:text-gray-500 mb-0.5 px-1">{m.sender_name}</span>}
+                {!mine && <span className="text-xs text-ink-subtle mb-0.5 px-1">{m.sender_name}</span>}
                 <div
-                  className={`px-3 py-2 rounded-2xl text-sm break-words ${
-                    mine ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                  className={`px-3 py-2 rounded-panel text-sm break-words ${
+                    mine ? 'bg-primary text-primary-on' : 'bg-surface-2 text-ink'
                   }`}
                 >
                   {m.text}
@@ -125,19 +125,20 @@ export default function ChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      {error && <p className="px-4 text-xs text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="px-4 text-xs text-danger">{error}</p>}
 
-      <form onSubmit={handleSend} className="flex gap-2 p-3 border-t border-gray-100 dark:border-gray-700">
+      <form onSubmit={handleSend} className="flex gap-2 p-3 border-t border-border">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={t('placeholder')}
-          className="flex-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="flex-1 border border-border bg-surface text-ink rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <button
           type="submit"
           disabled={sending || !text.trim()}
-          className="px-3 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 hover:bg-green-700 transition-colors"
+          aria-label={t('send')}
+          className="px-3 py-2 bg-primary text-primary-on rounded-control disabled:opacity-50 hover:bg-primary-hover transition-colors"
         >
           <Send className="w-4 h-4" />
         </button>

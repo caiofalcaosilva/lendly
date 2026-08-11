@@ -5,12 +5,13 @@ import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Leaf } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/contexts/AuthContext'
 import Input from '@/components/ui/Input'
+import PasswordInput from '@/components/ui/PasswordInput'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
+import { LogoMark } from '@/components/ui/Logo'
 import TwoFactorModal from '@/components/auth/TwoFactorModal'
 import { isSafeRedirect } from '@/lib/utils'
 
@@ -61,7 +62,7 @@ function LoginForm() {
   if (authLoading || isAuthenticated) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
-        <Spinner className="w-8 h-8 text-green-600" />
+        <Spinner className="w-8 h-8 text-primary" />
       </div>
     )
   }
@@ -70,16 +71,14 @@ function LoginForm() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-xl mb-4">
-            <Leaf className="w-6 h-6 text-green-600 dark:text-green-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{t('subtitle')}</p>
+          <LogoMark className="w-12 h-12 mb-4" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
+          <p className="text-ink-muted mt-1 text-sm">{t('subtitle')}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
+        <div className="bg-surface rounded-panel shadow-elevated border border-border p-8">
           {error && (
-            <div className="mb-5 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
+            <div className="mb-5 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
               {error}
             </div>
           )}
@@ -94,9 +93,8 @@ function LoginForm() {
               placeholder="seu@email.com"
               required
             />
-            <Input
+            <PasswordInput
               label={t('passwordLabel')}
-              type="password"
               autoComplete="current-password"
               {...register('password')}
               error={errors.password?.message}
@@ -104,7 +102,7 @@ function LoginForm() {
               required
             />
             <div className="text-right -mt-2">
-              <Link href="/forgot-password" className="text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
+              <Link href="/forgot-password" className="text-xs text-primary hover:text-primary-hover">
                 {t('forgotPassword')}
               </Link>
             </div>
@@ -114,9 +112,9 @@ function LoginForm() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+        <p className="text-center text-sm text-ink-muted mt-6">
           {t('noAccount')}{' '}
-          <Link href="/register" className="text-green-600 dark:text-green-400 font-medium hover:text-green-700 dark:hover:text-green-300">
+          <Link href="/register" className="text-primary font-medium hover:text-primary-hover">
             {t('createFree')}
           </Link>
         </p>

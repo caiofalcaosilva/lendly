@@ -20,6 +20,7 @@ import Button from '@/components/ui/Button'
 import Badge, { STATUS_COLORS } from '@/components/ui/Badge'
 import EmptyState from '@/components/ui/EmptyState'
 import Spinner from '@/components/ui/Spinner'
+import Skeleton from '@/components/ui/Skeleton'
 import RequestCard from '@/components/requests/RequestCard'
 import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist'
@@ -40,6 +41,24 @@ const TAB_ICONS: Record<Tab, React.ElementType> = {
   analytics: BarChart3,
 }
 const TAB_IDS: Tab[] = ['items', 'received', 'sent', 'history', 'favorites', 'given-reviews', 'analytics']
+
+// Matches the "my items" row shape — the default tab — since this only
+// shows before the user has picked a tab.
+function SkeletonListItem() {
+  return (
+    <div className="bg-surface rounded-panel border border-border p-4 flex items-center justify-between gap-4">
+      <div className="flex-1 min-w-0 space-y-2">
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-3 w-1/4" />
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <Skeleton className="h-8 w-8" />
+        <Skeleton className="h-8 w-8" />
+        <Skeleton className="h-8 w-8" />
+      </div>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading: authLoading, updateUser } = useAuth()
@@ -108,6 +127,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` intentionally excluded: next-intl returns a new function each render, and including it would refetch on every render instead of only on auth/user change
   }, [isAuthenticated, user])
 
   useEffect(() => { loadAll() }, [loadAll])
@@ -150,10 +170,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('greeting', { name: user?.name.split(' ')[0] ?? '' })}</h1>
+          <h1 className="text-2xl font-bold text-ink">{t('greeting', { name: user?.name.split(' ')[0] ?? '' })}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="text-sm text-ink-muted">
               {t('ratingCount', { rating: user?.average_rating.toFixed(1) ?? '0.0', count: user?.rating_count ?? 0 })}
             </span>
             <ReliabilityBadge score={user?.reliability_score} count={user?.reliability_count ?? 0} />
@@ -178,15 +198,15 @@ export default function DashboardPage() {
 
       {/* Error banner */}
       {loadError && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+        <div className="mb-6 p-4 bg-danger-subtle border border-danger/30 rounded-panel flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-red-700 dark:text-red-300 font-medium">{t('errorLoading')}</p>
-            <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{loadError}</p>
+            <p className="text-sm text-danger font-medium">{t('errorLoading')}</p>
+            <p className="text-xs text-danger mt-0.5">{loadError}</p>
           </div>
           <button
             onClick={() => loadAll()}
-            className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium flex-shrink-0"
+            className="flex items-center gap-1 text-xs text-danger hover:opacity-75 font-medium flex-shrink-0"
           >
             <RefreshCw className="w-3.5 h-3.5" /> {t('retry')}
           </button>
@@ -196,20 +216,20 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {[
-          { key: 'myItems', value: items.length, color: 'text-green-600 dark:text-green-400' },
-          { key: 'received', value: received.filter((r) => r.status === 'pending').length, color: 'text-yellow-600 dark:text-yellow-400' },
-          { key: 'inProgress', value: [...received, ...sent].filter((r) => r.status === 'in_progress').length, color: 'text-blue-600 dark:text-blue-400' },
-          { key: 'reviews', value: reviews.length, color: 'text-purple-600 dark:text-purple-400' },
+          { key: 'myItems', value: items.length, color: 'text-primary' },
+          { key: 'received', value: received.filter((r) => r.status === 'pending').length, color: 'text-warning' },
+          { key: 'inProgress', value: [...received, ...sent].filter((r) => r.status === 'in_progress').length, color: 'text-info' },
+          { key: 'reviews', value: reviews.length, color: 'text-accent' },
         ].map(({ key, value, color }) => (
-          <div key={key} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
+          <div key={key} className="bg-surface rounded-panel border border-border p-4 text-center">
             <div className={`text-2xl font-bold ${color}`}>{value}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t(`stats.${key}`)}</div>
+            <div className="text-xs text-ink-muted mt-1">{t(`stats.${key}`)}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+      <div className="border-b border-border mb-6">
         <div className="flex gap-0 -mb-px overflow-x-auto">
           {TAB_IDS.map((id) => {
             const Icon = TAB_ICONS[id]
@@ -219,14 +239,14 @@ export default function DashboardPage() {
               onClick={() => setTab(id)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                 tab === id
-                  ? 'border-green-600 dark:border-green-400 text-green-600 dark:text-green-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-ink-muted hover:text-ink'
               }`}
             >
               <Icon className="w-4 h-4" />
               {t(`tabs.${id}`)}
               {id === 'received' && received.filter((r) => r.status === 'pending').length > 0 && (
-                <span className="bg-yellow-400 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="bg-warning text-warning-on text-xs rounded-full w-4 h-4 flex items-center justify-center">
                   {received.filter((r) => r.status === 'pending').length}
                 </span>
               )}
@@ -237,7 +257,9 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-green-600" /></div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonListItem key={i} />)}
+        </div>
       ) : (
         <>
           {/* My Items */}
@@ -253,18 +275,18 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between gap-4">
+                    <div key={item.id} className="bg-surface rounded-panel border border-border p-4 flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.title}</span>
+                          <span className="font-medium text-ink truncate">{item.title}</span>
                           <Badge variant="gray">{getCategoryLabel(categories, item.category)}</Badge>
                           {item.availability_type === 'paid' && item.daily_rate && (
                             <Badge variant="blue">{formatCurrency(item.daily_rate, locale)}{t('perDay')}</Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${item.is_available ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className={`w-2 h-2 rounded-full ${item.is_available ? 'bg-primary' : 'bg-border-strong'}`} />
+                          <span className="text-xs text-ink-muted">
                             {item.is_available ? t('available') : t('unavailable')}
                           </span>
                         </div>
@@ -277,6 +299,7 @@ export default function DashboardPage() {
                           disabled={!(user?.featured_item_ids ?? []).includes(item.id) && (user?.featured_item_ids?.length ?? 0) >= MAX_FEATURED}
                           onClick={() => toggleFeatured(item)}
                           title={(user?.featured_item_ids ?? []).includes(item.id) ? t('removeFromFeatured') : t('featureOnProfile', { max: MAX_FEATURED })}
+                          aria-label={(user?.featured_item_ids ?? []).includes(item.id) ? t('removeFromFeatured') : t('featureOnProfile', { max: MAX_FEATURED })}
                         >
                           <Star className={`w-4 h-4 ${(user?.featured_item_ids ?? []).includes(item.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                         </Button>
@@ -286,11 +309,12 @@ export default function DashboardPage() {
                           loading={toggling === item.id}
                           onClick={() => toggleAvailability(item)}
                           title={item.is_available ? t('deactivate') : t('activate')}
+                          aria-label={item.is_available ? t('deactivate') : t('activate')}
                         >
                           {item.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
                         <Link href={`/items/${item.id}/edit`}>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" aria-label={t('editItem')}>
                             <Edit className="w-4 h-4" />
                           </Button>
                         </Link>
@@ -323,12 +347,12 @@ export default function DashboardPage() {
           {tab === 'sent' && (
             <div className="space-y-4">
               {spending && spending.total_spent > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+                <div className="bg-surface rounded-panel border border-border p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('sent.totalSpent')}</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(spending.total_spent, locale)}</p>
+                    <p className="text-xs text-ink-muted">{t('sent.totalSpent')}</p>
+                    <p className="text-lg font-bold text-ink">{formatCurrency(spending.total_spent, locale)}</p>
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <p className="text-xs text-ink-subtle">
                     {t('sent.paymentsCount', { count: spending.payments_count })}
                   </p>
                 </div>
@@ -361,14 +385,14 @@ export default function DashboardPage() {
                 history.map((req) => {
                   const isOwner = req.owner_id === user?.id
                   return (
-                    <div key={req.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                    <div key={req.id} className="bg-surface rounded-panel border border-border p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{req.item_title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                          <p className="font-medium text-ink truncate">{req.item_title}</p>
+                          <p className="text-xs text-ink-muted mt-0.5 truncate">
                             {isOwner ? t('requester', { name: req.requester_name }) : t('owner', { name: req.owner_name })}
                           </p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          <p className="text-xs text-ink-subtle mt-1">
                             {formatDate(req.pickup_date, locale)} → {formatDate(req.expected_return_date, locale)}
                           </p>
                         </div>
@@ -381,8 +405,8 @@ export default function DashboardPage() {
                       {req.status === 'finished' && (() => {
                         const rev = reviews.find((r) => r.loan_request_id === req.id)
                         return rev ? (
-                          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">{t('history.reviewReceived')}</p>
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <p className="text-xs text-ink-subtle mb-2">{t('history.reviewReceived')}</p>
                             <ReviewCard review={rev} linkItem={false} />
                           </div>
                         ) : null
@@ -422,25 +446,25 @@ export default function DashboardPage() {
 
               {favoriteUsers.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  <h2 className="text-sm font-semibold text-ink-muted mb-3">
                     {t('favorites.favoritePeople')}
-                  </h3>
+                  </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {favoriteUsers.map((u) => (
                       <Link
                         key={u.id}
                         href={`/users/${u.id}`}
-                        className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 hover:border-green-300 dark:hover:border-green-700 transition-colors"
+                        className="flex items-center gap-3 bg-surface rounded-panel border border-border p-3 hover:border-primary/50 transition-colors"
                       >
                         <Avatar name={u.trade_name || u.name} avatarUrl={u.avatar_url} size="sm" />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                            <span className="font-medium text-ink truncate text-sm">
                               {u.trade_name || u.name}
                             </span>
                             <BusinessBadge accountType={u.account_type} />
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                          <div className="flex items-center gap-1 text-xs text-ink-subtle">
                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                             {u.average_rating.toFixed(1)}
                           </div>
@@ -485,49 +509,49 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                      <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 mb-1">
+                    <div className="bg-surface rounded-panel border border-border p-4">
+                      <div className="flex items-center gap-1.5 text-ink-subtle mb-1">
                         <TrendingUp className="w-3.5 h-3.5" />
                         <span className="text-xs">{t('analytics.totalRevenue')}</span>
                       </div>
-                      <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                      <div className="text-xl font-bold text-primary">
                         {formatCurrency(analytics.total_revenue, locale)}
                       </div>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                      <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 mb-1">
+                    <div className="bg-surface rounded-panel border border-border p-4">
+                      <div className="flex items-center gap-1.5 text-ink-subtle mb-1">
                         <History className="w-3.5 h-3.5" />
                         <span className="text-xs">{t('analytics.finishedLoans')}</span>
                       </div>
-                      <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      <div className="text-xl font-bold text-ink">
                         {analytics.total_loans}
                       </div>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                      <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 mb-1">
+                    <div className="bg-surface rounded-panel border border-border p-4">
+                      <div className="flex items-center gap-1.5 text-ink-subtle mb-1">
                         <Percent className="w-3.5 h-3.5" />
                         <span className="text-xs">{t('analytics.averageOccupancy')}</span>
                       </div>
-                      <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                      <div className="text-xl font-bold text-ink">
                         {analytics.average_occupancy_rate}%
                       </div>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                      <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 mb-1">
+                    <div className="bg-surface rounded-panel border border-border p-4">
+                      <div className="flex items-center gap-1.5 text-ink-subtle mb-1">
                         <Trophy className="w-3.5 h-3.5" />
                         <span className="text-xs">{t('analytics.mostPopularItem')}</span>
                       </div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate" title={analytics.most_popular_item ?? undefined}>
+                      <div className="text-sm font-semibold text-ink truncate" title={analytics.most_popular_item ?? undefined}>
                         {analytics.most_popular_item ?? '—'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="bg-surface rounded-panel border border-border overflow-hidden">
                     <div className="overflow-x-auto">
                     <table className="w-full text-sm min-w-[480px]">
                       <thead>
-                        <tr className="border-b border-gray-100 dark:border-gray-700 text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                        <tr className="border-b border-border text-left text-xs text-ink-subtle uppercase tracking-wide">
                           <th className="px-4 py-3 font-medium">{t('analytics.tableItem')}</th>
                           <th className="px-4 py-3 font-medium text-right">{t('analytics.tableLoans')}</th>
                           <th className="px-4 py-3 font-medium text-right">{t('analytics.tableRevenue')}</th>
@@ -536,26 +560,26 @@ export default function DashboardPage() {
                       </thead>
                       <tbody>
                         {analytics.items.map((it) => (
-                          <tr key={it.item_id} className="border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                          <tr key={it.item_id} className="border-b border-border last:border-0">
                             <td className="px-4 py-3">
-                              <Link href={`/items/${it.item_id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+                              <Link href={`/items/${it.item_id}`} className="font-medium text-ink hover:text-primary transition-colors">
                                 {it.title}
                               </Link>
-                              <div className="text-xs text-gray-400 dark:text-gray-500">{getCategoryLabel(categories, it.category)}</div>
+                              <div className="text-xs text-ink-subtle">{getCategoryLabel(categories, it.category)}</div>
                             </td>
-                            <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{it.times_borrowed}</td>
-                            <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                            <td className="px-4 py-3 text-right text-ink-muted">{it.times_borrowed}</td>
+                            <td className="px-4 py-3 text-right text-ink-muted">
                               {it.revenue > 0 ? formatCurrency(it.revenue, locale) : '—'}
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="inline-flex items-center gap-2 justify-end w-full">
-                                <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div className="w-16 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                                   <div
-                                    className="h-full bg-green-500 rounded-full"
+                                    className="h-full bg-primary rounded-full"
                                     style={{ width: `${it.occupancy_rate}%` }}
                                   />
                                 </div>
-                                <span className="text-xs text-gray-500 dark:text-gray-400 w-9 text-right">{it.occupancy_rate}%</span>
+                                <span className="text-xs text-ink-muted w-9 text-right">{it.occupancy_rate}%</span>
                               </div>
                             </td>
                           </tr>

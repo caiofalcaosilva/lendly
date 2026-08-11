@@ -12,12 +12,15 @@ import BusinessBadge from '@/components/ui/BusinessBadge'
 import { useAuth } from '@/contexts/AuthContext'
 import { itemsService } from '@/services/items'
 import { categoriesService } from '@/services/categories'
+import { useToast } from '@/contexts/ToastContext'
 
 const CATEGORY_COLORS: Record<string, string> = {
   tools: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30',
   electronics: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30',
   sports: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30',
-  garden: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30',
+  // Deliberately not green — that's the brand/primary color, reserved for
+  // actions, so a category tag can't be mistaken for one.
+  garden: 'text-lime-600 dark:text-lime-400 bg-lime-50 dark:bg-lime-900/30',
   kitchen: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30',
   books: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30',
   toys: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30',
@@ -40,6 +43,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
   const { isAuthenticated } = useAuth()
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Common.ItemCard')
+  const toast = useToast()
   const photo = item.photos?.[0]
   const categoryColor = CATEGORY_COLORS[item.category] ?? 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700'
   const [favorited, setFavorited] = useState(item.is_favorited)
@@ -66,6 +70,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
       onFavoriteChange?.(item, next)
     } catch {
       setFavorited(!next) // revert on failure
+      toast.error(t('favoriteError'))
     } finally {
       setTogglingFavorite(false)
     }
@@ -73,15 +78,15 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
 
   return (
     <Link href={`/items/${item.id}`} className="group block h-full">
-      <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+      <div className="h-full flex flex-col bg-surface rounded-panel border border-border overflow-hidden motion-safe:hover:shadow-elevated motion-safe:hover:-translate-y-0.5 transition-all duration-200">
         {/* Image */}
-        <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-700 flex-shrink-0 overflow-hidden">
+        <div className="relative aspect-[4/3] bg-surface-2 flex-shrink-0 overflow-hidden">
           {photo ? (
             <Image
               src={photo}
               alt={item.title}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              className="object-cover motion-safe:group-hover:scale-105 transition-transform duration-300"
               unoptimized
             />
           ) : (
@@ -98,12 +103,12 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
           {/* Price / free badge */}
           <div className="absolute top-2.5 left-2.5">
             {item.availability_type === 'free' ? (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary text-primary-on shadow-elevated">
                 {t('free')}
               </span>
             ) : (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 dark:bg-gray-900/90 text-gray-800 dark:text-gray-100 shadow-sm">
-                {formatCurrency(item.daily_rate ?? 0, locale)}<span className="font-normal text-gray-500 dark:text-gray-400">{t('perDay')}</span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 dark:bg-black/70 text-ink shadow-elevated">
+                {formatCurrency(item.daily_rate ?? 0, locale)}<span className="font-normal text-ink-muted">{t('perDay')}</span>
               </span>
             )}
           </div>
@@ -159,22 +164,22 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
           </span>
 
           {/* Title */}
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-snug line-clamp-2 group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors flex-1 mb-3">
+          <h3 className="font-semibold text-ink text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors flex-1 mb-3">
             {item.title}
           </h3>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 min-w-0">
-              <MapPin className="w-3 h-3 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+          <div className="flex items-center justify-between pt-2.5 border-t border-border">
+            <div className="flex items-center gap-1 text-xs text-ink-muted min-w-0">
+              <MapPin className="w-3 h-3 flex-shrink-0 text-ink-subtle" />
               <span className="truncate">
                 {item.neighborhood || item.city || t('noLocation')}
               </span>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
               <div className="flex items-center gap-1">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                <span className="text-xs font-medium text-ink-muted">
                   {item.owner.average_rating.toFixed(1)}
                 </span>
               </div>

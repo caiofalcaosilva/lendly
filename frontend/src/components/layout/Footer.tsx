@@ -1,27 +1,26 @@
 'use client'
-import { Leaf } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { Logo } from '@/components/ui/Logo'
 
 export default function Footer() {
   const { isAuthenticated } = useAuth()
   const t = useTranslations('Common.Footer')
 
   return (
-    <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors">
+    <footer className="bg-surface border-t border-border mt-auto transition-colors">
       <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold">
-          <Leaf className="w-5 h-5" />
-          Lendly
+        <Link href="/">
+          <Logo markClassName="w-6 h-6" />
         </Link>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">{t('tagline')}</p>
-        <div className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
-          <Link href="/items" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">{t('explore')}</Link>
+        <p className="text-sm text-ink-muted text-center">{t('tagline')}</p>
+        <div className="flex gap-4 text-sm text-ink-muted">
+          <Link href="/items" className="hover:text-ink transition-colors">{t('explore')}</Link>
           {isAuthenticated ? (
-            <Link href="/dashboard" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">{t('dashboard')}</Link>
+            <Link href="/dashboard" className="hover:text-ink transition-colors">{t('dashboard')}</Link>
           ) : (
-            <Link href="/register" className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors">{t('createAccount')}</Link>
+            <Link href="/register" className="hover:text-ink transition-colors">{t('createAccount')}</Link>
           )}
         </div>
       </div>

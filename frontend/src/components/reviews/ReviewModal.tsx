@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { reviewsService } from '@/services/reviews'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
+import Textarea from '@/components/ui/Textarea'
 
 interface Props {
   requestId: string
@@ -41,7 +42,7 @@ export default function ReviewModal({ requestId, reviewedName, onClose, onSucces
     <Modal open onClose={onClose} title={t('title', { name: reviewedName })}>
       <div className="space-y-5">
         <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{t('subtitle', { name: reviewedName })}</p>
+          <p className="text-sm text-ink-muted mb-3">{t('subtitle', { name: reviewedName })}</p>
           <div className="flex gap-2 justify-center">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -53,31 +54,28 @@ export default function ReviewModal({ requestId, reviewedName, onClose, onSucces
                 className="transition-transform hover:scale-110"
               >
                 <Star
-                  className={`w-8 h-8 ${n <= (hovered || rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 dark:text-gray-600'}`}
+                  className={`w-8 h-8 ${n <= (hovered || rating) ? 'fill-yellow-400 text-yellow-400' : 'text-ink-subtle'}`}
                 />
               </button>
             ))}
           </div>
           {rating > 0 && (
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-center text-sm text-ink-muted mt-2">
               {t(`ratings.${RATING_KEYS[rating]}`)}
             </p>
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('comment')}</label>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={3}
-            maxLength={500}
-            placeholder={t('commentPlaceholder')}
-            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
+        <Textarea
+          label={t('comment')}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          rows={3}
+          maxLength={500}
+          placeholder={t('commentPlaceholder')}
+        />
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3">
           <Button onClick={submit} loading={loading} disabled={!rating} className="flex-1">

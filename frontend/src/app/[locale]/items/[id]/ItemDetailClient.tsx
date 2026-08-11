@@ -20,6 +20,8 @@ import BusinessBadge from '@/components/ui/BusinessBadge'
 import RequestModal from '@/components/requests/RequestModal'
 import ReportModal from '@/components/reports/ReportModal'
 import ItemCard from '@/components/items/ItemCard'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/contexts/ToastContext'
 
 const SIMILAR_LIMIT = 4
 const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
@@ -65,13 +67,14 @@ export default function ItemDetailClient() {
   const { user, isAuthenticated } = useAuth()
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Items.Id')
+  const toast = useToast()
   const [item, setItem] = useState<Item | null>(null)
   const [loading, setLoading] = useState(true)
   const [showRequest, setShowRequest] = useState(false)
   const [showReport, setShowReport] = useState(false)
-  const [reportSent, setReportSent] = useState(false)
   const [activePhoto, setActivePhoto] = useState(0)
   const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [waitlistLoading, setWaitlistLoading] = useState(false)
   const [similarItems, setSimilarItems] = useState<Item[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -90,23 +93,18 @@ export default function ItemDetailClient() {
     let cancelled = false
     loadSimilarItems(item).then((results) => { if (!cancelled) setSimilarItems(results) })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `item` intentionally narrowed to id/category/subcategory: refetch only when those change, not on unrelated item updates (e.g. photos, description)
   }, [item?.id, item?.category, item?.subcategory])
-
-  useEffect(() => {
-    if (!reportSent) return
-    const timer = setTimeout(() => setReportSent(false), 3000)
-    return () => clearTimeout(timer)
-  }, [reportSent])
 
   const isOwner = user?.id === item?.owner.id
 
   const handleDelete = async () => {
-    if (!confirm(t('confirmDelete'))) return
     setDeleting(true)
     try {
       await itemsService.delete(id)
       router.push('/dashboard')
-    } finally {
+    } catch {
+      toast.error(t('errorDeleting'))
       setDeleting(false)
     }
   }
@@ -126,15 +124,15 @@ export default function ItemDetailClient() {
 
   if (loading) return (
     <div className="flex justify-center items-center min-h-[50vh]">
-      <Spinner className="w-8 h-8 text-green-600" />
+      <Spinner className="w-8 h-8 text-primary" />
     </div>
   )
 
   if (!item) return (
     <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-      <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('notFound')}</h2>
-      <Link href="/items" className="text-green-600 dark:text-green-400 text-sm mt-3 inline-block">← {t('backToItems')}</Link>
+      <Package className="w-12 h-12 text-ink-subtle mx-auto mb-4" />
+      <h1 className="text-xl font-semibold text-ink-muted">{t('notFound')}</h1>
+      <Link href="/items" className="text-primary text-sm mt-3 inline-block">← {t('backToItems')}</Link>
     </div>
   )
 
@@ -142,14 +140,14 @@ export default function ItemDetailClient() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <Link href="/items" className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-sm mb-6 transition-colors">
+      <Link href="/items" className="inline-flex items-center gap-2 text-ink-muted hover:text-ink text-sm mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" /> {t('backToItems')}
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Photos */}
         <div>
-          <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
+          <div className="relative aspect-[4/3] bg-surface-2 rounded-panel overflow-hidden">
             {photos.length > 0 ? (
               <Image
                 src={photos[activePhoto]}
@@ -160,7 +158,7 @@ export default function ItemDetailClient() {
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
-                <Package className="w-16 h-16 text-gray-300 dark:text-gray-600" />
+                <Package className="w-16 h-16 text-ink-subtle" />
               </div>
             )}
           </div>
@@ -170,7 +168,7 @@ export default function ItemDetailClient() {
                 <button
                   key={i}
                   onClick={() => setActivePhoto(i)}
-                  className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${i === activePhoto ? 'border-green-500' : 'border-transparent'}`}
+                  className={`relative w-16 h-16 rounded-control overflow-hidden border-2 transition-colors ${i === activePhoto ? 'border-primary' : 'border-transparent'}`}
                 >
                   <Image src={photo} alt="" fill className="object-cover" unoptimized />
                 </button>
@@ -196,14 +194,14 @@ export default function ItemDetailClient() {
                   <Badge variant="blue">{t('rental')}</Badge>
                 )}
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{item.title}</h1>
+              <h1 className="text-2xl font-bold text-ink">{item.title}</h1>
             </div>
             {isOwner && (
               <div className="flex gap-2 flex-shrink-0">
                 <Link href={`/items/${item.id}/edit`}>
-                  <Button size="sm" variant="outline"><Edit className="w-4 h-4" /></Button>
+                  <Button size="sm" variant="outline" aria-label={t('Edit.title')}><Edit className="w-4 h-4" /></Button>
                 </Link>
-                <Button size="sm" variant="danger" loading={deleting} onClick={handleDelete}>
+                <Button size="sm" variant="danger" loading={deleting} onClick={() => setShowDeleteConfirm(true)} aria-label={t('confirmDeleteTitle')}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -211,13 +209,13 @@ export default function ItemDetailClient() {
           </div>
 
           {item.availability_type === 'paid' && item.daily_rate && (
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-4">
-              {formatCurrency(item.daily_rate, locale)}<span className="text-base font-normal text-gray-500 dark:text-gray-400">{t('perDay')}</span>
+            <div className="text-2xl font-bold text-primary mb-4">
+              {formatCurrency(item.daily_rate, locale)}<span className="text-base font-normal text-ink-muted">{t('perDay')}</span>
             </div>
           )}
 
           {(item.neighborhood || item.city) && (
-            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm mb-5">
+            <div className="flex items-center gap-1.5 text-ink-muted text-sm mb-5">
               <MapPin className="w-4 h-4" />
               {[item.neighborhood, item.city].filter(Boolean).join(', ')}
             </div>
@@ -225,41 +223,41 @@ export default function ItemDetailClient() {
 
           {item.description && (
             <div className="mb-5">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('description')}</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{item.description}</p>
+              <h2 className="text-sm font-semibold text-ink-muted mb-2">{t('description')}</h2>
+              <p className="text-ink-muted text-sm leading-relaxed">{item.description}</p>
             </div>
           )}
 
           {item.available_days && item.available_days.length > 0 && (
-            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm mb-5">
+            <div className="flex items-center gap-1.5 text-ink-muted text-sm mb-5">
               <CalendarDays className="w-4 h-4" />
               {t('availableOn', { days: item.available_days.map((d) => t(`weekdays.${WEEKDAY_KEYS[d]}`)).join(', ') })}
             </div>
           )}
 
           {item.usage_rules && (
-            <div className="mb-5 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+            <div className="mb-5 p-4 bg-warning-subtle border border-warning/30 rounded-panel">
               <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">{t('usageRules')}</h3>
+                <AlertTriangle className="w-4 h-4 text-warning" />
+                <h2 className="text-sm font-semibold text-warning">{t('usageRules')}</h2>
               </div>
-              <p className="text-sm text-amber-700 dark:text-amber-400">{item.usage_rules}</p>
+              <p className="text-sm text-warning">{item.usage_rules}</p>
             </div>
           )}
 
           {/* Owner */}
-          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6">
+          <div className="border border-border rounded-panel p-4 mb-6">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t('listedBy')}</p>
+                <p className="text-xs text-ink-muted mb-0.5">{t('listedBy')}</p>
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <Link href={`/users/${item.owner.id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate">
+                  <Link href={`/users/${item.owner.id}`} className="font-medium text-ink hover:text-primary transition-colors truncate">
                     {item.owner.trade_name || item.owner.name}
                   </Link>
                   <BusinessBadge accountType={item.owner.account_type} />
                 </div>
                 {item.owner.city && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-ink-muted flex items-center gap-1 mt-0.5">
                     <MapPin className="w-3 h-3" />
                     {[item.owner.neighborhood, item.owner.city].filter(Boolean).join(', ')}
                   </p>
@@ -268,7 +266,7 @@ export default function ItemDetailClient() {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-lg">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.owner.average_rating.toFixed(1)}</span>
+                  <span className="text-sm font-semibold text-ink">{item.owner.average_rating.toFixed(1)}</span>
                 </div>
                 <ReliabilityBadge score={item.owner.reliability_score} count={item.owner.reliability_count} size="md" />
               </div>
@@ -285,7 +283,7 @@ export default function ItemDetailClient() {
                 </Link>
               ) : !item.is_available ? (
                 <div className="space-y-2">
-                  <div className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-center py-3 px-4 rounded-lg text-sm">
+                  <div className="bg-surface-2 text-ink-muted text-center py-3 px-4 rounded-control text-sm">
                     {t('temporarilyUnavailable')}
                   </div>
                   <Button
@@ -303,7 +301,7 @@ export default function ItemDetailClient() {
                 </div>
               ) : item.requires_identity_verification && user?.identity_status !== 'approved' ? (
                 <div className="space-y-2">
-                  <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-300">
+                  <div className="flex items-start gap-2 bg-warning-subtle border border-warning/30 rounded-control p-3 text-sm text-warning">
                     <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     {t('requiresVerification')}
                   </div>
@@ -322,13 +320,13 @@ export default function ItemDetailClient() {
           )}
 
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-xs text-ink-subtle">
               {t('publishedOn', { date: formatDate(item.created_at, locale) })}
             </p>
             {isAuthenticated && !isOwner && (
               <button
                 onClick={() => setShowReport(true)}
-                className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                className="flex items-center gap-1 text-xs text-ink-subtle hover:text-danger transition-colors"
               >
                 <Flag className="w-3 h-3" /> {t('report')}
               </button>
@@ -339,7 +337,7 @@ export default function ItemDetailClient() {
 
       {similarItems.length > 0 && (
         <div className="mt-12">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('similarItems')}</h2>
+          <h2 className="text-lg font-semibold text-ink mb-4">{t('similarItems')}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {similarItems.map((similar) => (
               <ItemCard key={similar.id} item={similar} />
@@ -357,15 +355,18 @@ export default function ItemDetailClient() {
           itemId={item.id}
           targetLabel={t('reportTargetLabel')}
           onClose={() => setShowReport(false)}
-          onSuccess={() => { setShowReport(false); setReportSent(true) }}
+          onSuccess={() => { setShowReport(false); toast.success(t('reportSent')) }}
         />
       )}
 
-      {reportSent && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50">
-          {t('reportSent')}
-        </div>
-      )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => { setShowDeleteConfirm(false); handleDelete() }}
+        title={t('confirmDeleteTitle')}
+        description={t('confirmDelete')}
+        loading={deleting}
+      />
     </div>
   )
 }

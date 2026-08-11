@@ -57,8 +57,9 @@ export default function AvatarUploader({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={busy}
-          className="absolute -bottom-1 -right-1 w-7 h-7 flex items-center justify-center rounded-full bg-green-600 text-white shadow-sm hover:bg-green-700 disabled:opacity-50"
+          className="absolute -bottom-1 -right-1 w-7 h-7 flex items-center justify-center rounded-full bg-primary text-primary-on shadow-elevated hover:bg-primary-hover disabled:opacity-50"
           title={t('changePhoto')}
+          aria-label={t('changePhoto')}
         >
           {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
         </button>
@@ -67,14 +68,15 @@ export default function AvatarUploader({
             type="button"
             onClick={handleRemove}
             disabled={busy}
-            className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 text-white hover:bg-gray-900 disabled:opacity-50"
+            className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full bg-ink text-bg hover:opacity-80 disabled:opacity-50"
             title={t('removePhoto')}
+            aria-label={t('removePhoto')}
           >
             <X className="w-3 h-3" />
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-600 dark:text-red-400 mt-1.5">{error}</p>}
+      {error && <p className="text-xs text-danger mt-1.5">{error}</p>}
       <input
         ref={inputRef}
         type="file"

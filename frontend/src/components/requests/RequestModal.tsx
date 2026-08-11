@@ -11,6 +11,7 @@ import { formatCurrency } from '@/lib/utils'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Textarea from '@/components/ui/Textarea'
 
 const WEEKDAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
 
@@ -85,21 +86,21 @@ export default function RequestModal({ item, onClose }: Props) {
 
   return (
     <Modal open onClose={onClose} title={t('title')}>
-      <div className="mb-5 p-4 bg-gray-50 dark:bg-gray-900/40 rounded-lg">
-        <p className="font-medium text-gray-900 dark:text-gray-100">{item.title}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      <div className="mb-5 p-4 bg-surface-2 rounded-control">
+        <p className="font-medium text-ink">{item.title}</p>
+        <p className="text-sm text-ink-muted mt-1">
           {item.availability_type === 'free'
             ? t('freeLoan')
             : t('paidRental', { price: formatCurrency(item.daily_rate ?? 0, locale) })}
         </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('owner', { name: item.owner.name })}</p>
+        <p className="text-xs text-ink-subtle mt-1">{t('owner', { name: item.owner.name })}</p>
       </div>
 
-      {error && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-sm">{error}</div>}
+      {error && <div className="mb-4 p-3 bg-danger-subtle text-danger rounded-control text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {availableDays.length > 0 && (
-          <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+          <p className="text-xs text-warning bg-warning-subtle border border-warning/30 rounded-control px-3 py-2">
             {t('availableDaysNotice', { days: availableDays.map((d) => t(`weekdays.${WEEKDAY_KEYS[d]}`)).join(', ') })}
           </p>
         )}
@@ -120,16 +121,13 @@ export default function RequestModal({ item, onClose }: Props) {
           required
         />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('notes')}</label>
-          <textarea
-            {...register('notes')}
-            rows={3}
-            placeholder={t('notesPlaceholder')}
-            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          {errors.notes && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.notes.message}</p>}
-        </div>
+        <Textarea
+          label={t('notes')}
+          {...register('notes')}
+          rows={3}
+          placeholder={t('notesPlaceholder')}
+          error={errors.notes?.message}
+        />
 
         <div className="flex gap-3 pt-2">
           <Button type="submit" loading={loading} className="flex-1">

@@ -14,8 +14,26 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import Skeleton from '@/components/ui/Skeleton'
 
 const LIMIT = 20
+
+function SkeletonRow() {
+  return (
+    <tr className="border-b border-border last:border-0">
+      <td className="px-4 py-3"><Skeleton className="w-4 h-4" /></td>
+      <td className="px-4 py-3 space-y-1.5">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-3 w-40" />
+      </td>
+      <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+      <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
+      <td className="px-4 py-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
+      <td className="px-4 py-3"><div className="flex justify-end"><Skeleton className="h-8 w-8" /></div></td>
+    </tr>
+  )
+}
 
 export default function AdminUsersPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -30,6 +48,8 @@ export default function AdminUsersPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkLoading, setBulkLoading] = useState(false)
   const [bulkMessage, setBulkMessage] = useState<{ text: string; hasFailures: boolean } | null>(null)
+  const [bulkConfirmAction, setBulkConfirmAction] = useState<'activate' | 'deactivate' | null>(null)
+  const [adminConfirmTarget, setAdminConfirmTarget] = useState<AdminUserSummary | null>(null)
   const skipRef = useRef(0)
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Admin.Users')
@@ -52,10 +72,6 @@ export default function AdminUsersPage() {
   const runBulkAction = async (action: 'activate' | 'deactivate') => {
     const ids = Array.from(selected)
     if (ids.length === 0) return
-    const confirmMessage = action === 'activate'
-      ? t('confirmActivate', { count: ids.length })
-      : t('confirmDeactivate', { count: ids.length })
-    if (!window.confirm(confirmMessage)) return
     setBulkLoading(true)
     setBulkMessage(null)
     try {
@@ -154,11 +170,6 @@ export default function AdminUsersPage() {
   }
 
   const toggleAdmin = async (target: AdminUserSummary) => {
-    const name = target.trade_name || target.name
-    const message = target.is_admin
-      ? t('confirmDemote', { name })
-      : t('confirmPromote', { name })
-    if (!window.confirm(message)) return
     setBusy(target.id)
     setError('')
     try {
@@ -174,57 +185,57 @@ export default function AdminUsersPage() {
   }
 
   if (authLoading || !user?.is_admin) {
-    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-green-600" /></div>
+    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-primary" /></div>
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center gap-2 mb-1">
-        <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
+        <Users className="w-6 h-6 text-info" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
       </div>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+      <p className="text-ink-muted text-sm mb-6">
         {t('subtitle')}
       </p>
 
       <div className="relative mb-6">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('searchPlaceholder')}
-          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full pl-10 pr-4 py-2.5 bg-surface text-ink border border-border rounded-panel text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
+        <div className="mb-4 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
           {error}
         </div>
       )}
 
       {bulkMessage && (
-        <div className={`mb-4 p-3 border rounded-lg text-sm ${
+        <div className={`mb-4 p-3 border rounded-control text-sm ${
           bulkMessage.hasFailures
-            ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
-            : 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+            ? 'bg-warning-subtle border-warning/30 text-warning'
+            : 'bg-primary-subtle border-primary/30 text-primary'
         }`}>
           {bulkMessage.text}
         </div>
       )}
 
       {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <span className="text-sm text-blue-800 dark:text-blue-300 font-medium">{t('selectedCount', { count: selected.size })}</span>
-          <Button size="sm" variant="outline" loading={bulkLoading} onClick={() => runBulkAction('activate')}>
+        <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-info-subtle border border-info/30 rounded-control">
+          <span className="text-sm text-info font-medium">{t('selectedCount', { count: selected.size })}</span>
+          <Button size="sm" variant="outline" loading={bulkLoading} onClick={() => setBulkConfirmAction('activate')}>
             <CheckCircle2 className="w-3.5 h-3.5" /> {t('activateSelected')}
           </Button>
-          <Button size="sm" variant="danger" loading={bulkLoading} onClick={() => runBulkAction('deactivate')}>
+          <Button size="sm" variant="danger" loading={bulkLoading} onClick={() => setBulkConfirmAction('deactivate')}>
             <Ban className="w-3.5 h-3.5" /> {t('deactivateSelected')}
           </Button>
           <button
             onClick={() => setSelected(new Set())}
-            className="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            className="ml-auto text-xs text-info hover:underline"
           >
             {t('clearSelection')}
           </button>
@@ -232,22 +243,40 @@ export default function AdminUsersPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-green-600" /></div>
+        <div className="bg-surface rounded-panel border border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-ink-subtle uppercase tracking-wide">
+                  <th className="px-4 py-3 font-medium w-8" />
+                  <th className="px-4 py-3 font-medium">{t('columnUser')}</th>
+                  <th className="px-4 py-3 font-medium">{t('columnCity')}</th>
+                  <th className="px-4 py-3 font-medium">{t('columnSignup')}</th>
+                  <th className="px-4 py-3 font-medium">{t('columnStatus')}</th>
+                  <th className="px-4 py-3 font-medium text-right">{t('columnAction')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : users.length === 0 ? (
         <EmptyState icon={Users} title={t('emptyTitle')} description={t('emptyDescription')} />
       ) : (
         <>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-surface rounded-panel border border-border overflow-hidden">
             <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700 text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                <tr className="border-b border-border text-left text-xs text-ink-subtle uppercase tracking-wide">
                   <th className="px-4 py-3 font-medium w-8">
                     <input
                       type="checkbox"
                       checked={allSelectableSelected}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded accent-green-600"
+                      className="w-4 h-4 rounded accent-primary"
                     />
                   </th>
                   <th className="px-4 py-3 font-medium">{t('columnUser')}</th>
@@ -259,28 +288,28 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                  <tr key={u.id} className="border-b border-border last:border-0">
                     <td className="px-4 py-3">
                       {!u.is_admin && (
                         <input
                           type="checkbox"
                           checked={selected.has(u.id)}
                           onChange={() => toggleSelected(u.id)}
-                          className="w-4 h-4 rounded accent-green-600"
+                          className="w-4 h-4 rounded accent-primary"
                         />
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <Link href={`/users/${u.id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors flex items-center gap-1.5">
-                        {u.account_type === 'business' && <Building2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
+                      <Link href={`/users/${u.id}`} className="font-medium text-ink hover:text-primary transition-colors flex items-center gap-1.5">
+                        {u.account_type === 'business' && <Building2 className="w-3.5 h-3.5 text-ink-subtle flex-shrink-0" />}
                         {u.trade_name || u.name}
                       </Link>
-                      <div className="text-xs text-gray-400 dark:text-gray-500">{u.email}</div>
+                      <div className="text-xs text-ink-subtle">{u.email}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                    <td className="px-4 py-3 text-ink-muted">
                       {[u.neighborhood, u.city].filter(Boolean).join(', ') || '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{formatDate(u.created_at, locale)}</td>
+                    <td className="px-4 py-3 text-ink-muted">{formatDate(u.created_at, locale)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1 items-start">
                         <Badge variant={u.is_active ? 'green' : 'red'}>{u.is_active ? t('statusActive') : t('statusInactive')}</Badge>
@@ -296,6 +325,7 @@ export default function AdminUsersPage() {
                             loading={busy === u.id}
                             onClick={() => viewAs(u)}
                             title={t('viewAs')}
+                            aria-label={t('viewAs')}
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </Button>
@@ -311,13 +341,13 @@ export default function AdminUsersPage() {
                           </Button>
                         )}
                         {u.id === user?.id ? (
-                          <span className="text-xs text-gray-400 dark:text-gray-500 self-center">—</span>
+                          <span className="text-xs text-ink-subtle self-center">—</span>
                         ) : (
                           <Button
                             size="sm"
                             variant="outline"
                             loading={busy === u.id}
-                            onClick={() => toggleAdmin(u)}
+                            onClick={() => setAdminConfirmTarget(u)}
                           >
                             {u.is_admin ? <><ShieldMinus className="w-3.5 h-3.5" /> {t('removeAdmin')}</> : <><ShieldPlus className="w-3.5 h-3.5" /> {t('promote')}</>}
                           </Button>
@@ -340,6 +370,46 @@ export default function AdminUsersPage() {
           )}
         </>
       )}
+
+      <ConfirmDialog
+        open={bulkConfirmAction !== null}
+        onClose={() => setBulkConfirmAction(null)}
+        onConfirm={() => {
+          const action = bulkConfirmAction
+          setBulkConfirmAction(null)
+          if (action) runBulkAction(action)
+        }}
+        title={bulkConfirmAction === 'activate' ? t('activateSelected') : t('deactivateSelected')}
+        description={
+          bulkConfirmAction === 'activate'
+            ? t('confirmActivate', { count: selected.size })
+            : t('confirmDeactivate', { count: selected.size })
+        }
+        confirmLabel={bulkConfirmAction === 'activate' ? t('activate') : t('deactivate')}
+        variant={bulkConfirmAction === 'activate' ? 'primary' : 'danger'}
+        loading={bulkLoading}
+      />
+
+      <ConfirmDialog
+        open={adminConfirmTarget !== null}
+        onClose={() => setAdminConfirmTarget(null)}
+        onConfirm={() => {
+          const target = adminConfirmTarget
+          setAdminConfirmTarget(null)
+          if (target) toggleAdmin(target)
+        }}
+        title={adminConfirmTarget?.is_admin ? t('removeAdmin') : t('promote')}
+        description={
+          adminConfirmTarget
+            ? adminConfirmTarget.is_admin
+              ? t('confirmDemote', { name: adminConfirmTarget.trade_name || adminConfirmTarget.name })
+              : t('confirmPromote', { name: adminConfirmTarget.trade_name || adminConfirmTarget.name })
+            : ''
+        }
+        confirmLabel={adminConfirmTarget?.is_admin ? t('removeAdmin') : t('promote')}
+        variant={adminConfirmTarget?.is_admin ? 'danger' : 'primary'}
+        loading={busy === adminConfirmTarget?.id}
+      />
     </div>
   )
 }

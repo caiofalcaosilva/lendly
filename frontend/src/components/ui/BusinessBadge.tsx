@@ -19,7 +19,7 @@ export default function BusinessBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border font-medium flex-shrink-0 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 ${sizeClasses}`}
+      className={`inline-flex items-center rounded-full border font-medium flex-shrink-0 text-business bg-business-subtle border-business/30 ${sizeClasses}`}
       title={t('tooltip')}
     >
       <Store className={iconSize} />

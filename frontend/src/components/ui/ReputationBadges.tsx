@@ -29,6 +29,15 @@ export default function ReputationBadges({
   const t = useTranslations('Common.ReputationBadges')
   const badges: { key: string; label: string; title: string; icon: typeof HeartHandshake; tone: string }[] = []
 
+  // Every achievement below means the same thing — "this neighbor is good at
+  // this" — so they share one tone and are told apart by icon and label
+  // instead of by color. A different hue per badge would just be confetti;
+  // color is reserved for the one badge that IS a distinct signal (below).
+  const ACHIEVEMENT_TONE = 'text-clay bg-clay-subtle border-clay/30'
+  // Informational, not an achievement — a new account hasn't earned
+  // anything yet, so it gets a neutral tone rather than the achievement gold.
+  const NEW_TONE = 'text-ink-muted bg-surface-2 border-border-strong'
+
   // Makes newness visible instead of leaving it to be inferred from empty
   // stats — an empty rating is indistinguishable from "just never reviewed"
   // otherwise. Mutually exclusive with the badges below in practice, since
@@ -39,7 +48,7 @@ export default function ReputationBadges({
       label: t('new.label'),
       title: t('new.title'),
       icon: Sparkles,
-      tone: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800',
+      tone: NEW_TONE,
     })
   }
 
@@ -49,7 +58,7 @@ export default function ReputationBadges({
       label: t('trusted.label'),
       title: t('trusted.title', { score: Math.round(reliabilityScore), count: reliabilityCount }),
       icon: HeartHandshake,
-      tone: 'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800',
+      tone: ACHIEVEMENT_TONE,
     })
   }
 
@@ -59,7 +68,7 @@ export default function ReputationBadges({
       label: t('punctual.label'),
       title: t('punctual.title', { count: finishedLoansCount }),
       icon: Timer,
-      tone: 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
+      tone: ACHIEVEMENT_TONE,
     })
   }
 
@@ -69,7 +78,7 @@ export default function ReputationBadges({
       label: t('rated.label'),
       title: t('rated.title', { rating: averageRating.toFixed(1), count: ratingCount }),
       icon: Award,
-      tone: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800',
+      tone: ACHIEVEMENT_TONE,
     })
   }
 
@@ -81,7 +90,7 @@ export default function ReputationBadges({
       label: t('responsive.label'),
       title: t('responsive.title', { response: responseLabel, count: responseCount }),
       icon: Zap,
-      tone: 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-800',
+      tone: ACHIEVEMENT_TONE,
     })
   }
 

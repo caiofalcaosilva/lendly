@@ -186,7 +186,7 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
 
   return (
     <div>
-      <div className="h-[600px] w-full rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="h-[600px] w-full rounded-panel overflow-hidden border border-border">
         <MapContainer center={initialCenter} zoom={12} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
           <TileLayer
             attribution={CARTO_ATTRIBUTION}

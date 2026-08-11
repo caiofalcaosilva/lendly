@@ -11,6 +11,7 @@ import { usersService } from '@/services/users'
 import { authService } from '@/services/auth'
 import { isValidCnpj, formatCnpj } from '@/lib/cnpj'
 import Input from '@/components/ui/Input'
+import Textarea from '@/components/ui/Textarea'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import AddressFields from '@/components/ui/AddressFields'
@@ -28,6 +29,8 @@ import SessionsSection from '@/components/profile/SessionsSection'
 import LoginHistorySection from '@/components/profile/LoginHistorySection'
 import NotificationPreferencesSection from '@/components/profile/NotificationPreferencesSection'
 import InAppNotificationPreferencesSection from '@/components/profile/InAppNotificationPreferencesSection'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/contexts/ToastContext'
 
 const opt = z.string().optional().or(z.literal(''))
 
@@ -57,11 +60,13 @@ export default function ProfilePage() {
   const [exportingData, setExportingData] = useState(false)
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
   const [pausing, setPausing] = useState(false)
+  const [showPauseConfirm, setShowPauseConfirm] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [showChangeEmail, setShowChangeEmail] = useState(false)
   const [passwordChanged, setPasswordChanged] = useState(false)
   const [emailChanged, setEmailChanged] = useState(false)
   const t = useTranslations('Profile')
+  const toast = useToast()
 
   const schema = z.object({
     name: z.string().min(2, t('errors.minName')).max(100),
@@ -217,15 +222,24 @@ export default function ProfilePage() {
 
   const handleTogglePause = async () => {
     if (!user) return
-    if (!user.is_paused && !confirm(t('confirmPause'))) return
     setPausing(true)
     try {
       const updated = user.is_paused
         ? await usersService.resumeAccount()
         : await usersService.pauseAccount()
       updateUser(updated)
+    } catch {
+      toast.error(t('errorTogglingPause'))
     } finally {
       setPausing(false)
+    }
+  }
+
+  const requestTogglePause = () => {
+    if (user?.is_paused) {
+      handleTogglePause()
+    } else {
+      setShowPauseConfirm(true)
     }
   }
 
@@ -247,7 +261,7 @@ export default function ProfilePage() {
   if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <Spinner className="w-8 h-8 text-green-600" />
+        <Spinner className="w-8 h-8 text-primary" />
       </div>
     )
   }
@@ -257,8 +271,8 @@ export default function ProfilePage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
+        <p className="text-ink-muted text-sm mt-1">
           {t('subtitle')}
         </p>
       </div>
@@ -268,7 +282,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Sidebar */}
         <div className="space-y-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 text-center">
+          <div className="bg-surface rounded-panel border border-border p-6 text-center">
             {user && (
               <AvatarUploader
                 name={user.name}
@@ -276,14 +290,14 @@ export default function ProfilePage() {
                 onChange={(avatar_url) => updateUser({ ...user, avatar_url })}
               />
             )}
-            <p className="font-semibold text-gray-900 dark:text-gray-100">{user?.trade_name || user?.name}</p>
+            <p className="font-semibold text-ink">{user?.trade_name || user?.name}</p>
             <div className="flex items-center justify-center mt-1">
               <BusinessBadge accountType={user?.account_type} />
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-2">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.average_rating.toFixed(1)}</span>
-              <span className="text-xs text-gray-400 dark:text-gray-500">{t('ratingCount', { count: user?.rating_count ?? 0 })}</span>
+              <span className="text-sm font-medium text-ink">{user?.average_rating.toFixed(1)}</span>
+              <span className="text-xs text-ink-subtle">{t('ratingCount', { count: user?.rating_count ?? 0 })}</span>
             </div>
             {user && (
               <div className="flex justify-center mt-3">
@@ -301,38 +315,38 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 space-y-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('accountData')}</h3>
+          <div className="bg-surface rounded-panel border border-border p-5 space-y-4">
+            <h2 className="text-xs font-semibold text-ink-muted uppercase tracking-wide">{t('accountData')}</h2>
 
             <div className="flex items-start gap-3">
-              <Mail className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
+              <Mail className="w-4 h-4 text-ink-subtle mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{t('email')}</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300 break-all">{user?.email}</p>
+                <p className="text-xs text-ink-subtle">{t('email')}</p>
+                <p className="text-sm text-ink-muted break-all">{user?.email}</p>
               </div>
             </div>
 
             {user?.phone && (
               <div className="flex items-start gap-3">
-                <Phone className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
+                <Phone className="w-4 h-4 text-ink-subtle mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('phone')}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{user.phone}</p>
+                  <p className="text-xs text-ink-subtle">{t('phone')}</p>
+                  <p className="text-sm text-ink-muted">{user.phone}</p>
                 </div>
               </div>
             )}
 
             {addressLine && (
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-ink-subtle mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('address')}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{addressLine}</p>
+                  <p className="text-xs text-ink-subtle">{t('address')}</p>
+                  <p className="text-sm text-ink-muted leading-relaxed">{addressLine}</p>
                 </div>
               </div>
             )}
 
-            <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div className="pt-3 border-t border-border">
               <Button size="sm" variant="outline" loading={exportingData} onClick={exportData} className="w-full">
                 <Download className="w-3.5 h-3.5" /> {t('downloadData')}
               </Button>
@@ -346,12 +360,12 @@ export default function ProfilePage() {
                 {t('changePassword')}
               </Button>
               {emailChanged && (
-                <p className="text-xs text-green-600 dark:text-green-400">
+                <p className="text-xs text-primary">
                   {t('emailUpdated')}
                 </p>
               )}
               {passwordChanged && (
-                <p className="text-xs text-green-600 dark:text-green-400">{t('passwordUpdated')}</p>
+                <p className="text-xs text-primary">{t('passwordUpdated')}</p>
               )}
             </div>
           </div>
@@ -359,20 +373,20 @@ export default function ProfilePage() {
 
         {/* Form */}
         <div className="md:col-span-2">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
+          <div className="bg-surface rounded-panel border border-border p-6">
             <div className="flex items-center gap-2 mb-6">
-              <UserCog className="w-5 h-5 text-green-600 dark:text-green-400" />
-              <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('personalInfo')}</h2>
+              <UserCog className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold text-ink">{t('personalInfo')}</h2>
             </div>
 
             {error && (
-              <div className="mb-5 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
+              <div className="mb-5 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
                 {error}
               </div>
             )}
 
             {saved && (
-              <div className="mb-5 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg text-sm flex items-center gap-2">
+              <div className="mb-5 p-3 bg-primary-subtle border border-primary/30 text-primary rounded-control text-sm flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {t('savedSuccess')}
               </div>
@@ -396,31 +410,25 @@ export default function ProfilePage() {
                 helper={t('phoneHelper')}
               />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  {user?.account_type === 'business' ? t('aboutBusiness') : t('aboutYou')}
-                </label>
-                <textarea
-                  {...register('bio')}
-                  rows={3}
-                  maxLength={500}
-                  placeholder={
-                    user?.account_type === 'business'
-                      ? t('bioPlaceholderBusiness')
-                      : t('bioPlaceholderIndividual')
-                  }
-                  className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-none"
-                />
-                {errors.bio?.message && (
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.bio.message}</p>
-                )}
-              </div>
+              <Textarea
+                label={user?.account_type === 'business' ? t('aboutBusiness') : t('aboutYou')}
+                {...register('bio')}
+                rows={3}
+                maxLength={500}
+                placeholder={
+                  user?.account_type === 'business'
+                    ? t('bioPlaceholderBusiness')
+                    : t('bioPlaceholderIndividual')
+                }
+                className="resize-none"
+                error={errors.bio?.message}
+              />
 
-              <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="pt-4 border-t border-border">
                 <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('address')}</h3>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">{t('addressPrivacyHint')}</span>
+                  <MapPin className="w-4 h-4 text-ink-subtle" />
+                  <h3 className="text-sm font-medium text-ink-muted">{t('address')}</h3>
+                  <span className="text-xs text-ink-subtle">{t('addressPrivacyHint')}</span>
                 </div>
 
                 <AddressFields
@@ -432,10 +440,10 @@ export default function ProfilePage() {
               </div>
 
               {user?.account_type === 'business' && (
-                <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="pt-4 border-t border-border">
                   <div className="flex items-center gap-2 mb-4">
-                    <Building2 className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('businessData')}</h3>
+                    <Building2 className="w-4 h-4 text-ink-subtle" />
+                    <h3 className="text-sm font-medium text-ink-muted">{t('businessData')}</h3>
                   </div>
 
                   <div className="space-y-4">
@@ -471,24 +479,24 @@ export default function ProfilePage() {
       </div>
 
       {/* Security section */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
+      <div className="mt-6 bg-surface rounded-panel border border-border p-6">
         <div className="flex items-center gap-2 mb-6">
-          <ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('security')}</h2>
+          <ShieldCheck className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold text-ink">{t('security')}</h2>
         </div>
 
         <div className="space-y-5">
           {/* Email verification */}
-          <div className="flex items-start justify-between gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
+          <div className="flex items-start justify-between gap-4 p-4 rounded-panel border border-border bg-surface-2">
             <div className="flex items-start gap-3">
               {user?.is_verified ? (
-                <MailCheck className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                <MailCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
               ) : (
-                <MailWarning className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                <MailWarning className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
               )}
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('emailVerification')}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-sm font-medium text-ink">{t('emailVerification')}</p>
+                <p className="text-xs text-ink-muted mt-0.5">
                   {user?.is_verified
                     ? t('emailVerified')
                     : t('emailNotVerified')}
@@ -504,7 +512,7 @@ export default function ProfilePage() {
                 disabled={emailResent}
               >
                 {emailResent ? (
-                  <><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> {t('sent')}</>
+                  <><CheckCircle2 className="w-3.5 h-3.5 text-primary" /> {t('sent')}</>
                 ) : t('resend')}
               </Button>
             )}
@@ -529,17 +537,17 @@ export default function ProfilePage() {
           {user && <InAppNotificationPreferencesSection user={user} updateUser={updateUser} />}
 
           {/* TOTP 2FA */}
-          <div className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
+          <div className="p-4 rounded-panel border border-border bg-surface-2">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 {user?.totp_enabled ? (
-                  <ShieldCheck className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <ShieldCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 ) : (
-                  <ShieldOff className="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
+                  <ShieldOff className="w-5 h-5 text-ink-subtle mt-0.5 flex-shrink-0" />
                 )}
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('totpTitle')}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-sm font-medium text-ink">{t('totpTitle')}</p>
+                  <p className="text-xs text-ink-muted mt-0.5">
                     {user?.totp_enabled
                       ? t('totpEnabled')
                       : t('totpDisabled')}
@@ -554,8 +562,8 @@ export default function ProfilePage() {
             </div>
 
             {user?.totp_enabled && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('totpDisableHint')}</p>
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-xs text-ink-muted mb-2">{t('totpDisableHint')}</p>
                 <div className="flex flex-wrap gap-2 items-start">
                   <input
                     type="text"
@@ -564,7 +572,7 @@ export default function ProfilePage() {
                     placeholder="000000"
                     value={totpDisableCode}
                     onChange={(e) => setTotpDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="w-32 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-1.5 text-sm text-center font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-red-400"
+                    className="w-32 border border-border bg-surface text-ink rounded-control px-3 py-1.5 text-sm text-center font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-danger"
                   />
                   <Button
                     size="sm"
@@ -577,7 +585,7 @@ export default function ProfilePage() {
                   </Button>
                 </div>
                 {totpDisableError && (
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{totpDisableError}</p>
+                  <p className="text-xs text-danger mt-1">{totpDisableError}</p>
                 )}
               </div>
             )}
@@ -587,14 +595,14 @@ export default function ProfilePage() {
 
       {/* Pause account — reversible, unlike deletion below */}
       {user && (
-        <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl border border-amber-200 dark:border-amber-900 shadow-sm p-6">
+        <div className="mt-6 bg-surface rounded-panel border border-warning/30 p-6">
           <div className="flex items-center gap-2 mb-2">
-            <PauseCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+            <PauseCircle className="w-5 h-5 text-warning" />
+            <h2 className="font-semibold text-ink">
               {user.is_paused ? t('accountPaused') : t('pauseAccount')}
             </h2>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm text-ink-muted mb-4">
             {user.is_paused
               ? t('pausedDescription')
               : t('pauseDescription')}
@@ -603,20 +611,30 @@ export default function ProfilePage() {
             variant={user.is_paused ? 'secondary' : 'outline'}
             size="sm"
             loading={pausing}
-            onClick={handleTogglePause}
+            onClick={requestTogglePause}
           >
             {user.is_paused ? t('reactivateAccount') : t('pauseAccount')}
           </Button>
         </div>
       )}
 
+      <ConfirmDialog
+        open={showPauseConfirm}
+        onClose={() => setShowPauseConfirm(false)}
+        onConfirm={() => { setShowPauseConfirm(false); handleTogglePause() }}
+        title={t('pauseAccount')}
+        description={t('confirmPause')}
+        confirmLabel={t('pauseAccount')}
+        loading={pausing}
+      />
+
       {/* Danger zone */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl border border-red-200 dark:border-red-900 shadow-sm p-6">
+      <div className="mt-6 bg-surface rounded-panel border border-danger/30 p-6">
         <div className="flex items-center gap-2 mb-2">
-          <ShieldOff className="w-5 h-5 text-red-600 dark:text-red-400" />
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('dangerZone')}</h2>
+          <ShieldOff className="w-5 h-5 text-danger" />
+          <h2 className="font-semibold text-ink">{t('dangerZone')}</h2>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <p className="text-sm text-ink-muted mb-4">
           {t('deleteAccountNotice')}
         </p>
         <Button variant="danger" size="sm" onClick={() => setShowDeleteAccount(true)}>

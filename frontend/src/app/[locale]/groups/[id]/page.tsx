@@ -11,6 +11,8 @@ import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
 import ItemCard from '@/components/items/ItemCard'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/contexts/ToastContext'
 
 export default function GroupDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -21,7 +23,14 @@ export default function GroupDetailPage() {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [busy, setBusy] = useState(false)
+  type PendingAction =
+    | { kind: 'leave' }
+    | { kind: 'delete' }
+    | { kind: 'adminDelete' }
+    | { kind: 'removeMember'; memberId: string; memberName: string }
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const t = useTranslations('Groups.Id')
+  const toast = useToast()
 
   const load = useCallback(() => {
     Promise.all([groupsService.get(id), groupsService.items(id)])
@@ -45,47 +54,58 @@ export default function GroupDetailPage() {
   }
 
   const handleLeave = async () => {
-    if (!confirm(t('confirmLeave'))) return
     setBusy(true)
     try {
       await groupsService.leave(id)
       router.push('/groups')
-    } finally {
+    } catch {
+      toast.error(t('error'))
       setBusy(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!confirm(t('confirmDelete'))) return
     setBusy(true)
     try {
       await groupsService.remove(id)
       router.push('/groups')
-    } finally {
+    } catch {
+      toast.error(t('error'))
       setBusy(false)
     }
   }
 
   const handleAdminDelete = async () => {
-    if (!confirm(t('confirmAdminDelete'))) return
     setBusy(true)
     try {
       await groupsService.adminDelete(id)
       router.push('/admin/groups')
+    } catch {
+      toast.error(t('error'))
+      setBusy(false)
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string) => {
+    setBusy(true)
+    try {
+      const updated = await groupsService.adminRemoveMember(id, memberId)
+      setGroup(updated)
+    } catch {
+      toast.error(t('error'))
     } finally {
       setBusy(false)
     }
   }
 
-  const handleRemoveMember = async (memberId: string, memberName: string) => {
-    if (!confirm(t('confirmRemoveMember', { name: memberName }))) return
-    setBusy(true)
-    try {
-      const updated = await groupsService.adminRemoveMember(id, memberId)
-      setGroup(updated)
-    } finally {
-      setBusy(false)
-    }
+  const confirmPendingAction = () => {
+    if (!pendingAction) return
+    const action = pendingAction
+    setPendingAction(null)
+    if (action.kind === 'leave') handleLeave()
+    else if (action.kind === 'delete') handleDelete()
+    else if (action.kind === 'adminDelete') handleAdminDelete()
+    else handleRemoveMember(action.memberId)
   }
 
   const handleToggleVouch = async (member: { id: string; vouched_by_me: boolean }) => {
@@ -97,27 +117,27 @@ export default function GroupDetailPage() {
 
   if (loading) return (
     <div className="flex justify-center items-center min-h-[50vh]">
-      <Spinner className="w-8 h-8 text-green-600" />
+      <Spinner className="w-8 h-8 text-primary" />
     </div>
   )
 
   if (!group) return (
-    <div className="max-w-2xl mx-auto px-4 py-16 text-center text-gray-500 dark:text-gray-400">
+    <div className="max-w-2xl mx-auto px-4 py-16 text-center text-ink-muted">
       {t('notFound')}
     </div>
   )
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 mb-8">
+      <div className="bg-surface rounded-panel border border-border p-6 mb-8">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-              <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <div className="w-12 h-12 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
+              <Users className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{group.name}</h1>
-              {group.description && <p className="text-sm text-gray-500 dark:text-gray-400">{group.description}</p>}
+              <h1 className="text-xl font-extrabold tracking-tight text-ink">{group.name}</h1>
+              {group.description && <p className="text-sm text-ink-muted">{group.description}</p>}
             </div>
           </div>
           {isMember && (
@@ -125,24 +145,24 @@ export default function GroupDetailPage() {
               size="sm"
               variant={isCreator ? 'danger' : 'outline'}
               loading={busy}
-              onClick={isCreator ? handleDelete : handleLeave}
+              onClick={() => setPendingAction(isCreator ? { kind: 'delete' } : { kind: 'leave' })}
             >
               {isCreator ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
               {isCreator ? t('deleteGroup') : t('leave')}
             </Button>
           )}
           {!isMember && user?.is_admin && (
-            <Button size="sm" variant="danger" loading={busy} onClick={handleAdminDelete}>
+            <Button size="sm" variant="danger" loading={busy} onClick={() => setPendingAction({ kind: 'adminDelete' })}>
               <Trash2 className="w-4 h-4" /> {t('deleteGroup')}
             </Button>
           )}
         </div>
 
-        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg mb-4">
-          <span className="text-xs text-gray-500 dark:text-gray-400 flex-1 truncate font-mono">{inviteUrl}</span>
+        <div className="flex items-center gap-2 p-3 bg-surface-2 rounded-control mb-4">
+          <span className="text-xs text-ink-muted flex-1 truncate font-mono">{inviteUrl}</span>
           <button
             onClick={copyInvite}
-            className="flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 flex-shrink-0"
+            className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover flex-shrink-0"
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? t('copied') : t('copyInvite')}
@@ -150,18 +170,18 @@ export default function GroupDetailPage() {
         </div>
 
         <div>
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+          <p className="text-xs font-medium text-ink-muted mb-2">
             {t('memberCount', { count: group.member_count })}
           </p>
           <div className="flex flex-wrap gap-2">
             {group.members.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-full pl-2.5 pr-1 py-1"
+                className="flex items-center gap-1 bg-surface-2 rounded-full pl-2.5 pr-1 py-1"
               >
                 <Link
                   href={`/users/${m.id}`}
-                  className="text-xs text-gray-700 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+                  className="text-xs text-ink-muted hover:text-primary transition-colors"
                 >
                   {m.name}
                 </Link>
@@ -169,22 +189,24 @@ export default function GroupDetailPage() {
                   <button
                     onClick={() => handleToggleVouch(m)}
                     title={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
+                    aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
                     className={`flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[10px] transition-colors ${
                       m.vouched_by_me
-                        ? 'text-green-700 dark:text-green-400'
-                        : 'text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400'
+                        ? 'text-primary'
+                        : 'text-ink-subtle hover:text-primary'
                     }`}
                   >
-                    <ShieldCheck className={`w-3 h-3 ${m.vouched_by_me ? 'fill-green-100 dark:fill-green-900' : ''}`} />
+                    <ShieldCheck className={`w-3 h-3 ${m.vouched_by_me ? 'fill-primary-subtle' : ''}`} />
                     {m.vouch_count > 0 && m.vouch_count}
                   </button>
                 )}
                 {user?.is_admin && m.id !== group.created_by && (
                   <button
-                    onClick={() => handleRemoveMember(m.id, m.name)}
+                    onClick={() => setPendingAction({ kind: 'removeMember', memberId: m.id, memberName: m.name })}
                     disabled={busy}
                     title={t('removeFromGroup')}
-                    className="p-0.5 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                    aria-label={t('removeFromGroup')}
+                    className="p-0.5 rounded-full text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -195,7 +217,7 @@ export default function GroupDetailPage() {
         </div>
       </div>
 
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('groupItems')}</h2>
+      <h2 className="text-lg font-semibold text-ink mb-4">{t('groupItems')}</h2>
       {items.length === 0 ? (
         <EmptyState
           icon={Package}
@@ -209,6 +231,25 @@ export default function GroupDetailPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        onConfirm={confirmPendingAction}
+        title={
+          pendingAction?.kind === 'leave' ? t('leave')
+            : pendingAction?.kind === 'removeMember' ? t('removeFromGroup')
+            : t('deleteGroup')
+        }
+        description={
+          pendingAction?.kind === 'leave' ? t('confirmLeave')
+            : pendingAction?.kind === 'delete' ? t('confirmDelete')
+            : pendingAction?.kind === 'adminDelete' ? t('confirmAdminDelete')
+            : pendingAction?.kind === 'removeMember' ? t('confirmRemoveMember', { name: pendingAction.memberName })
+            : ''
+        }
+        loading={busy}
+      />
     </div>
   )
 }

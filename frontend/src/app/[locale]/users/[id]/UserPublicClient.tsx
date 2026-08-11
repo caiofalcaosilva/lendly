@@ -17,6 +17,8 @@ import BusinessBadge from '@/components/ui/BusinessBadge'
 import ReputationBadges from '@/components/ui/ReputationBadges'
 import ReportModal from '@/components/reports/ReportModal'
 import Avatar from '@/components/ui/Avatar'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/contexts/ToastContext'
 
 export default function UserPublicClient() {
   const { id } = useParams<{ id: string }>()
@@ -27,10 +29,12 @@ export default function UserPublicClient() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [showReport, setShowReport] = useState(false)
-  const [reportSent, setReportSent] = useState(false)
   const [togglingFavorite, setTogglingFavorite] = useState(false)
+  const [deleteReviewId, setDeleteReviewId] = useState<string | null>(null)
+  const [deletingReview, setDeletingReview] = useState(false)
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Users.Id')
+  const toast = useToast()
 
   useEffect(() => {
     Promise.all([
@@ -49,18 +53,20 @@ export default function UserPublicClient() {
       .finally(() => setLoading(false))
   }, [id])
 
-  useEffect(() => {
-    if (!reportSent) return
-    const timer = setTimeout(() => setReportSent(false), 3000)
-    return () => clearTimeout(timer)
-  }, [reportSent])
-
-  const handleDeleteReview = async (reviewId: string) => {
-    if (!confirm(t('confirmDeleteReview'))) return
-    await reviewsService.remove(reviewId)
-    setReviews((prev) => prev.filter((r) => r.id !== reviewId))
-    const updated = await usersService.getPublic(id)
-    setUser(updated)
+  const handleDeleteReview = async () => {
+    if (!deleteReviewId) return
+    setDeletingReview(true)
+    try {
+      await reviewsService.remove(deleteReviewId)
+      setReviews((prev) => prev.filter((r) => r.id !== deleteReviewId))
+      const updated = await usersService.getPublic(id)
+      setUser(updated)
+      setDeleteReviewId(null)
+    } catch {
+      toast.error(t('errorDeletingReview'))
+    } finally {
+      setDeletingReview(false)
+    }
   }
 
   const toggleFavorite = async () => {
@@ -79,7 +85,7 @@ export default function UserPublicClient() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <Spinner className="w-8 h-8 text-green-600" />
+        <Spinner className="w-8 h-8 text-primary" />
       </div>
     )
   }
@@ -87,9 +93,9 @@ export default function UserPublicClient() {
   if (notFound || !user) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('notFound')}</h2>
-        <Link href="/items" className="text-green-600 dark:text-green-400 text-sm mt-3 inline-block">
+        <Package className="w-12 h-12 text-ink-subtle mx-auto mb-4" />
+        <h1 className="text-xl font-semibold text-ink-muted">{t('notFound')}</h1>
+        <Link href="/items" className="text-primary text-sm mt-3 inline-block">
           ← {t('backToItems')}
         </Link>
       </div>
@@ -102,39 +108,39 @@ export default function UserPublicClient() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <Link
         href="/items"
-        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-sm mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-ink-muted hover:text-ink text-sm mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> {t('backToItems')}
       </Link>
 
       {/* Profile header */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 mb-8">
+      <div className="bg-surface rounded-panel border border-border p-6 mb-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <Avatar name={user.name} avatarUrl={user.avatar_url} size="lg" />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{user.trade_name || user.name}</h1>
+              <h1 className="text-2xl font-bold text-ink">{user.trade_name || user.name}</h1>
               <BusinessBadge accountType={user.account_type} size="md" />
             </div>
             {user.account_type === 'business' && user.business_category && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{user.business_category}</p>
+              <p className="text-sm text-ink-muted mt-0.5">{user.business_category}</p>
             )}
 
             {location && (
-              <p className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm mt-1">
+              <p className="flex items-center gap-1.5 text-ink-muted text-sm mt-1">
                 <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                 {location}
               </p>
             )}
 
-            <p className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 text-xs mt-1">
+            <p className="flex items-center gap-1.5 text-ink-subtle text-xs mt-1">
               <Calendar className="w-3 h-3" />
               {t('memberSince', { date: formatDate(user.created_at, locale) })}
             </p>
 
             {user.bio && (
-              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">{user.bio}</p>
+              <p className="text-sm text-ink-muted mt-2 leading-relaxed">{user.bio}</p>
             )}
 
             <div className="mt-3">
@@ -151,7 +157,7 @@ export default function UserPublicClient() {
             </div>
 
             {user.account_type === 'business' && (user.business_hours || user.business_phone || user.website || user.instagram || user.whatsapp) && (
-              <div className="flex flex-col gap-1 mt-3 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex flex-col gap-1 mt-3 text-xs text-ink-muted">
                 {user.business_hours && (
                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{user.business_hours}</span>
                 )}
@@ -159,7 +165,7 @@ export default function UserPublicClient() {
                   <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{user.business_phone}</span>
                 )}
                 {user.website && isHttpUrl(user.website) && (
-                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors min-w-0">
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-primary transition-colors min-w-0">
                     <Globe className="w-3.5 h-3.5 flex-shrink-0" /><span className="break-all">{user.website}</span>
                   </a>
                 )}
@@ -168,7 +174,7 @@ export default function UserPublicClient() {
                     href={`https://instagram.com/${user.instagram.replace(/^@/, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                    className="flex items-center gap-1.5 hover:text-primary transition-colors"
                   >
                     <Instagram className="w-3.5 h-3.5" />{user.instagram}
                   </a>
@@ -178,7 +184,7 @@ export default function UserPublicClient() {
                     href={`https://wa.me/55${user.whatsapp.replace(/\D/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                    className="flex items-center gap-1.5 hover:text-primary transition-colors"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />{user.whatsapp}
                   </a>
@@ -187,14 +193,14 @@ export default function UserPublicClient() {
             )}
           </div>
 
-          <div className="flex flex-col items-center bg-yellow-50 dark:bg-yellow-900/20 rounded-xl px-6 py-4 flex-shrink-0">
+          <div className="flex flex-col items-center bg-yellow-50 dark:bg-yellow-900/20 rounded-panel px-6 py-4 flex-shrink-0">
             <div className="flex items-center gap-1.5 mb-1">
               <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <span className="text-2xl font-bold text-ink">
                 {user.average_rating.toFixed(1)}
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            <p className="text-xs text-ink-muted mb-2">
               {t('ratingCount', { count: user.rating_count })}
             </p>
             <ReliabilityBadge score={user.reliability_score} count={user.reliability_count} size="md" />
@@ -206,7 +212,7 @@ export default function UserPublicClient() {
                   className={`flex items-center gap-1 text-xs transition-colors disabled:opacity-50 ${
                     user.is_favorited
                       ? 'text-red-500 dark:text-red-400'
-                      : 'text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400'
+                      : 'text-ink-subtle hover:text-red-500 dark:hover:text-red-400'
                   }`}
                 >
                   <Heart className={`w-3.5 h-3.5 ${user.is_favorited ? 'fill-red-500 dark:fill-red-400' : ''}`} />
@@ -214,7 +220,7 @@ export default function UserPublicClient() {
                 </button>
                 <button
                   onClick={() => setShowReport(true)}
-                  className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                  className="flex items-center gap-1 text-xs text-ink-subtle hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 >
                   <Flag className="w-3 h-3" /> {t('report')}
                 </button>
@@ -227,15 +233,15 @@ export default function UserPublicClient() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Items */}
         <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h2 className="text-lg font-semibold text-ink mb-4">
             {t('availableItems')}
-            <span className="ml-2 text-sm font-normal text-gray-400 dark:text-gray-500">({items.length})</span>
+            <span className="ml-2 text-sm font-normal text-ink-subtle">({items.length})</span>
           </h2>
 
           {items.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-10 text-center">
-              <Package className="w-10 h-10 text-gray-200 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400 dark:text-gray-500 text-sm">{t('noItems')}</p>
+            <div className="bg-surface rounded-panel border border-border p-10 text-center">
+              <Package className="w-10 h-10 text-ink-subtle mx-auto mb-3" />
+              <p className="text-ink-subtle text-sm">{t('noItems')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -251,7 +257,7 @@ export default function UserPublicClient() {
                 .map((item) => (
                   <div key={item.id} className="relative">
                     {user.featured_item_ids.includes(item.id) && (
-                      <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-yellow-400 text-yellow-900 shadow-sm">
+                      <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-yellow-400 text-yellow-900">
                         <Star className="w-2.5 h-2.5 fill-yellow-900" /> {t('featured')}
                       </span>
                     )}
@@ -264,15 +270,15 @@ export default function UserPublicClient() {
 
         {/* Reviews */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h2 className="text-lg font-semibold text-ink mb-4">
             {t('reviewsReceived')}
-            <span className="ml-2 text-sm font-normal text-gray-400 dark:text-gray-500">({reviews.length})</span>
+            <span className="ml-2 text-sm font-normal text-ink-subtle">({reviews.length})</span>
           </h2>
 
           {reviews.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 text-center">
-              <Star className="w-8 h-8 text-gray-200 dark:text-gray-600 mx-auto mb-2" />
-              <p className="text-gray-400 dark:text-gray-500 text-sm">{t('noReviews')}</p>
+            <div className="bg-surface rounded-panel border border-border p-8 text-center">
+              <Star className="w-8 h-8 text-ink-subtle mx-auto mb-2" />
+              <p className="text-ink-subtle text-sm">{t('noReviews')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -280,7 +286,7 @@ export default function UserPublicClient() {
                 <ReviewCard
                   key={rev.id}
                   review={rev}
-                  onDelete={currentUser?.is_admin ? () => handleDeleteReview(rev.id) : undefined}
+                  onDelete={currentUser?.is_admin ? () => setDeleteReviewId(rev.id) : undefined}
                 />
               ))}
             </div>
@@ -293,15 +299,18 @@ export default function UserPublicClient() {
           reportedUserId={user.id}
           targetLabel={t('reportTargetLabel')}
           onClose={() => setShowReport(false)}
-          onSuccess={() => { setShowReport(false); setReportSent(true) }}
+          onSuccess={() => { setShowReport(false); toast.success(t('reportSent')) }}
         />
       )}
 
-      {reportSent && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50">
-          {t('reportSent')}
-        </div>
-      )}
+      <ConfirmDialog
+        open={deleteReviewId !== null}
+        onClose={() => setDeleteReviewId(null)}
+        onConfirm={handleDeleteReview}
+        title={t('confirmDeleteReviewTitle')}
+        description={t('confirmDeleteReview')}
+        loading={deletingReview}
+      />
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { platformSettingsService } from '@/services/platformSettings'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatDate } from '@/lib/utils'
 import Input from '@/components/ui/Input'
+import Textarea from '@/components/ui/Textarea'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 
@@ -78,25 +79,25 @@ export default function AdminSettingsPage() {
   }
 
   if (authLoading || !user?.is_admin) {
-    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-green-600" /></div>
+    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-primary" /></div>
   }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center gap-2 mb-1">
-        <SettingsIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
+        <SettingsIcon className="w-6 h-6 text-info" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
       </div>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
+      <p className="text-ink-muted text-sm mb-8">
         {t('subtitle')}
       </p>
 
       {loading || !settings ? (
-        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-green-600" /></div>
+        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-primary" /></div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
+        <div className="bg-surface rounded-panel border border-border p-6 space-y-5">
           {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
+            <div className="p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
               {error}
             </div>
           )}
@@ -113,35 +114,35 @@ export default function AdminSettingsPage() {
             />
           ))}
 
-          <div className="pt-2 border-t border-gray-100 dark:border-gray-700 space-y-3">
+          <div className="pt-2 border-t border-border space-y-3">
             <div className="flex items-center gap-2">
-              <Megaphone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('announcement')}</span>
+              <Megaphone className="w-4 h-4 text-info" />
+              <span className="text-sm font-medium text-ink-muted">{t('announcement')}</span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2">
+            <p className="text-xs text-ink-muted -mt-2">
               {t('announcementHint')}
             </p>
-            <textarea
+            <Textarea
               value={settings.announcement_message ?? ''}
               onChange={(e) => setSettings((prev) => (prev ? { ...prev, announcement_message: e.target.value.slice(0, 280) } : prev))}
               rows={2}
               maxLength={280}
               placeholder={t('announcementPlaceholder')}
-              className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-none"
+              className="resize-none"
             />
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-ink-muted cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.announcement_active}
                 onChange={(e) => setSettings((prev) => (prev ? { ...prev, announcement_active: e.target.checked } : prev))}
-                className="w-4 h-4 rounded accent-green-600"
+                className="w-4 h-4 rounded accent-primary"
               />
               {t('announcementActive')}
             </label>
           </div>
 
           {settings.updated_by_name && settings.updated_at && (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-xs text-ink-subtle">
               {t('lastUpdated', { name: settings.updated_by_name, date: formatDate(settings.updated_at, locale) })}
             </p>
           )}
@@ -151,7 +152,7 @@ export default function AdminSettingsPage() {
               {t('saveChanges')}
             </Button>
             {saved && (
-              <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
+              <span className="flex items-center gap-1.5 text-sm text-primary">
                 <CheckCircle2 className="w-4 h-4" /> {t('saved')}
               </span>
             )}

@@ -16,12 +16,12 @@ import Spinner from '@/components/ui/Spinner'
 
 function StatCard({ icon: Icon, label, value, valueClassName }: { icon: any; label: string; value: string | number; valueClassName?: string }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 mb-1">
+    <div className="bg-surface rounded-panel border border-border p-4">
+      <div className="flex items-center gap-1.5 text-ink-subtle mb-1">
         <Icon className="w-3.5 h-3.5" />
         <span className="text-xs">{label}</span>
       </div>
-      <div className={valueClassName ?? 'text-xl font-bold text-gray-900 dark:text-gray-100'}>{value}</div>
+      <div className={valueClassName ?? 'text-xl font-bold text-ink'}>{value}</div>
     </div>
   )
 }
@@ -53,7 +53,7 @@ export default function AdminDashboardPage() {
   useEffect(() => { load() }, [load])
 
   if (authLoading || !user?.is_admin) {
-    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-green-600" /></div>
+    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-primary" /></div>
   }
 
   const maxWeekly = data ? Math.max(1, ...data.signups_last_8_weeks.map((w) => w.count)) : 1
@@ -63,15 +63,15 @@ export default function AdminDashboardPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center gap-2 mb-1">
-        <LayoutDashboard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
+        <LayoutDashboard className="w-6 h-6 text-info" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
       </div>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
+      <p className="text-ink-muted text-sm mb-8">
         {t('subtitle')}
       </p>
 
       {loading || !data ? (
-        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-green-600" /></div>
+        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-primary" /></div>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -79,7 +79,7 @@ export default function AdminDashboardPage() {
             <StatCard icon={Package} label={t('activeItems')} value={data.total_items} />
             <StatCard icon={Clock} label={t('pendingLoans')} value={data.loans_pending} />
             <StatCard icon={PackageCheck} label={t('inProgress')} value={data.loans_in_progress} />
-            <StatCard icon={CheckCircle2} label={t('finished')} value={data.loans_finished} valueClassName="text-xl font-bold text-green-600 dark:text-green-400" />
+            <StatCard icon={CheckCircle2} label={t('finished')} value={data.loans_finished} valueClassName="text-xl font-bold text-primary" />
             <StatCard icon={XCircle} label={t('cancelledOrRefused')} value={data.loans_cancelled_or_refused} />
           </div>
 
@@ -87,41 +87,41 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link
               href="/admin/moderation"
-              className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-red-300 dark:hover:border-red-700 transition-colors"
+              className="flex items-center justify-between bg-surface rounded-panel border border-border p-4 hover:border-danger/40 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Flag className="w-4 h-4 text-red-500" />
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('pendingReports')}</span>
+                <Flag className="w-4 h-4 text-danger" />
+                <span className="text-sm font-medium text-ink">{t('pendingReports')}</span>
               </div>
-              <span className={`text-lg font-bold ${data.pending_reports > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}`}>
+              <span className={`text-lg font-bold ${data.pending_reports > 0 ? 'text-danger' : 'text-ink-subtle'}`}>
                 {data.pending_reports}
               </span>
             </Link>
             <Link
               href="/admin/verification"
-              className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
+              className="flex items-center justify-between bg-surface rounded-panel border border-border p-4 hover:border-accent/40 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-purple-500" />
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('pendingVerifications')}</span>
+                <ShieldCheck className="w-4 h-4 text-accent" />
+                <span className="text-sm font-medium text-ink">{t('pendingVerifications')}</span>
               </div>
-              <span className={`text-lg font-bold ${data.pending_verifications > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-gray-500'}`}>
+              <span className={`text-lg font-bold ${data.pending_verifications > 0 ? 'text-accent' : 'text-ink-subtle'}`}>
                 {data.pending_verifications}
               </span>
             </Link>
           </div>
 
           {/* Weekly signups */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-              <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" /> {t('weeklySignups')}
+          <div className="bg-surface rounded-panel border border-border p-5">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted mb-4">
+              <TrendingUp className="w-4 h-4 text-primary" /> {t('weeklySignups')}
             </div>
             <div className="flex items-end gap-2 h-24">
               {data.signups_last_8_weeks.map((w) => (
                 <div key={w.week_start} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">{w.count}</span>
+                  <span className="text-[10px] text-ink-subtle">{w.count}</span>
                   <div
-                    className="w-full bg-green-500 dark:bg-green-600 rounded-t-sm min-h-[2px]"
+                    className="w-full bg-primary rounded-t-sm min-h-[2px]"
                     style={{ height: `${(w.count / maxWeekly) * 100}%` }}
                     title={t('weekOf', { week: w.week_start, count: w.count })}
                   />
@@ -132,36 +132,36 @@ export default function AdminDashboardPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Top categories */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                <Tag className="w-4 h-4 text-gray-400 dark:text-gray-500" /> {t('topCategories')}
+            <div className="bg-surface rounded-panel border border-border p-5">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted mb-4">
+                <Tag className="w-4 h-4 text-ink-subtle" /> {t('topCategories')}
               </div>
               <div className="space-y-2.5">
                 {data.top_categories.map((c) => (
                   <div key={c.category} className="flex items-center gap-2 text-sm">
-                    <span className="w-28 flex-shrink-0 text-gray-700 dark:text-gray-300 truncate">{getCategoryLabel(categories, c.category)}</span>
-                    <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${(c.count / maxCategory) * 100}%` }} />
+                    <span className="w-28 flex-shrink-0 text-ink-muted truncate">{getCategoryLabel(categories, c.category)}</span>
+                    <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${(c.count / maxCategory) * 100}%` }} />
                     </div>
-                    <span className="w-6 text-right text-gray-400 dark:text-gray-500">{c.count}</span>
+                    <span className="w-6 text-right text-ink-subtle">{c.count}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Top cities */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" /> {t('topCities')}
+            <div className="bg-surface rounded-panel border border-border p-5">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted mb-4">
+                <MapPin className="w-4 h-4 text-ink-subtle" /> {t('topCities')}
               </div>
               <div className="space-y-2.5">
                 {data.top_cities.map((c) => (
                   <div key={c.city} className="flex items-center gap-2 text-sm">
-                    <span className="w-28 flex-shrink-0 text-gray-700 dark:text-gray-300 truncate">{c.city}</span>
-                    <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${(c.count / maxCity) * 100}%` }} />
+                    <span className="w-28 flex-shrink-0 text-ink-muted truncate">{c.city}</span>
+                    <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${(c.count / maxCity) * 100}%` }} />
                     </div>
-                    <span className="w-6 text-right text-gray-400 dark:text-gray-500">{c.count}</span>
+                    <span className="w-6 text-right text-ink-subtle">{c.count}</span>
                   </div>
                 ))}
               </div>

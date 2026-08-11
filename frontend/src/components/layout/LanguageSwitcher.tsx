@@ -18,7 +18,7 @@ function LanguageSwitcherButton({ compact }: { compact?: boolean }) {
   return (
     <button
       onClick={switchLocale}
-      className={`font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors ${compact ? 'p-2 text-sm' : 'text-xs w-7 text-center'}`}
+      className={`font-semibold text-ink-muted hover:text-ink transition-colors ${compact ? 'p-2 text-sm' : 'text-xs w-7 text-center'}`}
       title={nextLocale === 'en' ? 'Switch to English' : 'Mudar para português'}
     >
       {nextLocale.toUpperCase()}

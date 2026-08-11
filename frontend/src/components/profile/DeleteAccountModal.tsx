@@ -35,9 +35,9 @@ export default function DeleteAccountModal({ onClose, onSuccess }: Props) {
   return (
     <Modal open onClose={onClose} title={t('title')}>
       <div className="space-y-4">
-        <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-          <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-700 dark:text-red-300">
+        <div className="flex items-start gap-2 bg-danger-subtle border border-danger/30 rounded-control p-3">
+          <AlertTriangle className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-danger">
             {t('warning')}
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function DeleteAccountModal({ onClose, onSuccess }: Props) {
           required
         />
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="danger" loading={loading} disabled={!password} onClick={submit} className="flex-1">

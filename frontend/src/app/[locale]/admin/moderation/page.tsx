@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
+import { useToast } from '@/contexts/ToastContext'
 
 type Tab = 'pending' | 'resolved'
 
@@ -25,6 +26,7 @@ export default function ModerationPage() {
   const tReportReason = useTranslations('Common.ReportModal')
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Admin.Moderation')
+  const toast = useToast()
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !user?.is_admin)) {
@@ -45,13 +47,15 @@ export default function ModerationPage() {
     try {
       await action(id)
       await load()
+    } catch {
+      toast.error(t('error'))
     } finally {
       setBusy(null)
     }
   }
 
   if (authLoading || !user?.is_admin) {
-    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-green-600" /></div>
+    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-primary" /></div>
   }
 
   const pending = reports.filter((r) => r.status === 'pending')
@@ -61,14 +65,14 @@ export default function ModerationPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center gap-2 mb-1">
-        <ShieldAlert className="w-6 h-6 text-red-600 dark:text-red-400" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
+        <ShieldAlert className="w-6 h-6 text-danger" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
       </div>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
+      <p className="text-ink-muted text-sm mb-8">
         {t('subtitle')}
       </p>
 
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+      <div className="border-b border-border mb-6">
         <div className="flex gap-0 -mb-px">
           {([
             { id: 'pending' as const, label: t('pending'), count: pending.length },
@@ -79,13 +83,13 @@ export default function ModerationPage() {
               onClick={() => setTab(id)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                 tab === id
-                  ? 'border-green-600 dark:border-green-400 text-green-600 dark:text-green-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-ink-muted hover:text-ink'
               }`}
             >
               {label}
               {count > 0 && (
-                <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="bg-surface-2 text-ink-muted text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {count}
                 </span>
               )}
@@ -95,7 +99,7 @@ export default function ModerationPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-green-600" /></div>
+        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-primary" /></div>
       ) : visible.length === 0 ? (
         <EmptyState
           icon={ShieldAlert}
@@ -105,16 +109,16 @@ export default function ModerationPage() {
       ) : (
         <div className="space-y-3">
           {visible.map((report) => (
-            <div key={report.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <div key={report.id} className="bg-surface rounded-panel border border-border p-5">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  {report.item_id ? <Package className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" /> : <UserIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />}
+                  {report.item_id ? <Package className="w-4 h-4 text-ink-subtle flex-shrink-0" /> : <UserIcon className="w-4 h-4 text-ink-subtle flex-shrink-0" />}
                   {report.item_id ? (
-                    <Link href={`/items/${report.item_id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate">
+                    <Link href={`/items/${report.item_id}`} className="font-medium text-ink hover:text-primary transition-colors truncate">
                       {report.item_title}
                     </Link>
                   ) : (
-                    <Link href={`/users/${report.reported_user_id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate">
+                    <Link href={`/users/${report.reported_user_id}`} className="font-medium text-ink hover:text-primary transition-colors truncate">
                       {report.reported_user_name}
                     </Link>
                   )}
@@ -124,15 +128,15 @@ export default function ModerationPage() {
                 </Badge>
               </div>
 
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+              <p className="text-sm text-ink-muted mb-1">
                 <span className="font-medium">{t('reason')}</span> {tReportReason(`reasons.${report.reason}`)}
               </p>
               {report.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/40 rounded-lg p-3 mb-2">
-                  "{report.description}"
+                <p className="text-sm text-ink-muted bg-surface-2 rounded-control p-3 mb-2">
+                  &ldquo;{report.description}&rdquo;
                 </p>
               )}
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-xs text-ink-subtle">
                 {t('reportedBy', { name: report.reporter_name, date: formatDate(report.created_at, locale) })}
                 {report.reviewed_by_name && report.reviewed_at && (
                   <> · {t('reviewedBy', { name: report.reviewed_by_name, date: formatDate(report.reviewed_at, locale) })}</>

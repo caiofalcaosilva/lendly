@@ -40,7 +40,7 @@ export default function ExtensionModal({ requestId, currentExpectedReturnDate, o
   return (
     <Modal open onClose={onClose} title={t('title')}>
       <div className="space-y-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-ink-muted">
           {t('currentReturnDate')} <strong>{formatDate(currentExpectedReturnDate, locale)}</strong>
         </p>
 
@@ -53,7 +53,7 @@ export default function ExtensionModal({ requestId, currentExpectedReturnDate, o
           required
         />
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button onClick={submit} loading={loading} disabled={!newDate} className="flex-1">

@@ -5,14 +5,16 @@ import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Leaf, MapPin, User as UserIcon, Store } from 'lucide-react'
+import { MapPin, User as UserIcon, Store } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/contexts/AuthContext'
 import { isValidCnpj, formatCnpj, lookupCnpj } from '@/lib/cnpj'
 import Input from '@/components/ui/Input'
+import PasswordInput from '@/components/ui/PasswordInput'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import AddressFields from '@/components/ui/AddressFields'
+import { LogoMark } from '@/components/ui/Logo'
 
 const opt = z.string().optional().or(z.literal(''))
 
@@ -112,7 +114,7 @@ export default function RegisterPage() {
   if (authLoading || isAuthenticated) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
-        <Spinner className="w-8 h-8 text-green-600" />
+        <Spinner className="w-8 h-8 text-primary" />
       </div>
     )
   }
@@ -121,11 +123,9 @@ export default function RegisterPage() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-xl mb-4">
-            <Leaf className="w-6 h-6 text-green-600 dark:text-green-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{t('subtitle')}</p>
+          <LogoMark className="w-12 h-12 mb-4" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
+          <p className="text-ink-muted mt-1 text-sm">{t('subtitle')}</p>
         </div>
 
         {/* Step indicator */}
@@ -133,21 +133,21 @@ export default function RegisterPage() {
           {[1, 2].map((s) => (
             <div key={s} className="flex items-center gap-2 flex-1">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                step >= s ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                step >= s ? 'bg-primary text-primary-on' : 'bg-surface-2 text-ink-subtle'
               }`}>
                 {s}
               </div>
-              <span className={`text-xs flex-1 ${step >= s ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>
+              <span className={`text-xs flex-1 ${step >= s ? 'text-primary font-medium' : 'text-ink-subtle'}`}>
                 {s === 1 ? t('step1Label') : t('step2Label')}
               </span>
-              {s < 2 && <div className={`h-px flex-1 ${step > s ? 'bg-green-300 dark:bg-green-700' : 'bg-gray-200 dark:bg-gray-700'}`} />}
+              {s < 2 && <div className={`h-px flex-1 ${step > s ? 'bg-primary/40' : 'bg-surface-2'}`} />}
             </div>
           ))}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
+        <div className="bg-surface rounded-panel shadow-elevated border border-border p-8">
           {error && (
-            <div className="mb-5 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
+            <div className="mb-5 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
               {error}
             </div>
           )}
@@ -156,7 +156,7 @@ export default function RegisterPage() {
             {/* Step 1: personal info */}
             <div className={step === 1 ? 'block space-y-4' : 'hidden'}>
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1.5">{t('accountType')}</label>
+                <label className="text-sm font-medium text-ink-muted block mb-1.5">{t('accountType')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {([
                     { value: 'individual' as const, label: t('individual'), icon: UserIcon },
@@ -166,10 +166,10 @@ export default function RegisterPage() {
                       key={value}
                       type="button"
                       onClick={() => setValue('account_type', value)}
-                      className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                      className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-control border text-sm font-medium transition-colors ${
                         accountType === value
-                          ? 'bg-green-600 text-white border-green-600'
-                          : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-600'
+                          ? 'bg-primary text-primary-on border-primary'
+                          : 'bg-surface text-ink-muted border-border hover:border-primary/50'
                       }`}
                     >
                       <Icon className="w-4 h-4" /> {label}
@@ -224,9 +224,8 @@ export default function RegisterPage() {
                 placeholder="seu@email.com"
                 required
               />
-              <Input
+              <PasswordInput
                 label={t('passwordLabel')}
-                type="password"
                 autoComplete="new-password"
                 {...register('password')}
                 error={errors.password?.message}
@@ -248,10 +247,10 @@ export default function RegisterPage() {
             {/* Step 2: address */}
             <div className={step === 2 ? 'block space-y-5' : 'hidden'}>
               <div className="flex items-center gap-2 mb-1">
-                <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <MapPin className="w-4 h-4 text-ink-subtle" />
+                <p className="text-sm text-ink-muted">
                   {t('addressIntro')}
-                  <span className="text-gray-400 dark:text-gray-500"> {t('addressPrivacy')}</span>
+                  <span className="text-ink-subtle"> {t('addressPrivacy')}</span>
                 </p>
               </div>
 
@@ -279,9 +278,9 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+        <p className="text-center text-sm text-ink-muted mt-6">
           {t('haveAccount')}{' '}
-          <Link href="/login" className="text-green-600 dark:text-green-400 font-medium hover:text-green-700 dark:hover:text-green-300">
+          <Link href="/login" className="text-primary font-medium hover:text-primary-hover">
             {t('login')}
           </Link>
         </p>

@@ -7,8 +7,20 @@ import { useTranslations } from 'next-intl'
 import { GroupSummary } from '@/types'
 import { groupsService } from '@/services/groups'
 import Button from '@/components/ui/Button'
-import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
+import Skeleton from '@/components/ui/Skeleton'
+
+function SkeletonRow() {
+  return (
+    <div className="flex items-center justify-between bg-surface rounded-panel border border-border p-4">
+      <div className="flex items-center gap-3 min-w-0 mr-3">
+        <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <Skeleton className="h-3 w-16 flex-shrink-0" />
+    </div>
+  )
+}
 
 export default function GroupsPage() {
   const router = useRouter()
@@ -24,8 +36,8 @@ export default function GroupsPage() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
+          <p className="text-ink-muted text-sm mt-1">
             {t('subtitle')}
           </p>
         </div>
@@ -37,7 +49,9 @@ export default function GroupsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-green-600" /></div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
+        </div>
       ) : groups.length === 0 ? (
         <EmptyState
           icon={Users}
@@ -51,15 +65,15 @@ export default function GroupsPage() {
             <Link
               key={group.id}
               href={`/groups/${group.id}`}
-              className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-green-300 dark:hover:border-green-700 transition-colors"
+              className="flex items-center justify-between bg-surface rounded-panel border border-border p-4 hover:border-primary/50 transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0 mr-3">
-                <div className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                  <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <div className="w-10 h-10 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
+                  <Users className="w-5 h-5 text-primary" />
                 </div>
-                <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{group.name}</span>
+                <span className="font-medium text-ink truncate">{group.name}</span>
               </div>
-              <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+              <span className="text-xs text-ink-subtle flex-shrink-0">
                 {t('memberCount', { count: group.member_count })}
               </span>
             </Link>

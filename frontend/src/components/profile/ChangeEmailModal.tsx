@@ -36,7 +36,7 @@ export default function ChangeEmailModal({ onClose, onSuccess }: Props) {
   return (
     <Modal open onClose={onClose} title={t('title')}>
       <div className="space-y-4">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-ink-muted">
           {t('notice')}
         </p>
 
@@ -57,7 +57,7 @@ export default function ChangeEmailModal({ onClose, onSuccess }: Props) {
           required
         />
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button loading={loading} disabled={!newEmail || !password} onClick={submit} className="flex-1">

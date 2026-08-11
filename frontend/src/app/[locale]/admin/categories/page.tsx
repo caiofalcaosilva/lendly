@@ -10,6 +10,7 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Spinner from '@/components/ui/Spinner'
+import { useToast } from '@/contexts/ToastContext'
 
 function slugify(label: string): string {
   return label
@@ -31,6 +32,7 @@ export default function AdminCategoriesPage() {
   const [subLabels, setSubLabels] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState<string | null>(null)
   const t = useTranslations('Admin.Categories')
+  const toast = useToast()
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !user?.is_admin)) {
@@ -64,6 +66,8 @@ export default function AdminCategoriesPage() {
     try {
       const updated = await categoriesService.admin.update(key, { is_active: !isActive })
       setCategories((prev) => prev.map((c) => (c.key === key ? updated : c)))
+    } catch {
+      toast.error(t('errorToggling'))
     } finally {
       setBusy(null)
     }
@@ -71,8 +75,12 @@ export default function AdminCategoriesPage() {
 
   const renameCategory = async (key: string, label: string) => {
     if (!label.trim()) return
-    const updated = await categoriesService.admin.update(key, { label: label.trim() })
-    setCategories((prev) => prev.map((c) => (c.key === key ? updated : c)))
+    try {
+      const updated = await categoriesService.admin.update(key, { label: label.trim() })
+      setCategories((prev) => prev.map((c) => (c.key === key ? updated : c)))
+    } catch {
+      toast.error(t('errorRenaming'))
+    }
   }
 
   const createSubcategory = async (categoryKey: string) => {
@@ -96,6 +104,8 @@ export default function AdminCategoriesPage() {
     try {
       const updated = await categoriesService.admin.updateSubcategory(categoryKey, subKey, { is_active: !isActive })
       setCategories((prev) => prev.map((c) => (c.key === categoryKey ? updated : c)))
+    } catch {
+      toast.error(t('errorToggling'))
     } finally {
       setBusy(null)
     }
@@ -103,31 +113,35 @@ export default function AdminCategoriesPage() {
 
   const renameSubcategory = async (categoryKey: string, subKey: string, label: string) => {
     if (!label.trim()) return
-    const updated = await categoriesService.admin.updateSubcategory(categoryKey, subKey, { label: label.trim() })
-    setCategories((prev) => prev.map((c) => (c.key === categoryKey ? updated : c)))
+    try {
+      const updated = await categoriesService.admin.updateSubcategory(categoryKey, subKey, { label: label.trim() })
+      setCategories((prev) => prev.map((c) => (c.key === categoryKey ? updated : c)))
+    } catch {
+      toast.error(t('errorRenaming'))
+    }
   }
 
   if (authLoading || !user?.is_admin) {
-    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-green-600" /></div>
+    return <div className="flex justify-center items-center min-h-[50vh]"><Spinner className="w-8 h-8 text-primary" /></div>
   }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center gap-2 mb-1">
-        <Tags className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
+        <Tags className="w-6 h-6 text-info" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
       </div>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+      <p className="text-ink-muted text-sm mb-6">
         {t('subtitle')}
       </p>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm">
+        <div className="mb-4 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
           {error}
         </div>
       )}
 
-      <div className="flex items-end gap-2 mb-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <div className="flex items-end gap-2 mb-6 bg-surface rounded-panel border border-border p-4">
         <div className="flex-1">
           <Input
             label={t('newCategory')}
@@ -143,16 +157,16 @@ export default function AdminCategoriesPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-green-600" /></div>
+        <div className="flex justify-center py-12"><Spinner className="w-8 h-8 text-primary" /></div>
       ) : (
         <div className="space-y-3">
           {categories.map((c) => (
-            <div key={c.key} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+            <div key={c.key} className="bg-surface rounded-panel border border-border p-4">
               <div className="flex items-center gap-2">
                 <input
                   defaultValue={c.label}
                   onBlur={(e) => e.target.value !== c.label && renameCategory(c.key, e.target.value)}
-                  className="flex-1 min-w-0 font-medium text-gray-900 dark:text-gray-100 bg-transparent border border-transparent hover:border-gray-200 dark:hover:border-gray-600 focus:border-green-500 rounded-md px-2 py-1 text-sm focus:outline-none transition-colors"
+                  className="flex-1 min-w-0 font-medium text-ink bg-transparent border border-transparent hover:border-border-strong focus:border-primary rounded-md px-2 py-1 text-sm focus:outline-none transition-colors"
                 />
                 {!c.is_active && <Badge variant="red">{t('inactive')}</Badge>}
                 <Button
@@ -165,14 +179,14 @@ export default function AdminCategoriesPage() {
                 </Button>
               </div>
 
-              <div className="mt-3 ml-2 pl-3 border-l-2 border-gray-100 dark:border-gray-700 space-y-2">
+              <div className="mt-3 ml-2 pl-3 border-l-2 border-border space-y-2">
                 {c.subcategories.map((s) => (
                   <div key={s.key} className="flex items-center gap-2">
-                    <CornerDownRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+                    <CornerDownRight className="w-3.5 h-3.5 text-ink-subtle flex-shrink-0" />
                     <input
                       defaultValue={s.label}
                       onBlur={(e) => e.target.value !== s.label && renameSubcategory(c.key, s.key, e.target.value)}
-                      className="flex-1 min-w-0 text-sm text-gray-700 dark:text-gray-300 bg-transparent border border-transparent hover:border-gray-200 dark:hover:border-gray-600 focus:border-green-500 rounded-md px-2 py-1 focus:outline-none transition-colors"
+                      className="flex-1 min-w-0 text-sm text-ink-muted bg-transparent border border-transparent hover:border-border-strong focus:border-primary rounded-md px-2 py-1 focus:outline-none transition-colors"
                     />
                     {!s.is_active && <Badge variant="red">{t('inactive')}</Badge>}
                     <Button
@@ -187,13 +201,13 @@ export default function AdminCategoriesPage() {
                 ))}
 
                 <div className="flex items-center gap-2">
-                  <CornerDownRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+                  <CornerDownRight className="w-3.5 h-3.5 text-ink-subtle flex-shrink-0" />
                   <input
                     value={subLabels[c.key] ?? ''}
                     onChange={(e) => setSubLabels((prev) => ({ ...prev, [c.key]: e.target.value }))}
                     onKeyDown={(e) => e.key === 'Enter' && createSubcategory(c.key)}
                     placeholder={t('newSubcategoryPlaceholder')}
-                    className="flex-1 min-w-0 text-sm bg-transparent border border-dashed border-gray-200 dark:border-gray-600 rounded-md px-2 py-1 focus:outline-none focus:border-green-500 transition-colors"
+                    className="flex-1 min-w-0 text-sm bg-transparent border border-dashed border-border rounded-md px-2 py-1 focus:outline-none focus:border-primary transition-colors"
                   />
                   <Button
                     size="sm"
@@ -201,6 +215,7 @@ export default function AdminCategoriesPage() {
                     loading={busy === `${c.key}:new`}
                     onClick={() => createSubcategory(c.key)}
                     disabled={!subLabels[c.key]?.trim()}
+                    aria-label={t('addSubcategory')}
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </Button>

@@ -6,12 +6,12 @@ export default async function NewItemPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
+        <p className="text-ink-muted text-sm mt-1">
           {t('subtitle')}
         </p>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
+      <div className="bg-surface rounded-panel border border-border p-8">
         <ItemForm />
       </div>
     </div>

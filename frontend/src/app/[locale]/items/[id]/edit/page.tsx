@@ -19,12 +19,12 @@ export default function EditItemPage() {
 
   if (loading) return (
     <div className="flex justify-center items-center min-h-[50vh]">
-      <Spinner className="w-8 h-8 text-green-600" />
+      <Spinner className="w-8 h-8 text-primary" />
     </div>
   )
 
   if (!item) return (
-    <div className="max-w-2xl mx-auto px-4 py-16 text-center text-gray-500 dark:text-gray-400">
+    <div className="max-w-2xl mx-auto px-4 py-16 text-center text-ink-muted">
       {t('notFound')}
     </div>
   )
@@ -32,10 +32,10 @@ export default function EditItemPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{item.title}</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
+        <p className="text-ink-muted text-sm mt-1">{item.title}</p>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
+      <div className="bg-surface rounded-panel border border-border p-8">
         <ItemForm item={item} />
       </div>
     </div>

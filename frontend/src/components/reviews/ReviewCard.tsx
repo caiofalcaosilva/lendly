@@ -11,7 +11,7 @@ function Stars({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((s) => (
         <Star
           key={s}
-          className={`w-3.5 h-3.5 ${s <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 dark:text-gray-600'}`}
+          className={`w-3.5 h-3.5 ${s <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-ink-subtle'}`}
         />
       ))}
     </div>
@@ -34,14 +34,14 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
   const t = useTranslations('Common.ReviewCard')
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 space-y-3">
+    <div className="bg-surface rounded-panel border border-border p-4 space-y-3">
       {/* Role badge + item */}
       <div className="flex items-start justify-between gap-2">
         <span
           className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
             isLender
-              ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-              : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+              ? 'bg-primary-subtle text-primary'
+              : 'bg-info-subtle text-info'
           }`}
         >
           {isLender ? (
@@ -51,12 +51,13 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
           )}
         </span>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(review.created_at, locale)}</span>
+          <span className="text-xs text-ink-subtle">{formatDate(review.created_at, locale)}</span>
           {onDelete && (
             <button
               onClick={onDelete}
               title={t('removeReview')}
-              className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              aria-label={t('removeReview')}
+              className="text-ink-subtle hover:text-danger transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -65,17 +66,17 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
       </div>
 
       {/* Item name */}
-      <div className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="text-xs text-ink-muted">
         {t('product')}{' '}
         {linkItem ? (
           <Link
             href={`/items/${review.item_id}`}
-            className="font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+            className="font-medium text-ink-muted hover:text-primary transition-colors"
           >
             {review.item_title}
           </Link>
         ) : (
-          <span className="font-medium text-gray-700 dark:text-gray-300">{review.item_title}</span>
+          <span className="font-medium text-ink-muted">{review.item_title}</span>
         )}
       </div>
 
@@ -84,16 +85,16 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
 
       {/* Comment */}
       {review.comment && (
-        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{review.comment}</p>
+        <p className="text-sm text-ink-muted leading-relaxed">{review.comment}</p>
       )}
 
       {/* Reviewer, or who it's about when viewing your own given reviews */}
       {perspective === 'given' ? (
-        <p className="text-xs text-gray-400 dark:text-gray-500">{t('to', { name: review.reviewed_name })}</p>
+        <p className="text-xs text-ink-subtle">{t('to', { name: review.reviewed_name })}</p>
       ) : (
         <div className="flex items-center gap-1.5">
           <Avatar name={review.reviewer_name} avatarUrl={review.reviewer_avatar_url} size="sm" />
-          <p className="text-xs text-gray-400 dark:text-gray-500">{review.reviewer_name}</p>
+          <p className="text-xs text-ink-subtle">{review.reviewer_name}</p>
         </div>
       )}
     </div>

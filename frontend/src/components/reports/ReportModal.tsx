@@ -5,6 +5,8 @@ import { reportsService } from '@/services/reports'
 import { ReportReason } from '@/types'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
+import Select from '@/components/ui/Select'
+import Textarea from '@/components/ui/Textarea'
 
 interface Props {
   itemId?: string
@@ -45,33 +47,23 @@ export default function ReportModal({ itemId, reportedUserId, targetLabel, onClo
   return (
     <Modal open onClose={onClose} title={t('title', { target: targetLabel })}>
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('reason')}</label>
-          <select
-            value={reason}
-            onChange={(e) => setReason(e.target.value as ReportReason)}
-            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">{t('select')}</option>
-            {REASONS.map((r) => (
-              <option key={r} value={r}>{t(`reasons.${r}`)}</option>
-            ))}
-          </select>
-        </div>
+        <Select label={t('reason')} value={reason} onChange={(e) => setReason(e.target.value as ReportReason)}>
+          <option value="">{t('select')}</option>
+          {REASONS.map((r) => (
+            <option key={r} value={r}>{t(`reasons.${r}`)}</option>
+          ))}
+        </Select>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('details')}</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            maxLength={500}
-            placeholder={t('detailsPlaceholder')}
-            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
+        <Textarea
+          label={t('details')}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+          maxLength={500}
+          placeholder={t('detailsPlaceholder')}
+        />
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3">
           <Button onClick={submit} loading={loading} disabled={!reason} variant="danger" className="flex-1">

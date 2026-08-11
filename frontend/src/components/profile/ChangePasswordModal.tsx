@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import { usersService } from '@/services/users'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import PasswordInput from '@/components/ui/PasswordInput'
 
 interface Props {
   onClose: () => void
@@ -36,28 +36,26 @@ export default function ChangePasswordModal({ onClose, onSuccess }: Props) {
   return (
     <Modal open onClose={onClose} title={t('title')}>
       <div className="space-y-4">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-ink-muted">
           {t('notice')}
         </p>
 
-        <Input
+        <PasswordInput
           label={t('currentPassword')}
-          type="password"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           placeholder="••••••••"
           required
         />
-        <Input
+        <PasswordInput
           label={t('newPassword')}
-          type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           placeholder={t('newPasswordPlaceholder')}
           required
         />
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button

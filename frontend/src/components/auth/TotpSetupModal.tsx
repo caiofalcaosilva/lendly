@@ -63,11 +63,11 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
     <Modal open onClose={onClose} title={t('title')}>
       {loading ? (
         <div className="flex justify-center py-8">
-          <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full motion-safe:animate-spin" />
         </div>
       ) : step === 'scan' ? (
         <div className="space-y-5">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-ink-muted">
             {t('scanInstructions')}
           </p>
 
@@ -75,17 +75,18 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
             {uri && <QRCodeSVG value={uri} size={200} level="M" />}
           </div>
 
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('orEnterManually')}</p>
+          <div className="bg-surface-2 rounded-control p-3">
+            <p className="text-xs text-ink-muted mb-1">{t('orEnterManually')}</p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs font-mono text-gray-700 dark:text-gray-300 break-all">{secret}</code>
+              <code className="flex-1 text-xs font-mono text-ink-muted break-all">{secret}</code>
               <button
                 onClick={copySecret}
-                className="flex-shrink-0 p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="flex-shrink-0 p-1.5 text-ink-subtle hover:text-ink-muted transition-colors"
                 title={t('copy')}
+                aria-label={t('copy')}
               >
                 {copied ? (
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
                 ) : (
                   <Copy className="w-4 h-4" />
                 )}
@@ -93,7 +94,7 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
             </div>
           </div>
 
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-ink-subtle">
             {t.rich('afterAdding', { strong: (chunks) => <strong>{chunks}</strong> })}
           </p>
 
@@ -105,8 +106,8 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
       ) : (
         <div className="space-y-5">
           <div className="flex flex-col items-center gap-2 py-2">
-            <ShieldCheck className="w-10 h-10 text-green-500" />
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+            <ShieldCheck className="w-10 h-10 text-primary" />
+            <p className="text-sm text-ink-muted text-center">
               {t('confirmInstructions')}
             </p>
           </div>
@@ -121,7 +122,7 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
             className="text-center text-2xl tracking-widest font-mono"
           />
 
-          {error && <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>}
+          {error && <p className="text-sm text-danger text-center">{error}</p>}
 
           <div className="flex gap-3">
             <Button onClick={confirm} loading={confirming} disabled={code.length < 6} className="flex-1">

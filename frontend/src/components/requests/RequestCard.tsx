@@ -60,14 +60,14 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+    <div className="bg-surface rounded-panel border border-border p-5">
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Package className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-            <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{req.item_title}</span>
+            <Package className="w-4 h-4 text-ink-subtle flex-shrink-0" />
+            <span className="font-medium text-ink truncate">{req.item_title}</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-ink-muted">
             {role === 'requester' ? t('owner', { name: req.owner_name }) : t('requester', { name: req.requester_name })}
           </p>
           {(() => {
@@ -75,7 +75,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
             return phone ? (
               <a
                 href={`tel:${phone}`}
-                className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 mt-0.5"
+                className="flex items-center gap-1 text-xs text-primary hover:text-primary-hover mt-0.5"
               >
                 <Phone className="w-3 h-3" /> {phone}
               </a>
@@ -94,7 +94,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-4">
+      <div className="flex items-center gap-4 text-xs text-ink-muted mb-4">
         <span className="flex items-center gap-1">
           <Calendar className="w-3 h-3" />
           {t('pickup', { date: formatDate(req.pickup_date, locale) })}
@@ -103,14 +103,14 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
       </div>
 
       {req.notes && (
-        <p className="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/40 rounded-lg p-3 mb-4">"{req.notes}"</p>
+        <p className="text-sm text-ink-muted bg-surface-2 rounded-control p-3 mb-4">&ldquo;{req.notes}&rdquo;</p>
       )}
 
       {req.extension_status === 'pending' && req.requested_extension_date && (
-        <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-          <CalendarClock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 bg-info-subtle border border-info/30 rounded-control p-3 mb-4">
+          <CalendarClock className="w-4 h-4 text-info flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
+            <p className="text-sm text-info">
               {role === 'owner'
                 ? t('extensionRequestedOwner', { date: formatDate(req.requested_extension_date, locale) })
                 : t('extensionRequestedRequester', { date: formatDate(req.requested_extension_date, locale) })}
@@ -150,13 +150,13 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
         {req.status === 'accepted' && (
           req.payment_status === 'processing' ? (
             role === 'owner' && (
-              <span className="text-xs text-amber-600 dark:text-amber-400 self-center">
+              <span className="text-xs text-warning self-center">
                 {t('waitingForPayment')}
               </span>
             )
           ) : myPickupConfirmedAt ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-green-600 dark:text-green-400 self-center">
+              <span className="text-xs text-primary self-center">
                 {role === 'owner' ? t('pickupConfirmedWaitingRequester') : t('pickupConfirmedWaitingOwner')}
               </span>
               {role === 'owner' && (
@@ -175,7 +175,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
         {req.status === 'in_progress' && (
           myReturnConfirmedAt ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-green-600 dark:text-green-400 self-center">
+              <span className="text-xs text-primary self-center">
                 {role === 'owner' ? t('returnConfirmedWaitingRequester') : t('returnConfirmedWaitingOwner')}
               </span>
               {role === 'owner' && (
@@ -211,14 +211,14 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
 
         <Link
           href={`/requests/${req.id}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-ink-muted hover:text-primary-hover hover:bg-primary-subtle rounded-control transition-colors"
         >
           <MessageCircle className="w-4 h-4" /> {t('viewConversation')}
         </Link>
       </div>
 
       {actionError && (
-        <p className="text-xs text-red-600 dark:text-red-400 mt-2">{actionError}</p>
+        <p className="text-xs text-danger mt-2">{actionError}</p>
       )}
 
       {showReview && (

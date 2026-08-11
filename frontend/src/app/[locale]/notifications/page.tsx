@@ -8,10 +8,23 @@ import { notificationsService } from '@/services/notifications'
 import { useNotifications } from '@/contexts/NotificationsContext'
 import { formatDate } from '@/lib/utils'
 import Button from '@/components/ui/Button'
-import Spinner from '@/components/ui/Spinner'
+import Select from '@/components/ui/Select'
 import EmptyState from '@/components/ui/EmptyState'
+import Skeleton from '@/components/ui/Skeleton'
 
 const LIMIT = 20
+
+function SkeletonRow() {
+  return (
+    <div className="flex items-start gap-3 p-4 bg-surface rounded-panel border border-border">
+      <Skeleton className="w-9 h-9 rounded-full flex-shrink-0" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-1/3" />
+      </div>
+    </div>
+  )
+}
 
 const TYPE_ICONS: Record<NotificationType, typeof Bell> = {
   request_status: ClipboardCheck,
@@ -116,8 +129,8 @@ export default function NotificationsPage() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
+          <p className="text-ink-muted text-sm mt-1">
             {t('subtitle')}
           </p>
         </div>
@@ -139,11 +152,11 @@ export default function NotificationsPage() {
         <label htmlFor="notif-type-filter" className="sr-only">
           {t('filterByType')}
         </label>
-        <select
+        <Select
           id="notif-type-filter"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value as NotificationType | '')}
-          className="text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="text-sm py-1.5 w-auto"
         >
           <option value="">{t('allTypes')}</option>
           {TYPE_KEYS.map((value) => (
@@ -151,12 +164,12 @@ export default function NotificationsPage() {
               {t(`types.${value}`)}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Spinner className="w-8 h-8 text-green-600" />
+        <div className="space-y-2.5">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
         </div>
       ) : notifications.length === 0 ? (
         <EmptyState
@@ -176,10 +189,10 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={n.id}
-                  className={`group relative flex items-start bg-white dark:bg-gray-800 rounded-xl border transition-colors ${
+                  className={`group relative flex items-start bg-surface rounded-panel border transition-colors ${
                     n.read_at
-                      ? 'border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600'
-                      : 'border-green-200 dark:border-green-800 bg-green-50/40 dark:bg-green-900/10 hover:border-green-300 dark:hover:border-green-700'
+                      ? 'border-border hover:border-border-strong'
+                      : 'border-primary/30 bg-primary-subtle hover:border-primary/50'
                   }`}
                 >
                   <Link
@@ -188,22 +201,22 @@ export default function NotificationsPage() {
                     className="flex items-start gap-3 p-4 flex-1 min-w-0"
                     aria-label={`${n.read_at ? '' : t('unreadPrefix')}${n.title}${n.body ? `, ${n.body}` : ''}, ${formatDate(n.created_at, locale)}`}
                   >
-                    <div className="w-9 h-9 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                    <div className="w-9 h-9 rounded-full bg-surface-2 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-4 h-4 text-ink-muted" aria-hidden="true" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{n.title}</p>
+                      <p className="text-sm font-medium text-ink">{n.title}</p>
                       {n.body && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{n.body}</p>
+                        <p className="text-sm text-ink-muted mt-0.5">{n.body}</p>
                       )}
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                      <p className="text-xs text-ink-subtle mt-1.5">
                         {formatDate(n.created_at, locale)}
                       </p>
                     </div>
                     {!n.read_at && (
                       <span
                         aria-hidden="true"
-                        className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 mt-1.5"
+                        className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5"
                       />
                     )}
                   </Link>
@@ -214,7 +227,7 @@ export default function NotificationsPage() {
                       handleDelete(n.id)
                     }}
                     aria-label={t('deleteNotification', { title: n.title })}
-                    className="absolute top-2.5 right-2.5 p-1.5 rounded-md text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="absolute top-2.5 right-2.5 p-1.5 rounded-control text-ink-subtle opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-danger hover:bg-danger-subtle transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
