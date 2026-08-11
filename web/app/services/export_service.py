@@ -5,7 +5,12 @@ from app.models.message import Message
 from app.models.report import Report
 from app.models.review import Review
 from app.models.user import User
-from app.services import group_service, item_service, loan_request_service
+from app.services import (
+    activity_service,
+    group_service,
+    item_service,
+    loan_request_service,
+)
 from app.services.auth_service import user_to_response
 from app.utils.time import utcnow
 
@@ -44,6 +49,14 @@ def export_user_data(current_user: User) -> dict[str, Any]:
     )
     filed_reports = Report.objects(reporter=current_user).order_by("-created_at")
     sent_messages = Message.objects(sender=current_user).order_by("created_at")
+
+    activity_service.record(
+        recipient=current_user,
+        event="account.data_exported",
+        actor=current_user,
+        resource_type="user",
+        resource_id=str(current_user.id),
+    )
 
     return {
         "exported_at": utcnow().isoformat(),

@@ -1,6 +1,7 @@
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestResponse
+from app.services import activity_service
 from app.utils import errors
 
 WEEKDAY_LABELS = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
@@ -74,3 +75,20 @@ def get_as_participant(request_id: str, current_user: User) -> LoanRequest:
 def assert_status(req: LoanRequest, expected: str) -> None:
     if req.status != expected:
         raise errors.conflict(f"Expected status '{expected}', got '{req.status}'")
+
+
+def record_activity(req: LoanRequest, event: str, actor: User | None = None) -> None:
+    """One Activity per participant (owner + requester) — shared by both
+    lifecycle.py and extensions.py, so every LoanRequest event (status or
+    extension) records the same way. Unlike _notify_status_change, which
+    only alerts whoever didn't just act, the timeline records the fact for
+    both sides, including the actor's own action."""
+    for recipient in (req.owner, req.requester):
+        activity_service.record(
+            recipient=recipient,
+            event=event,
+            actor=actor,
+            resource_type="loan_request",
+            resource_id=str(req.id),
+            resource_title=req.item.title,
+        )

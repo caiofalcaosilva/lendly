@@ -13,6 +13,7 @@ from app.services.loan_request_service._common import (
     assert_status,
     get_as_owner,
     get_as_requester,
+    record_activity,
     to_response,
 )
 from app.utils import errors
@@ -44,6 +45,7 @@ def request_extension(
         updated_at=utcnow(),
     )
     req.reload()
+    record_activity(req, "rental.extension_requested", actor=current_user)
     return to_response(req)
 
 
@@ -61,6 +63,7 @@ def approve_extension(
         updated_at=utcnow(),
     )
     req.reload()
+    record_activity(req, "rental.extension_approved", actor=current_user)
     background_tasks.add_task(
         notification_service.create_notification,
         req.requester,
@@ -81,6 +84,7 @@ def reject_extension(
 
     req.update(extension_status="rejected", updated_at=utcnow())
     req.reload()
+    record_activity(req, "rental.extension_rejected", actor=current_user)
     background_tasks.add_task(
         notification_service.create_notification,
         req.requester,

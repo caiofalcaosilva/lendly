@@ -15,7 +15,7 @@ from app.schemas.user import (
     PasswordChangeRequest,
     UserResponse,
 )
-from app.services import email_service, group_service
+from app.services import activity_service, email_service, group_service
 from app.services.auth_service._common import user_to_response
 from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils import errors
@@ -100,6 +100,13 @@ def pause_account(current_user: User) -> UserResponse:
     )
     current_user.update(is_paused=True, updated_at=utcnow())
     current_user.reload()
+    activity_service.record(
+        recipient=current_user,
+        event="account.paused",
+        actor=current_user,
+        resource_type="user",
+        resource_id=str(current_user.id),
+    )
     logger.info("account paused", extra={"user_id": str(current_user.id)})
     return user_to_response(current_user)
 
@@ -113,6 +120,13 @@ def resume_account(current_user: User) -> UserResponse:
     )
     current_user.update(is_paused=False, updated_at=utcnow())
     current_user.reload()
+    activity_service.record(
+        recipient=current_user,
+        event="account.resumed",
+        actor=current_user,
+        resource_type="user",
+        resource_id=str(current_user.id),
+    )
     logger.info("account resumed", extra={"user_id": str(current_user.id)})
     return user_to_response(current_user)
 
@@ -127,6 +141,13 @@ def change_password(data: PasswordChangeRequest, current_user: User) -> UserResp
         updated_at=utcnow(),
     )
     current_user.reload()
+    activity_service.record(
+        recipient=current_user,
+        event="account.password_changed",
+        actor=current_user,
+        resource_type="user",
+        resource_id=str(current_user.id),
+    )
     logger.info("password changed", extra={"user_id": str(current_user.id)})
     return user_to_response(current_user)
 
@@ -150,6 +171,14 @@ def change_email(
         updated_at=utcnow(),
     )
     current_user.reload()
+    activity_service.record(
+        recipient=current_user,
+        event="account.email_changed",
+        actor=current_user,
+        resource_type="user",
+        resource_id=str(current_user.id),
+        metadata={"new_email": current_user.email},
+    )
 
     background_tasks.add_task(
         email_service.send_verification_email,

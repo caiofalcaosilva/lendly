@@ -3,7 +3,7 @@ from datetime import timedelta
 from app.config import settings
 from app.models.user import User
 from app.schemas.payment import MercadoPagoConnectResponse, MercadoPagoConnectStatus
-from app.services import mercadopago_gateway
+from app.services import activity_service, mercadopago_gateway
 from app.services.mercadopago_gateway import MercadoPagoError
 from app.utils import errors
 from app.utils.crypto import encrypt
@@ -46,6 +46,13 @@ def handle_callback(
         mp_connected_at=utcnow(),
     )
     current_user.reload()
+    activity_service.record(
+        recipient=current_user,
+        event="account.mercadopago_connected",
+        actor=current_user,
+        resource_type="user",
+        resource_id=str(current_user.id),
+    )
     return get_connect_status(current_user)
 
 

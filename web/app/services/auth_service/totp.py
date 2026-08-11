@@ -1,7 +1,7 @@
 from app.models.user import User
 from app.schemas.auth import TotpSetupResponse
 from app.schemas.user import UserResponse
-from app.services import totp_service
+from app.services import activity_service, totp_service
 from app.services.auth_service._common import user_to_response
 from app.utils import errors
 
@@ -27,6 +27,13 @@ def enable_totp(code: str, current_user: User) -> UserResponse:
 
     current_user.update(totp_enabled=True)
     current_user.reload()
+    activity_service.record(
+        recipient=current_user,
+        event="account.2fa_enabled",
+        actor=current_user,
+        resource_type="user",
+        resource_id=str(current_user.id),
+    )
     return user_to_response(current_user)
 
 
@@ -38,4 +45,11 @@ def disable_totp(code: str, current_user: User) -> UserResponse:
 
     current_user.update(totp_enabled=False, totp_secret=None)
     current_user.reload()
+    activity_service.record(
+        recipient=current_user,
+        event="account.2fa_disabled",
+        actor=current_user,
+        resource_type="user",
+        resource_id=str(current_user.id),
+    )
     return user_to_response(current_user)

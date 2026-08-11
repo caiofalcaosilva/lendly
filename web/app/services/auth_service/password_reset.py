@@ -6,7 +6,7 @@ from fastapi import BackgroundTasks
 
 from app.models.user import User
 from app.schemas.auth import ForgotPasswordRequest, ResetPasswordRequest
-from app.services import email_service
+from app.services import activity_service, email_service
 from app.utils import errors
 from app.utils.security import hash_password
 from app.utils.time import utcnow
@@ -49,6 +49,12 @@ def reset_password(data: ResetPasswordRequest) -> dict:
         unset__password_reset_expires=1,
         refresh_sessions=[],
         updated_at=utcnow(),
+    )
+    activity_service.record(
+        recipient=user,
+        event="account.password_reset",
+        resource_type="user",
+        resource_id=str(user.id),
     )
     logger.info(
         "password reset via forgot-password flow", extra={"user_id": str(user.id)}

@@ -26,6 +26,8 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `rental.finished` | `lifecycle.py::_complete_return` | Owner + Requester |
 | `rental.return_forced` | `lifecycle.py::force_return` | Owner + Requester |
 | `rental.cancelled` | `lifecycle.py::cancel_request` | Owner + Requester |
+| `rental.extension_requested` | `loan_request_service/extensions.py::request_extension` | Owner + Requester |
+| `rental.extension_approved` / `rejected` | `extensions.py::approve_extension` / `reject_extension` | Owner + Requester |
 | `payment.held` / `payment.failed` | `payment_service.py::handle_webhook` | Payer + Payee |
 | `payment.released` | `payment_service.py::release_payment` | Payer + Payee |
 | `payment.refunded` | `payment_service.py::refund_payment` | Payer + Payee |
@@ -34,6 +36,13 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `verification.approved` / `rejected` | `verification_service.py::approve_submission` / `reject_submission` | Usuário verificado |
 | `group.vouch_received` | `group_service.py::vouch_for_member` | Membro vouched |
 | `account.new_login` | `auth_service/session.py::login_user` / `complete_2fa` (só dispositivo não confiável) | O próprio usuário |
+| `account.password_changed` | `auth_service/account.py::change_password` | O próprio usuário |
+| `account.email_changed` | `account.py::change_email` | O próprio usuário |
+| `account.paused` / `resumed` | `account.py::pause_account` / `resume_account` | O próprio usuário |
+| `account.2fa_enabled` / `2fa_disabled` | `auth_service/totp.py::enable_totp` / `disable_totp` | O próprio usuário |
+| `account.password_reset` | `auth_service/password_reset.py::reset_password` (fluxo "esqueci minha senha", ator=`None`) | O próprio usuário |
+| `account.mercadopago_connected` | `mp_connect_service.py::handle_callback` | O próprio usuário |
+| `account.data_exported` | `export_service.py::export_user_data` | O próprio usuário |
 | `admin.user_activated` / `deactivated` / `promoted` / `demoted` | `admin_user_service.py` | Usuário alvo |
 | `admin.item_activated` / `deactivated` | `admin_item_service.py` | Owner do item |
 | `admin.report_dismissed` / `actioned` | `report_service.py` | Reporter |
@@ -58,8 +67,9 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
   `totp_secret`), caminho de arquivo de verificação (`selfie_path`/`document_path`), CPF/CNPJ completo,
   ou payload cru de webhook. Os únicos campos hoje gravados em `metadata` são: `rating` (review),
   `gross_amount`/`platform_fee_amount` (payment — já são snapshots não sensíveis existentes em
-  `Payment`), `reason` (motivo de rejeição de verificação — mesmo texto já mostrado ao usuário) e
-  `ip_address`/`user_agent` (novo login — mesmos campos já expostos em `/users/me/login-history`).
+  `Payment`), `reason` (motivo de rejeição de verificação — mesmo texto já mostrado ao usuário),
+  `ip_address`/`user_agent` (novo login — mesmos campos já expostos em `/users/me/login-history`) e
+  `new_email` (troca de e-mail — o próprio usuário vendo o próprio novo e-mail, não é dado de terceiro).
 
 ## Índices
 

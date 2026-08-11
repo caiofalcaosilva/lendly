@@ -647,3 +647,203 @@ def test_new_login_on_untrusted_device_records_activity(client, register_user):
 
     events = [a["event"] for a in _activities(client, token)]
     assert "account.new_login" in events
+
+
+# --- Follow-up audit: extension requests + account security actions -----
+
+
+def test_loan_extension_lifecycle_records_activity_for_both_sides(
+    client, register_user
+):
+    _, owner_token = register_user("owner.extension@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("requester.extension@example.com")
+    req = _create_request(client, requester_token, item["id"])
+    client.patch(
+        f"/requests/{req['id']}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{req['id']}/start",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{req['id']}/start",
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+
+    resp = client.post(
+        f"/requests/{req['id']}/extend",
+        json={"new_expected_return_date": "2026-09-05T10:00:00"},
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+
+    owner_events = [a["event"] for a in _activities(client, owner_token)]
+    assert owner_events[0] == "rental.extension_requested"
+
+    resp = client.patch(
+        f"/requests/{req['id']}/extension/approve",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    requester_events = [a["event"] for a in _activities(client, requester_token)]
+    assert requester_events[0] == "rental.extension_approved"
+
+
+def test_loan_extension_rejected_records_activity(client, register_user):
+    _, owner_token = register_user("owner.extensionreject@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("requester.extensionreject@example.com")
+    req = _create_request(client, requester_token, item["id"])
+    client.patch(
+        f"/requests/{req['id']}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{req['id']}/start",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    client.patch(
+        f"/requests/{req['id']}/start",
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    client.post(
+        f"/requests/{req['id']}/extend",
+        json={"new_expected_return_date": "2026-09-05T10:00:00"},
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+
+    resp = client.patch(
+        f"/requests/{req['id']}/extension/reject",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    requester_events = [a["event"] for a in _activities(client, requester_token)]
+    assert requester_events[0] == "rental.extension_rejected"
+
+
+def test_change_password_records_activity(client, register_user):
+    _, token = register_user("changepw.activity@example.com")
+    resp = client.put(
+        "/users/me/password",
+        json={"current_password": "SenhaForte123!", "new_password": "OutraSenha456!"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    events = [a["event"] for a in _activities(client, token)]
+    assert events[0] == "account.password_changed"
+
+
+def test_change_email_records_activity(client, register_user):
+    _, token = register_user("changeemail.activity@example.com")
+    resp = client.put(
+        "/users/me/email",
+        json={
+            "new_email": "novo.email.activity@example.com",
+            "password": "SenhaForte123!",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    events = _activities(client, token)
+    assert events[0]["event"] == "account.email_changed"
+    assert events[0]["metadata"] == {"new_email": "novo.email.activity@example.com"}
+
+
+def test_pause_and_resume_account_record_activity(client, register_user):
+    _, token = register_user("pauseaccount.activity@example.com")
+    client.post("/users/me/pause", headers={"Authorization": f"Bearer {token}"})
+    client.post("/users/me/resume", headers={"Authorization": f"Bearer {token}"})
+
+    events = [a["event"] for a in _activities(client, token)]
+    assert events == ["account.resumed", "account.paused"]
+
+
+def test_enable_and_disable_2fa_record_activity(client, register_user):
+    _, token = register_user("totp.activity@example.com")
+    setup = client.post("/auth/2fa/setup", headers={"Authorization": f"Bearer {token}"})
+    assert setup.status_code == 200, setup.text
+    secret = setup.json()["secret"]
+
+    import pyotp
+
+    code = pyotp.TOTP(secret).now()
+    resp = client.post(
+        "/auth/2fa/enable",
+        json={"code": code},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    code = pyotp.TOTP(secret).now()
+    resp = client.post(
+        "/auth/2fa/disable",
+        json={"code": code},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    events = [a["event"] for a in _activities(client, token)]
+    assert events == ["account.2fa_disabled", "account.2fa_enabled"]
+
+
+def test_password_reset_records_activity(client, register_user):
+    email = "resetpw.activity@example.com"
+    user_id, token = register_user(email)
+    Activity.objects(recipient=user_id).delete()
+
+    forgot = client.post("/auth/forgot-password", json={"email": email})
+    assert forgot.status_code == 200, forgot.text
+    reset_token = User.objects(id=user_id).first().password_reset_token
+    assert reset_token
+
+    resp = client.post(
+        "/auth/reset-password",
+        json={"token": reset_token, "new_password": "NovaSenhaReset789!"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    activities = activity_service.list_activities(
+        _get_user(user_id), before_id=None, limit=10
+    )
+    assert activities[0].event == "account.password_reset"
+    assert activities[0].actor is None
+
+
+def test_mercadopago_connect_records_activity(client, register_user):
+    from app.services import mp_connect_service
+
+    user_id, _ = register_user("mpconnect.activity@example.com")
+    user = _get_user(user_id)
+    user.update(mp_oauth_state="state-token")
+    user.reload()
+
+    with patch.object(
+        mp_connect_service.mercadopago_gateway,
+        "exchange_oauth_code",
+        return_value={
+            "user_id": "MP-USER-1",
+            "access_token": "at",
+            "refresh_token": "rt",
+            "expires_in": 100,
+        },
+    ):
+        mp_connect_service.handle_callback("code", "state-token", user)
+
+    activities = activity_service.list_activities(user, before_id=None, limit=10)
+    assert activities[0].event == "account.mercadopago_connected"
+
+
+def test_export_data_records_activity(client, register_user):
+    user_id, token = register_user("exportdata.activity@example.com")
+
+    resp = client.get("/users/me/export", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200, resp.text
+
+    events = [a["event"] for a in _activities(client, token)]
+    assert events[0] == "account.data_exported"
