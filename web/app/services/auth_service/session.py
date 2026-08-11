@@ -232,9 +232,19 @@ def get_login_history(current_user: User) -> list[LoginHistoryEntry]:
 
 def revoke_session(session_id: str, current_user: User) -> dict:
     sessions = list(current_user.refresh_sessions or [])
+    found = False
     for s in sessions:
         if s.token_hash == session_id:
             s.revoked_at = utcnow()
+            found = True
             break
     current_user.update(refresh_sessions=sessions)
+    if found:
+        activity_service.record(
+            recipient=current_user,
+            event="account.session_revoked",
+            actor=current_user,
+            resource_type="user",
+            resource_id=str(current_user.id),
+        )
     return {"detail": "Sessão revogada"}

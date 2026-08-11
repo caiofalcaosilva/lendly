@@ -1057,3 +1057,37 @@ def test_filing_report_records_activity_for_reporter(client, register_user):
     events = _activities(client, reporter_token)
     assert events[0]["event"] == "report.filed"
     assert events[0]["resource"]["title"] == "Furadeira"
+
+
+# --- Fourth follow-up: revoking a connected-device session ---------------
+
+
+def test_revoke_session_records_activity(client, register_user):
+    _, token = register_user("revokesession.activity@example.com")
+
+    sessions = client.get(
+        "/users/me/sessions", headers={"Authorization": f"Bearer {token}"}
+    ).json()
+    assert len(sessions) >= 1
+    session_id = sessions[0]["id"]
+
+    resp = client.delete(
+        f"/users/me/sessions/{session_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    events = [a["event"] for a in _activities(client, token)]
+    assert events == ["account.session_revoked"]
+
+
+def test_revoke_nonexistent_session_records_no_activity(client, register_user):
+    _, token = register_user("revokebadsession.activity@example.com")
+
+    resp = client.delete(
+        "/users/me/sessions/not-a-real-session-id",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    assert _activities(client, token) == []

@@ -44,6 +44,7 @@ ACTIVITY_EVENTS = [
     "account.2fa_enabled",
     "account.2fa_disabled",
     "account.password_reset",
+    "account.session_revoked",
     "account.mercadopago_connected",
     "account.data_exported",
     "admin.user_activated",

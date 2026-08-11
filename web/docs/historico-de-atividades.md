@@ -47,6 +47,7 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `account.paused` / `resumed` | `account.py::pause_account` / `resume_account` | O próprio usuário |
 | `account.2fa_enabled` / `2fa_disabled` | `auth_service/totp.py::enable_totp` / `disable_totp` | O próprio usuário |
 | `account.password_reset` | `auth_service/password_reset.py::reset_password` (fluxo "esqueci minha senha", ator=`None`) | O próprio usuário |
+| `account.session_revoked` | `auth_service/session.py::revoke_session` ("desconectar este dispositivo" em `/me/sessions`) | O próprio usuário |
 | `account.mercadopago_connected` | `mp_connect_service.py::handle_callback` | O próprio usuário |
 | `account.data_exported` | `export_service.py::export_user_data` | O próprio usuário |
 | `admin.user_activated` / `deactivated` / `promoted` / `demoted` | `admin_user_service.py` | Usuário alvo |
