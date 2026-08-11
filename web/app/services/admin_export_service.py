@@ -1,9 +1,11 @@
 import csv
 import io
+from datetime import datetime
 
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.user import User
+from app.services import admin_activity_service
 
 
 def _write_csv(header: list, rows: list) -> str:
@@ -107,5 +109,44 @@ def export_loan_requests_csv() -> str:
         for r in LoanRequest.objects()
         .order_by("created_at")
         .select_related(max_depth=1)
+    ]
+    return _write_csv(header, rows)
+
+
+def export_activities_csv(
+    recipient_id: str | None = None,
+    actor_id: str | None = None,
+    event: str | None = None,
+    resource_type: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+) -> str:
+    """Same filters as GET /admin/activities — exports whatever the admin
+    currently has filtered in that search, not the whole collection, since
+    Activity has no natural per-page size the way users/items/loan
+    requests do."""
+    header = [
+        "id",
+        "evento",
+        "ator",
+        "destinatario",
+        "tipo_recurso",
+        "recurso",
+        "criado_em",
+    ]
+    qs = admin_activity_service.build_queryset(
+        recipient_id, actor_id, event, resource_type, date_from, date_to
+    )
+    rows = [
+        [
+            str(a.id),
+            a.event,
+            a.actor_name or "",
+            a.recipient.name,
+            a.resource_type,
+            a.resource_title or a.resource_id,
+            a.created_at.isoformat(),
+        ]
+        for a in qs.order_by("created_at").select_related(max_depth=1)
     ]
     return _write_csv(header, rows)

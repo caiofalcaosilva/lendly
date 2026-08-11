@@ -1262,3 +1262,57 @@ def test_admin_activities_pagination_cursor(client, register_user):
     )
     second_page = resp.json()
     assert [r["resource"]["id"] for r in second_page] == ["page-2", "page-1"]
+
+
+def test_export_activities_requires_admin(client, register_user):
+    _, token = register_user("notadmin.exportactivities@example.com")
+    resp = client.get(
+        "/admin/export/activities", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 403
+
+
+def test_export_activities_csv_respects_filters(client, register_user):
+    admin_id, admin_token = register_user("admin.exportactivities@example.com")
+    _make_admin(admin_id)
+    a_id, _ = register_user("a.exportactivities@example.com")
+    b_id, _ = register_user("b.exportactivities@example.com")
+    a = _get_user(a_id)
+    b = _get_user(b_id)
+
+    activity_service.record(
+        recipient=a,
+        event="item.created",
+        resource_type="item",
+        resource_id="ia",
+        resource_title="Item de A",
+    )
+    activity_service.record(
+        recipient=b,
+        event="item.created",
+        resource_type="item",
+        resource_id="ib",
+        resource_title="Item de B",
+    )
+
+    resp = client.get(
+        f"/admin/export/activities?recipient_id={a_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "attachment" in resp.headers["content-disposition"]
+    body = resp.text
+    assert "Item de A" in body
+    assert "Item de B" not in body
+    assert body.startswith("id,evento,ator,destinatario,tipo_recurso,recurso,criado_em")
+
+
+def test_export_activities_rejects_invalid_event(client, register_user):
+    admin_id, admin_token = register_user("admin.exportbadevent@example.com")
+    _make_admin(admin_id)
+    resp = client.get(
+        "/admin/export/activities?event=not_a_real_event",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 400
