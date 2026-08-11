@@ -1091,3 +1091,174 @@ def test_revoke_nonexistent_session_records_no_activity(client, register_user):
     assert resp.status_code == 200, resp.text
 
     assert _activities(client, token) == []
+
+
+# --- Admin cross-user activity search ------------------------------------
+
+
+def test_admin_activities_endpoint_requires_admin(client, register_user):
+    _, token = register_user("notadmin.adminactivities@example.com")
+    resp = client.get("/admin/activities", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 403
+
+
+def test_admin_activities_sees_across_users(client, register_user):
+    admin_id, admin_token = register_user("admin.adminactivities@example.com")
+    _make_admin(admin_id)
+    a_id, a_token = register_user("a.adminactivities@example.com")
+    b_id, b_token = register_user("b.adminactivities@example.com")
+    a = _get_user(a_id)
+    b = _get_user(b_id)
+
+    activity_service.record(
+        recipient=a, event="item.created", resource_type="item", resource_id="ia"
+    )
+    activity_service.record(
+        recipient=b, event="item.created", resource_type="item", resource_id="ib"
+    )
+
+    resp = client.get(
+        "/admin/activities", headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    recipient_ids = {row["recipient"]["id"] for row in body}
+    assert {a_id, b_id} <= recipient_ids
+    # Every row carries whose activity it is — the one thing GET /activities/
+    # never needs to say, since it's always the caller's own.
+    assert all("recipient" in row for row in body)
+
+
+def test_admin_activities_filters_by_recipient(client, register_user):
+    admin_id, admin_token = register_user("admin.adminfilterrecip@example.com")
+    _make_admin(admin_id)
+    a_id, _ = register_user("a.adminfilterrecip@example.com")
+    b_id, _ = register_user("b.adminfilterrecip@example.com")
+    a = _get_user(a_id)
+    b = _get_user(b_id)
+
+    activity_service.record(
+        recipient=a, event="item.created", resource_type="item", resource_id="ia"
+    )
+    activity_service.record(
+        recipient=b, event="item.created", resource_type="item", resource_id="ib"
+    )
+
+    resp = client.get(
+        f"/admin/activities?recipient_id={a_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    body = resp.json()
+    assert len(body) == 1
+    assert body[0]["recipient"]["id"] == a_id
+
+
+def test_admin_activities_filters_by_actor(client, register_user):
+    admin_id, admin_token = register_user("admin.adminfilteractor@example.com")
+    _make_admin(admin_id)
+    owner_id, owner_token = register_user("owner.adminfilteractor@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("requester.adminfilteractor@example.com")
+    _create_request(client, requester_token, item["id"])
+
+    resp = client.get(
+        f"/admin/activities?actor_id={owner_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    body = resp.json()
+    assert len(body) >= 1
+    assert all(row["actor"]["id"] == owner_id for row in body)
+
+
+def test_admin_activities_filters_by_event_and_resource_type(client, register_user):
+    admin_id, admin_token = register_user("admin.adminfilterevent@example.com")
+    _make_admin(admin_id)
+    _, owner_token = register_user("owner.adminfilterevent@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("requester.adminfilterevent@example.com")
+    _create_request(client, requester_token, item["id"])
+
+    resp = client.get(
+        "/admin/activities?event=item.created",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    body = resp.json()
+    assert len(body) >= 1
+    assert all(row["event"] == "item.created" for row in body)
+
+    resp = client.get(
+        "/admin/activities?resource_type=loan_request",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    body = resp.json()
+    assert len(body) >= 1
+    assert all(row["resource"]["type"] == "loan_request" for row in body)
+
+
+def test_admin_activities_rejects_invalid_event(client, register_user):
+    admin_id, admin_token = register_user("admin.adminbadevent@example.com")
+    _make_admin(admin_id)
+    resp = client.get(
+        "/admin/activities?event=not_a_real_event",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 400
+
+
+def test_admin_activities_filters_by_date_range(client, register_user):
+    admin_id, admin_token = register_user("admin.admindaterange@example.com")
+    _make_admin(admin_id)
+    a_id, _ = register_user("a.admindaterange@example.com")
+    a = _get_user(a_id)
+    activity_service.record(
+        recipient=a, event="item.created", resource_type="item", resource_id="ix"
+    )
+
+    far_future = "2099-01-01T00:00:00"
+    resp = client.get(
+        f"/admin/activities?date_from={far_future}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.json() == []
+
+    far_past = "2000-01-01T00:00:00"
+    resp = client.get(
+        f"/admin/activities?date_to={far_past}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.json() == []
+
+    resp = client.get(
+        f"/admin/activities?date_from={far_past}&date_to={far_future}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    body = resp.json()
+    assert any(row["resource"]["id"] == "ix" for row in body)
+
+
+def test_admin_activities_pagination_cursor(client, register_user):
+    admin_id, admin_token = register_user("admin.adminpagination@example.com")
+    _make_admin(admin_id)
+    a_id, _ = register_user("a.adminpagination@example.com")
+    a = _get_user(a_id)
+    for i in range(5):
+        activity_service.record(
+            recipient=a,
+            event="item.created",
+            resource_type="item",
+            resource_id=f"page-{i}",
+        )
+
+    resp = client.get(
+        f"/admin/activities?recipient_id={a_id}&limit=2",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    first_page = resp.json()
+    assert [r["resource"]["id"] for r in first_page] == ["page-4", "page-3"]
+
+    resp = client.get(
+        f"/admin/activities?recipient_id={a_id}&limit=2&before_id={first_page[-1]['id']}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    second_page = resp.json()
+    assert [r["resource"]["id"] for r in second_page] == ["page-2", "page-1"]

@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from app.routers.admin import (
     actions,
+    activities,
     categories,
     dashboard,
     exports,
@@ -27,3 +28,4 @@ router.include_router(groups.router)
 router.include_router(reviews.router)
 router.include_router(exports.router)
 router.include_router(categories.router)
+router.include_router(activities.router)

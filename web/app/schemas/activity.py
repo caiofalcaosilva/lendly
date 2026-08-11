@@ -21,3 +21,11 @@ class ActivityResponse(BaseModel):
     resource: ActivityResource
     metadata: dict = {}
     created_at: datetime
+
+
+class AdminActivityResponse(ActivityResponse):
+    """Same shape as ActivityResponse, plus `recipient` — implicit ("you")
+    on GET /activities/, but essential on the admin cross-user search
+    where every row can belong to a different person."""
+
+    recipient: ActivityActor

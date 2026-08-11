@@ -97,5 +97,14 @@ class Activity(Document):
             {"fields": ["recipient", "-created_at"]},
             {"fields": ["recipient", "event", "-created_at"]},
             {"fields": ["resource_type", "resource_id"]},
+            # The four below back the admin cross-user search (see
+            # admin_activity_service.py) — every filter combination there
+            # either has no `recipient` in the query at all, or filters by
+            # `actor` instead, so the three recipient-first indexes above
+            # can't serve it.
+            {"fields": ["-created_at"]},
+            {"fields": ["actor", "-created_at"]},
+            {"fields": ["event", "-created_at"]},
+            {"fields": ["resource_type", "-created_at"]},
         ],
     }
