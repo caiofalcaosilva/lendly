@@ -7,12 +7,12 @@ from app.utils import errors
 from app.utils.time import utcnow
 
 
-def _record_report_activity(report: Report, event: str, admin: User) -> None:
+def _record_report_activity(report: Report, event: str, actor: User) -> None:
     target_title = report.item.title if report.item else report.reported_user.name
     activity_service.record(
         recipient=report.reporter,
         event=event,
-        actor=admin,
+        actor=actor,
         resource_type="report",
         resource_id=str(report.id),
         resource_title=target_title,
@@ -60,6 +60,7 @@ def create_report(data: ReportCreate, current_user: User) -> ReportResponse:
         description=data.description,
     )
     report.save()
+    _record_report_activity(report, "report.filed", current_user)
     return _to_response(report)
 
 

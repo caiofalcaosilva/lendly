@@ -966,3 +966,94 @@ def test_admin_view_as_records_activity_for_target(client, register_user):
     events = _activities(client, target_token)
     assert events[0]["event"] == "admin.user_viewed"
     assert events[0]["actor"]["id"] == admin_id
+
+
+# --- Third follow-up: self-service group lifecycle + filing a report -----
+
+
+def test_group_lifecycle_records_activity(client, register_user):
+    _, creator_token = register_user("creator.grouplifecycle@example.com")
+    resp = client.post(
+        "/groups/",
+        json={"name": "Vizinhos do Bloco B"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+    group = resp.json()
+
+    creator_events = [a["event"] for a in _activities(client, creator_token)]
+    assert creator_events == ["group.created"]
+
+    _, member_token = register_user("member.grouplifecycle@example.com")
+    resp = client.post(
+        "/groups/join",
+        json={"invite_code": group["invite_code"]},
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    member_events = [a["event"] for a in _activities(client, member_token)]
+    assert member_events == ["group.joined"]
+
+    resp = client.post(
+        f"/groups/{group['id']}/leave",
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    member_events = [a["event"] for a in _activities(client, member_token)]
+    assert member_events == ["group.left", "group.joined"]
+
+    resp = client.delete(
+        f"/groups/{group['id']}", headers={"Authorization": f"Bearer {creator_token}"}
+    )
+    assert resp.status_code == 204, resp.text
+    creator_events = [a["event"] for a in _activities(client, creator_token)]
+    assert creator_events == ["group.deleted", "group.created"]
+
+
+def test_unvouch_records_activity_for_target(client, register_user):
+    _, creator_token = register_user("creator.unvouch@example.com")
+    resp = client.post(
+        "/groups/",
+        json={"name": "Grupo Unvouch"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    group = resp.json()
+    _, member_token = register_user("member.unvouch@example.com")
+    client.post(
+        "/groups/join",
+        json={"invite_code": group["invite_code"]},
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    member_id = client.get(
+        "/users/me", headers={"Authorization": f"Bearer {member_token}"}
+    ).json()["id"]
+
+    client.post(
+        f"/groups/{group['id']}/members/{member_id}/vouch",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    resp = client.delete(
+        f"/groups/{group['id']}/members/{member_id}/vouch",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    events = [a["event"] for a in _activities(client, member_token)]
+    assert events == ["group.vouch_withdrawn", "group.vouch_received", "group.joined"]
+
+
+def test_filing_report_records_activity_for_reporter(client, register_user):
+    _, owner_token = register_user("owner.reportfiled@example.com")
+    item = _create_item(client, owner_token)
+    _, reporter_token = register_user("reporter.reportfiled@example.com")
+
+    resp = client.post(
+        "/reports/",
+        json={"item_id": item["id"], "reason": "spam"},
+        headers={"Authorization": f"Bearer {reporter_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+
+    events = _activities(client, reporter_token)
+    assert events[0]["event"] == "report.filed"
+    assert events[0]["resource"]["title"] == "Furadeira"

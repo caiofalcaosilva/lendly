@@ -34,7 +34,13 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `review.submitted` | `review_service.py::create_review` | Reviewed + Reviewer |
 | `verification.submitted` | `verification_service.py::submit_verification` | O próprio usuário |
 | `verification.approved` / `rejected` | `verification_service.py::approve_submission` / `reject_submission` | Usuário verificado |
+| `group.created` | `group_service.py::create_group` | Criador |
+| `group.joined` | `group_service.py::join_group` | Novo membro |
+| `group.left` | `group_service.py::leave_group` | O próprio membro |
+| `group.deleted` | `group_service.py::delete_group` (autoexclusão pelo criador) | Todos os membros |
 | `group.vouch_received` | `group_service.py::vouch_for_member` | Membro vouched |
+| `group.vouch_withdrawn` | `group_service.py::unvouch_for_member` | Membro que perdeu o vouch |
+| `report.filed` | `report_service.py::create_report` | O próprio reporter |
 | `account.new_login` | `auth_service/session.py::login_user` / `complete_2fa` (só dispositivo não confiável) | O próprio usuário |
 | `account.password_changed` | `auth_service/account.py::change_password` | O próprio usuário |
 | `account.email_changed` | `account.py::change_email` | O próprio usuário |

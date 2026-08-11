@@ -98,6 +98,14 @@ def create_group(data: GroupCreate, current_user: User) -> GroupResponse:
         members=[current_user],
     )
     group.save()
+    activity_service.record(
+        recipient=current_user,
+        event="group.created",
+        actor=current_user,
+        resource_type="group",
+        resource_id=str(group.id),
+        resource_title=group.name,
+    )
     return _to_response(group, viewer=current_user)
 
 
@@ -141,6 +149,14 @@ def join_group(invite_code: str, current_user: User) -> GroupResponse:
     if not is_member and not current_user.is_admin:
         group.update(push__members=current_user)
         group.reload()
+        activity_service.record(
+            recipient=current_user,
+            event="group.joined",
+            actor=current_user,
+            resource_type="group",
+            resource_id=str(group.id),
+            resource_title=group.name,
+        )
     return _to_response(group, viewer=current_user)
 
 
@@ -153,6 +169,14 @@ def leave_group(group_id: str, current_user: User) -> dict:
     _strip_group_from_items(group, current_user)
     _strip_vouches(group, current_user)
     group.update(pull__members=current_user)
+    activity_service.record(
+        recipient=current_user,
+        event="group.left",
+        actor=current_user,
+        resource_type="group",
+        resource_id=str(group.id),
+        resource_title=group.name,
+    )
     return {"detail": "Left the group"}
 
 
@@ -160,9 +184,20 @@ def delete_group(group_id: str, current_user: User) -> None:
     group = _get_as_member(group_id, current_user)
     if str(group.created_by.id) != str(current_user.id):
         raise errors.forbidden("Only the creator can delete the group")
-    for member in group.members:
+    members = list(group.members)
+    group_name = group.name
+    for member in members:
         _strip_group_from_items(group, member)
     group.delete()
+    for member in members:
+        activity_service.record(
+            recipient=member,
+            event="group.deleted",
+            actor=current_user,
+            resource_type="group",
+            resource_id=group_id,
+            resource_title=group_name,
+        )
 
 
 def admin_delete_group(group_id: str, admin: User) -> None:
@@ -273,4 +308,14 @@ def unvouch_for_member(
     if len(remaining) != len(group.vouches):
         group.update(vouches=remaining)
         group.reload()
+        target = next((m for m in group.members if str(m.id) == user_id), None)
+        if target:
+            activity_service.record(
+                recipient=target,
+                event="group.vouch_withdrawn",
+                actor=current_user,
+                resource_type="group",
+                resource_id=str(group.id),
+                resource_title=group.name,
+            )
     return _to_response(group, viewer=current_user)
