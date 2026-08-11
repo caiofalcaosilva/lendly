@@ -13,6 +13,9 @@ backend: web/.env
 	@echo "MailHog:  http://localhost:8025"
 
 frontend: frontend/.env frontend/node_modules
+	@echo "Reiniciando frontend..."
+	@-lsof -ti:3000 | xargs kill 2>/dev/null || true
+	@sleep 1
 	cd frontend && npm run dev
 
 down:
