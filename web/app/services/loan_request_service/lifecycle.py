@@ -6,7 +6,12 @@ from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestCreate, LoanRequestResponse
-from app.services import email_service, notification_service, payment_service
+from app.services import (
+    activity_service,
+    email_service,
+    notification_service,
+    payment_service,
+)
 from app.services.loan_request_service._common import (
     WEEKDAY_LABELS,
     assert_status,
@@ -28,6 +33,22 @@ _STATUS_NOTIFICATION_TITLES = {
     "refused": "Seu pedido foi recusado",
     "finished": "Empréstimo finalizado",
 }
+
+
+def _record_activity(req: LoanRequest, event: str, actor: User | None = None) -> None:
+    """One Activity per participant (owner + requester) — unlike
+    _notify_status_change, which only alerts whoever didn't just act, the
+    timeline records the fact for both sides, including the actor's own
+    action."""
+    for recipient in (req.owner, req.requester):
+        activity_service.record(
+            recipient=recipient,
+            event=event,
+            actor=actor,
+            resource_type="loan_request",
+            resource_id=str(req.id),
+            resource_title=req.item.title,
+        )
 
 
 def _notify_status_change(req: LoanRequest, background_tasks: BackgroundTasks) -> None:
@@ -114,6 +135,7 @@ def create_request(
         notes=data.notes,
     )
     req.save()
+    _record_activity(req, "rental.requested", actor=current_user)
 
     if background_tasks:
         if should_notify(item.owner, "request_status"):
@@ -155,6 +177,7 @@ def accept_request(
         payment_service.create_payment_for_request(req)
         req.reload()
 
+    _record_activity(req, "rental.accepted", actor=current_user)
     _notify_status_change(req, background_tasks)
     return to_response(req)
 
@@ -168,6 +191,7 @@ def refuse_request(
     req.reload()
     recalculate_reliability(current_user)
     recalculate_response_time(current_user)
+    _record_activity(req, "rental.refused", actor=current_user)
     _notify_status_change(req, background_tasks)
     return to_response(req)
 
@@ -178,6 +202,7 @@ def _complete_pickup(req: LoanRequest) -> None:
     if req.item.availability_type == "paid":
         payment_service.release_payment(req)
         req.reload()
+    _record_activity(req, "rental.started")
 
 
 def confirm_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
@@ -205,6 +230,7 @@ def confirm_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
 
     req.update(**{field: utcnow(), "updated_at": utcnow()})
     req.reload()
+    _record_activity(req, "rental.pickup_confirmed", actor=current_user)
 
     if req.pickup_confirmed_by_owner_at and req.pickup_confirmed_by_requester_at:
         _complete_pickup(req)
@@ -232,6 +258,7 @@ def force_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
 
     req.update(pickup_forced=True, updated_at=utcnow())
     req.reload()
+    _record_activity(req, "rental.pickup_forced", actor=current_user)
     _complete_pickup(req)
     return to_response(req)
 
@@ -244,6 +271,7 @@ def _complete_return(req: LoanRequest, background_tasks: BackgroundTasks) -> Non
     )
     req.reload()
     recalculate_reliability(req.requester)
+    _record_activity(req, "rental.finished")
     _notify_status_change(req, background_tasks)
 
 
@@ -266,6 +294,7 @@ def confirm_return(
 
     req.update(**{field: utcnow(), "updated_at": utcnow()})
     req.reload()
+    _record_activity(req, "rental.return_confirmed", actor=current_user)
 
     if req.return_confirmed_by_owner_at and req.return_confirmed_by_requester_at:
         _complete_return(req, background_tasks)
@@ -293,6 +322,7 @@ def force_return(
 
     req.update(return_forced=True, updated_at=utcnow())
     req.reload()
+    _record_activity(req, "rental.return_forced", actor=current_user)
     _complete_return(req, background_tasks)
     return to_response(req)
 
@@ -313,6 +343,7 @@ def cancel_request(
     req.update(status="cancelled", cancelled_by=current_user, updated_at=utcnow())
     req.reload()
     recalculate_reliability(current_user)
+    _record_activity(req, "rental.cancelled", actor=current_user)
 
     other = (
         req.owner if str(current_user.id) == str(req.requester.id) else req.requester

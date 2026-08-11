@@ -5,12 +5,31 @@ from app.models.loan_request import LoanRequest
 from app.models.payment import Payment
 from app.models.user import User
 from app.schemas.payment import PaymentResponse
-from app.services import mercadopago_gateway
+from app.services import activity_service, mercadopago_gateway
 from app.services.mercadopago_gateway import MercadoPagoError
 from app.utils import errors
 from app.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
+
+
+def _record_payment_activity(payment: Payment, event: str) -> None:
+    """One Activity per side of the payment (payer + payee) — actor is
+    always None here, since every transition is either a webhook
+    confirmation or a system-driven consequence of a LoanRequest state
+    change, not a single user's direct action."""
+    for recipient in (payment.payer, payment.payee):
+        activity_service.record(
+            recipient=recipient,
+            event=event,
+            resource_type="payment",
+            resource_id=str(payment.id),
+            resource_title=payment.loan_request.item.title,
+            metadata={
+                "gross_amount": payment.gross_amount,
+                "platform_fee_amount": payment.platform_fee_amount,
+            },
+        )
 
 
 def _to_response(payment: Payment) -> PaymentResponse:
@@ -121,6 +140,7 @@ def release_payment(req: LoanRequest) -> None:
         ) from e
     payment.update(status="released", released_at=utcnow())
     req.update(payment_status="released", updated_at=utcnow())
+    _record_payment_activity(payment, "payment.released")
 
 
 def refund_payment(req: LoanRequest) -> None:
@@ -135,6 +155,7 @@ def refund_payment(req: LoanRequest) -> None:
         ) from e
     payment.update(status="refunded", refunded_at=utcnow())
     req.update(payment_status="refunded", updated_at=utcnow())
+    _record_payment_activity(payment, "payment.refunded")
 
 
 def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
@@ -171,10 +192,12 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
     if remote_status == "approved":
         payment.update(status="held", held_at=utcnow())
         payment.loan_request.update(payment_status="held", updated_at=utcnow())
+        _record_payment_activity(payment, "payment.held")
         logger.info("payment held", extra={"mp_payment_id": data_id})
     elif remote_status in ("rejected", "cancelled"):
         payment.update(status="failed")
         payment.loan_request.update(payment_status="failed", updated_at=utcnow())
+        _record_payment_activity(payment, "payment.failed")
         logger.warning(
             "payment failed",
             extra={"mp_payment_id": data_id, "mp_remote_status": remote_status},

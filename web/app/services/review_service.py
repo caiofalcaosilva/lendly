@@ -4,6 +4,7 @@ from app.models.loan_request import LoanRequest
 from app.models.review import Review
 from app.models.user import User
 from app.schemas.review import ReviewCreate, ReviewResponse
+from app.services import activity_service
 from app.utils import errors
 
 
@@ -77,6 +78,17 @@ def create_review(
         # requests can both pass it, but only one can win the unique index.
         raise errors.conflict("You already reviewed this request") from err
     recalculate_rating(reviewed)
+
+    for recipient in (reviewed, current_user):
+        activity_service.record(
+            recipient=recipient,
+            event="review.submitted",
+            actor=current_user,
+            resource_type="review",
+            resource_id=str(review.id),
+            resource_title=req.item.title,
+            metadata={"rating": data.rating},
+        )
 
     return _to_response(review)
 

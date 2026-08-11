@@ -16,6 +16,7 @@ from app.database import connect_db, disconnect_db
 from app.logging_config import configure_logging
 from app.rate_limit import limiter
 from app.routers import (
+    activities,
     admin,
     auth,
     groups,
@@ -124,6 +125,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 os.makedirs("verification_uploads", exist_ok=True)
 
 app.include_router(auth.router)
+app.include_router(activities.router)
 app.include_router(users.router)
 app.include_router(items.router)
 app.include_router(loan_requests.router)

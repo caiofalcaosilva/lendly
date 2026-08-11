@@ -6,7 +6,7 @@ from fastapi import BackgroundTasks, UploadFile
 from app.models.user import User
 from app.models.verification import VerificationSubmission
 from app.schemas.verification import VerificationResponse
-from app.services import email_service, notification_service
+from app.services import activity_service, email_service, notification_service
 from app.utils import errors
 from app.utils.images import load_and_resize
 from app.utils.notifications import should_notify
@@ -66,6 +66,13 @@ async def submit_verification(
     sub.save()
 
     current_user.update(cpf=cpf, identity_status="pending")
+    activity_service.record(
+        recipient=current_user,
+        event="verification.submitted",
+        actor=current_user,
+        resource_type="verification",
+        resource_id=str(sub.id),
+    )
     return _to_response(sub)
 
 
@@ -111,6 +118,13 @@ def approve_submission(
     sub.update(status="approved", reviewed_by=admin, reviewed_at=utcnow())
     sub.reload()
     sub.user.update(identity_status="approved")
+    activity_service.record(
+        recipient=sub.user,
+        event="verification.approved",
+        actor=admin,
+        resource_type="verification",
+        resource_id=str(sub.id),
+    )
     if should_notify(sub.user, "verification_result"):
         background_tasks.add_task(
             email_service.send_verification_approved_email,
@@ -147,6 +161,14 @@ def reject_submission(
     )
     sub.reload()
     sub.user.update(identity_status="rejected")
+    activity_service.record(
+        recipient=sub.user,
+        event="verification.rejected",
+        actor=admin,
+        resource_type="verification",
+        resource_id=str(sub.id),
+        metadata={"reason": reason} if reason else None,
+    )
     if should_notify(sub.user, "verification_result"):
         background_tasks.add_task(
             email_service.send_verification_rejected_email,

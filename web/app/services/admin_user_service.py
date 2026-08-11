@@ -6,6 +6,7 @@ from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.schemas.admin_users import AdminUserSummary
 from app.schemas.bulk import BulkActionResult
+from app.services import activity_service
 from app.utils import errors
 from app.utils.bulk import run_bulk
 from app.utils.time import utcnow
@@ -76,6 +77,13 @@ def deactivate_user(user_id: str, admin: User) -> AdminUserSummary:
 
     user.update(is_active=False, status_changed_by=admin, status_changed_at=utcnow())
     user.reload()
+    activity_service.record(
+        recipient=user,
+        event="admin.user_deactivated",
+        actor=admin,
+        resource_type="user",
+        resource_id=str(user.id),
+    )
     return _to_summary(user)
 
 
@@ -83,6 +91,13 @@ def activate_user(user_id: str, admin: User) -> AdminUserSummary:
     user = _get_user(user_id)
     user.update(is_active=True, status_changed_by=admin, status_changed_at=utcnow())
     user.reload()
+    activity_service.record(
+        recipient=user,
+        event="admin.user_activated",
+        actor=admin,
+        resource_type="user",
+        resource_id=str(user.id),
+    )
     return _to_summary(user)
 
 
@@ -106,6 +121,13 @@ def promote_user(user_id: str, admin: User) -> AdminUserSummary:
         admin_status_changed_at=utcnow(),
     )
     user.reload()
+    activity_service.record(
+        recipient=user,
+        event="admin.user_promoted",
+        actor=admin,
+        resource_type="user",
+        resource_id=str(user.id),
+    )
     logger.info(
         "user promoted to admin",
         extra={"admin_id": str(admin.id), "target_user_id": user_id},
@@ -125,6 +147,13 @@ def demote_user(user_id: str, admin: User) -> AdminUserSummary:
         admin_status_changed_at=utcnow(),
     )
     user.reload()
+    activity_service.record(
+        recipient=user,
+        event="admin.user_demoted",
+        actor=admin,
+        resource_type="user",
+        resource_id=str(user.id),
+    )
     logger.info(
         "user demoted from admin",
         extra={"admin_id": str(admin.id), "target_user_id": user_id},

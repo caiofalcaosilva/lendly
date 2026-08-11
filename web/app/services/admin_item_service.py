@@ -2,6 +2,7 @@ from app.models.item import Item
 from app.models.user import User
 from app.schemas.admin_items import AdminItemSummary
 from app.schemas.bulk import BulkActionResult
+from app.services import activity_service
 from app.utils import errors
 from app.utils.bulk import run_bulk
 from app.utils.time import utcnow
@@ -50,6 +51,14 @@ def deactivate_item(item_id: str, admin: User) -> AdminItemSummary:
     item = _get_item(item_id)
     item.update(is_active=False, status_changed_by=admin, status_changed_at=utcnow())
     item.reload()
+    activity_service.record(
+        recipient=item.owner,
+        event="admin.item_deactivated",
+        actor=admin,
+        resource_type="item",
+        resource_id=str(item.id),
+        resource_title=item.title,
+    )
     return _to_summary(item)
 
 
@@ -57,6 +66,14 @@ def activate_item(item_id: str, admin: User) -> AdminItemSummary:
     item = _get_item(item_id)
     item.update(is_active=True, status_changed_by=admin, status_changed_at=utcnow())
     item.reload()
+    activity_service.record(
+        recipient=item.owner,
+        event="admin.item_activated",
+        actor=admin,
+        resource_type="item",
+        resource_id=str(item.id),
+        resource_title=item.title,
+    )
     return _to_summary(item)
 
 

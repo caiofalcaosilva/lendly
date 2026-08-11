@@ -2,8 +2,21 @@ from app.models.item import Item
 from app.models.report import Report
 from app.models.user import User
 from app.schemas.report import ReportCreate, ReportResponse
+from app.services import activity_service
 from app.utils import errors
 from app.utils.time import utcnow
+
+
+def _record_report_activity(report: Report, event: str, admin: User) -> None:
+    target_title = report.item.title if report.item else report.reported_user.name
+    activity_service.record(
+        recipient=report.reporter,
+        event=event,
+        actor=admin,
+        resource_type="report",
+        resource_id=str(report.id),
+        resource_title=target_title,
+    )
 
 
 def _to_response(report: Report) -> ReportResponse:
@@ -70,6 +83,7 @@ def dismiss_report(report_id: str, admin: User) -> ReportResponse:
     report = _get_pending_report(report_id)
     report.update(status="dismissed", reviewed_by=admin, reviewed_at=utcnow())
     report.reload()
+    _record_report_activity(report, "admin.report_dismissed", admin)
     return _to_response(report)
 
 
@@ -81,4 +95,5 @@ def action_report(report_id: str, admin: User) -> ReportResponse:
         report.reported_user.update(is_active=False)
     report.update(status="actioned", reviewed_by=admin, reviewed_at=utcnow())
     report.reload()
+    _record_report_activity(report, "admin.report_actioned", admin)
     return _to_response(report)

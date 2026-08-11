@@ -7,7 +7,12 @@ from app.models.group import Group
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
-from app.services import category_service, email_service, notification_service
+from app.services import (
+    activity_service,
+    category_service,
+    email_service,
+    notification_service,
+)
 from app.services.item_service._common import get_owned_item, to_response
 from app.utils import errors
 from app.utils.notifications import should_notify
@@ -114,6 +119,14 @@ def create_item(data: ItemCreate, current_user: User) -> ItemResponse:
         requires_identity_verification=data.requires_identity_verification,
     )
     item.save()
+    activity_service.record(
+        recipient=current_user,
+        event="item.created",
+        actor=current_user,
+        resource_type="item",
+        resource_id=str(item.id),
+        resource_title=item.title,
+    )
     return to_response(item)
 
 
@@ -267,19 +280,36 @@ def update_item(
         "availability_type" in updates
         and updates["availability_type"] != old_availability_type
     )
-    if (price_changed or availability_changed) and background_tasks:
-        fans = User.objects(favorites=item, id__ne=current_user.id)
-        for fan in fans:
-            background_tasks.add_task(
-                notification_service.create_notification,
-                fan,
-                "favorite_item_changed",
-                f"{item.title} mudou",
-                "Preço ou forma de disponibilização atualizados."
-                if price_changed
-                else "Passou a ser gratuito ou pago.",
-                f"/items/{item.id}",
-            )
+    if price_changed or availability_changed:
+        activity_service.record(
+            recipient=current_user,
+            event="item.updated",
+            actor=current_user,
+            resource_type="item",
+            resource_id=str(item.id),
+            resource_title=item.title,
+        )
+        if background_tasks:
+            fans = User.objects(favorites=item, id__ne=current_user.id)
+            for fan in fans:
+                activity_service.record(
+                    recipient=fan,
+                    event="item.updated",
+                    actor=current_user,
+                    resource_type="item",
+                    resource_id=str(item.id),
+                    resource_title=item.title,
+                )
+                background_tasks.add_task(
+                    notification_service.create_notification,
+                    fan,
+                    "favorite_item_changed",
+                    f"{item.title} mudou",
+                    "Preço ou forma de disponibilização atualizados."
+                    if price_changed
+                    else "Passou a ser gratuito ou pago.",
+                    f"/items/{item.id}",
+                )
 
     return to_response(item)
 
@@ -287,12 +317,21 @@ def update_item(
 def _notify_fans_item_gone(
     item: Item,
     current_user: User,
+    event: str,
     title: str,
     body: str,
     background_tasks: BackgroundTasks,
 ) -> None:
     fans = User.objects(favorites=item, id__ne=current_user.id)
     for fan in fans:
+        activity_service.record(
+            recipient=fan,
+            event=event,
+            actor=current_user,
+            resource_type="item",
+            resource_id=str(item.id),
+            resource_title=item.title,
+        )
         background_tasks.add_task(
             notification_service.create_notification,
             fan,
@@ -310,10 +349,19 @@ def delete_item(
 ) -> None:
     item = get_owned_item(item_id, current_user)
     item.update(is_active=False, updated_at=utcnow())
+    activity_service.record(
+        recipient=current_user,
+        event="item.removed",
+        actor=current_user,
+        resource_type="item",
+        resource_id=str(item.id),
+        resource_title=item.title,
+    )
     if background_tasks:
         _notify_fans_item_gone(
             item,
             current_user,
+            "item.removed",
             f"{item.title} foi removido",
             "O item deixou de estar disponível na plataforma.",
             background_tasks,
@@ -338,10 +386,30 @@ def set_availability(
     item.update(**updates)
     item.reload()
 
+    if became_unavailable:
+        activity_service.record(
+            recipient=current_user,
+            event="item.paused",
+            actor=current_user,
+            resource_type="item",
+            resource_id=str(item.id),
+            resource_title=item.title,
+        )
+    if became_available:
+        activity_service.record(
+            recipient=current_user,
+            event="item.resumed",
+            actor=current_user,
+            resource_type="item",
+            resource_id=str(item.id),
+            resource_title=item.title,
+        )
+
     if became_unavailable and background_tasks:
         _notify_fans_item_gone(
             item,
             current_user,
+            "item.paused",
             f"{item.title} foi pausado",
             "O dono marcou o item como temporariamente indisponível.",
             background_tasks,
@@ -357,6 +425,14 @@ def set_availability(
                     item.title,
                     str(item.id),
                 )
+            activity_service.record(
+                recipient=user,
+                event="item.resumed",
+                actor=current_user,
+                resource_type="item",
+                resource_id=str(item.id),
+                resource_title=item.title,
+            )
             background_tasks.add_task(
                 notification_service.create_notification,
                 user,

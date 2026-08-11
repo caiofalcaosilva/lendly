@@ -12,7 +12,7 @@ from app.schemas.group import (
     GroupResponse,
     GroupSummary,
 )
-from app.services import notification_service
+from app.services import activity_service, notification_service
 from app.utils import errors
 
 
@@ -219,6 +219,14 @@ def vouch_for_member(
     if not already:
         group.update(push__vouches=Vouch(voucher=current_user, vouched_for=target))
         group.reload()
+        activity_service.record(
+            recipient=target,
+            event="group.vouch_received",
+            actor=current_user,
+            resource_type="group",
+            resource_id=str(group.id),
+            resource_title=group.name,
+        )
         if background_tasks:
             background_tasks.add_task(
                 notification_service.create_notification,
