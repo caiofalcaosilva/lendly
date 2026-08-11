@@ -91,28 +91,33 @@ export interface AppNotification {
 
 // Mirrors app/models/activity.py::ACTIVITY_EVENTS — a persistent, append-only
 // history distinct from AppNotification (no read state, never deleted).
-// See web/docs/historico-de-atividades.md for the full event catalog.
-export type ActivityEventType =
-  | 'item.created' | 'item.updated' | 'item.paused' | 'item.resumed' | 'item.removed'
-  | 'rental.requested' | 'rental.accepted' | 'rental.refused'
-  | 'rental.pickup_confirmed' | 'rental.started' | 'rental.pickup_forced'
-  | 'rental.return_confirmed' | 'rental.finished' | 'rental.return_forced'
-  | 'rental.cancelled' | 'rental.extension_requested' | 'rental.extension_approved'
-  | 'rental.extension_rejected'
-  | 'payment.held' | 'payment.released' | 'payment.refunded' | 'payment.failed'
-  | 'review.submitted'
-  | 'verification.submitted' | 'verification.approved' | 'verification.rejected'
-  | 'group.created' | 'group.joined' | 'group.left' | 'group.deleted'
-  | 'group.vouch_received' | 'group.vouch_withdrawn'
-  | 'report.filed'
-  | 'account.new_login' | 'account.password_changed' | 'account.email_changed'
-  | 'account.paused' | 'account.resumed' | 'account.2fa_enabled'
-  | 'account.2fa_disabled' | 'account.password_reset' | 'account.session_revoked'
-  | 'account.mercadopago_connected' | 'account.data_exported'
-  | 'admin.user_activated' | 'admin.user_deactivated' | 'admin.user_promoted'
-  | 'admin.user_demoted' | 'admin.item_activated' | 'admin.item_deactivated'
-  | 'admin.report_dismissed' | 'admin.report_actioned' | 'admin.group_deleted'
-  | 'admin.group_member_removed' | 'admin.review_deleted' | 'admin.user_viewed'
+// See web/docs/historico-de-atividades.md for the full event catalog. Kept
+// as a runtime array (not just a union type) so admin filter UIs can list
+// every event without hand-duplicating the 56 strings a second time.
+export const ACTIVITY_EVENTS = [
+  'item.created', 'item.updated', 'item.paused', 'item.resumed', 'item.removed',
+  'rental.requested', 'rental.accepted', 'rental.refused',
+  'rental.pickup_confirmed', 'rental.started', 'rental.pickup_forced',
+  'rental.return_confirmed', 'rental.finished', 'rental.return_forced',
+  'rental.cancelled', 'rental.extension_requested', 'rental.extension_approved',
+  'rental.extension_rejected',
+  'payment.held', 'payment.released', 'payment.refunded', 'payment.failed',
+  'review.submitted',
+  'verification.submitted', 'verification.approved', 'verification.rejected',
+  'group.created', 'group.joined', 'group.left', 'group.deleted',
+  'group.vouch_received', 'group.vouch_withdrawn',
+  'report.filed',
+  'account.new_login', 'account.password_changed', 'account.email_changed',
+  'account.paused', 'account.resumed', 'account.2fa_enabled',
+  'account.2fa_disabled', 'account.password_reset', 'account.session_revoked',
+  'account.mercadopago_connected', 'account.data_exported',
+  'admin.user_activated', 'admin.user_deactivated', 'admin.user_promoted',
+  'admin.user_demoted', 'admin.item_activated', 'admin.item_deactivated',
+  'admin.report_dismissed', 'admin.report_actioned', 'admin.group_deleted',
+  'admin.group_member_removed', 'admin.review_deleted', 'admin.user_viewed',
+] as const
+
+export type ActivityEventType = (typeof ACTIVITY_EVENTS)[number]
 
 export type ActivityResourceType =
   | 'item' | 'loan_request' | 'payment' | 'review' | 'verification' | 'group'
@@ -125,6 +130,22 @@ export interface Activity {
   resource: { type: ActivityResourceType; id: string; title?: string | null }
   metadata: Record<string, unknown>
   created_at: string
+}
+
+// GET /admin/activities — same shape as Activity, plus `recipient`, since
+// an admin's cross-user search can't rely on "it's always me" the way the
+// personal /activities/ feed does.
+export interface AdminActivity extends Activity {
+  recipient: { id: string; name: string }
+}
+
+export interface AdminActivityFilters {
+  recipientId?: string
+  actorId?: string
+  event?: ActivityEventType
+  resourceType?: ActivityResourceType
+  dateFrom?: string
+  dateTo?: string
 }
 
 // What GET /users/{id} returns — no email, cpf, phone, address detail,

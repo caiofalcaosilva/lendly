@@ -57,6 +57,7 @@
         "moderation": "Moderação",
         "verification": "Verificação de identidade",
         "actions": "Histórico de ações",
+        "activities": "Histórico de atividades (todos)",
         "settings": "Configurações da plataforma",
         "export": "Exportação de relatórios",
         "categories": "Gerenciamento de categorias"
@@ -638,6 +639,48 @@
         "item_deactivated": "Desativou item",
         "user_promoted": "Promoveu a admin",
         "user_demoted": "Removeu admin de"
+      }
+    },
+    "Activities": {
+      "title": "Histórico de atividades de todos os usuários",
+      "subtitle": "Busca com filtros sobre o registro completo de Activity — não só a última transição de cada um, como em Histórico de ações.",
+      "system": "Sistema",
+      "recipientLabel": "Atividade de {name}",
+      "emptyTitle": "Nenhuma atividade registrada ainda",
+      "emptyFilteredTitle": "Nenhuma atividade encontrada com esses filtros",
+      "loadMore": "Carregar mais",
+      "filters": {
+        "recipient": "Usuário (a quem aconteceu)",
+        "actor": "Ator (quem fez)",
+        "searchUser": "Nome ou e-mail...",
+        "event": "Evento",
+        "allEvents": "Todos os eventos",
+        "resourceType": "Tipo de recurso",
+        "allResourceTypes": "Todos os tipos",
+        "dateFrom": "De",
+        "dateTo": "Até",
+        "clear": "Limpar filtros"
+      },
+      "domains": {
+        "item": "Item",
+        "rental": "Empréstimo",
+        "payment": "Pagamento",
+        "review": "Avaliação",
+        "verification": "Verificação",
+        "group": "Grupo",
+        "report": "Denúncia",
+        "account": "Conta",
+        "admin": "Admin"
+      },
+      "resourceTypes": {
+        "item": "Item",
+        "loan_request": "Empréstimo",
+        "payment": "Pagamento",
+        "review": "Avaliação",
+        "verification": "Verificação",
+        "group": "Grupo",
+        "report": "Denúncia",
+        "user": "Usuário"
       }
     },
     "Dashboard": {

@@ -57,6 +57,7 @@
         "moderation": "Moderation",
         "verification": "Identity verification",
         "actions": "Action history",
+        "activities": "Activity history (all users)",
         "settings": "Platform settings",
         "export": "Report export",
         "categories": "Category management"
@@ -638,6 +639,48 @@
         "item_deactivated": "Deactivated item",
         "user_promoted": "Promoted to admin",
         "user_demoted": "Removed admin from"
+      }
+    },
+    "Activities": {
+      "title": "Activity history — all users",
+      "subtitle": "Filtered search over the full Activity record — not just each entity's latest transition, unlike Action History.",
+      "system": "System",
+      "recipientLabel": "Activity for {name}",
+      "emptyTitle": "No activity recorded yet",
+      "emptyFilteredTitle": "No activity found for these filters",
+      "loadMore": "Load more",
+      "filters": {
+        "recipient": "User (who it happened to)",
+        "actor": "Actor (who did it)",
+        "searchUser": "Name or email...",
+        "event": "Event",
+        "allEvents": "All events",
+        "resourceType": "Resource type",
+        "allResourceTypes": "All types",
+        "dateFrom": "From",
+        "dateTo": "To",
+        "clear": "Clear filters"
+      },
+      "domains": {
+        "item": "Item",
+        "rental": "Rental",
+        "payment": "Payment",
+        "review": "Review",
+        "verification": "Verification",
+        "group": "Group",
+        "report": "Report",
+        "account": "Account",
+        "admin": "Admin"
+      },
+      "resourceTypes": {
+        "item": "Item",
+        "loan_request": "Loan request",
+        "payment": "Payment",
+        "review": "Review",
+        "verification": "Verification",
+        "group": "Group",
+        "report": "Report",
+        "user": "User"
       }
     },
     "Dashboard": {

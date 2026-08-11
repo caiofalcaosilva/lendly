@@ -1,22 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
-import {
-  History,
-  Package,
-  ClipboardCheck,
-  CreditCard,
-  Star,
-  ShieldCheck,
-  HeartHandshake,
-  Flag,
-  Lock,
-  Shield,
-} from 'lucide-react'
+import { History } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Activity, ActivityResourceType } from '@/types'
+import { Activity } from '@/types'
 import { activitiesService } from '@/services/activities'
 import { useAuth } from '@/contexts/AuthContext'
+import { ACTIVITY_DOMAIN_ICONS, activityResourceHref } from '@/lib/activityDisplay'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
@@ -34,39 +24,6 @@ function SkeletonRow() {
       </div>
     </div>
   )
-}
-
-// One icon per domain (the event's prefix before the dot) rather than per
-// exact event — 56 distinct events is too many to give each a unique icon
-// without it becoming noise; the domain is what a glance needs to convey.
-const DOMAIN_ICONS: Record<string, typeof History> = {
-  item: Package,
-  rental: ClipboardCheck,
-  payment: CreditCard,
-  review: Star,
-  verification: ShieldCheck,
-  group: HeartHandshake,
-  report: Flag,
-  account: Lock,
-  admin: Shield,
-}
-
-function resourceHref(type: ActivityResourceType, id: string): string | null {
-  switch (type) {
-    case 'item':
-      return `/items/${id}`
-    case 'loan_request':
-      return `/requests/${id}`
-    case 'group':
-      return `/groups/${id}`
-    default:
-      // payment/review/verification/report/user don't have a page a
-      // recipient can usefully land on here — payment and review live
-      // inside their loan request (not linked from this row), verification
-      // and reports are private, and "user" is always the viewer's own
-      // account on every admin.* event that uses it.
-      return null
-  }
 }
 
 // A handful of events carry metadata worth a second line — the same
@@ -142,10 +99,10 @@ export default function ActivitiesPage() {
           <div className="space-y-2.5">
             {activities.map((a) => {
               const domain = a.event.split('.')[0]
-              const Icon = DOMAIN_ICONS[domain] ?? History
+              const Icon = ACTIVITY_DOMAIN_ICONS[domain] ?? History
               const isSelf = !!(a.actor && user && a.actor.id === user.id)
               const actorLabel = a.actor ? (isSelf ? t('you') : a.actor.name) : ''
-              const href = resourceHref(a.resource.type, a.resource.id)
+              const href = activityResourceHref(a.resource.type, a.resource.id)
               const text = t(`events.${a.event}`, {
                 actor: actorLabel,
                 resource: a.resource.title || '',
