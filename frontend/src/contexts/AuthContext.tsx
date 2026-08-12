@@ -1,28 +1,9 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User } from '@/types'
-import { authService } from '@/services/auth'
+import { authService, RegisterData } from '@/services/auth'
 import { usersService } from '@/services/users'
 import { clearTokens, getRefreshToken, setTokens } from '@/lib/tokenStorage'
-
-interface RegisterData {
-  name: string
-  email: string
-  password: string
-  phone?: string
-  zip_code?: string
-  street?: string
-  number?: string
-  complement?: string
-  neighborhood?: string
-  city?: string
-  state?: string
-  account_type?: 'individual' | 'business'
-  company_name?: string
-  trade_name?: string
-  cnpj?: string
-  business_category?: string
-}
 
 interface AuthContextType {
   user: User | null

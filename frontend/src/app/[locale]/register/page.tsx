@@ -46,12 +46,16 @@ export default function RegisterPage() {
       trade_name: opt,
       cnpj: opt,
       business_category: opt,
+      accepted_terms: z.boolean(),
     })
     .refine((d) => d.account_type !== 'business' || !!d.company_name?.trim(), {
       message: t('errors.companyNameRequired'), path: ['company_name'],
     })
     .refine((d) => d.account_type !== 'business' || isValidCnpj(d.cnpj || ''), {
       message: t('errors.invalidCnpj'), path: ['cnpj'],
+    })
+    .refine((d) => d.accepted_terms === true, {
+      message: t('errors.termsRequired'), path: ['accepted_terms'],
     })
 
   type FormData = z.infer<typeof schema>
@@ -70,7 +74,10 @@ export default function RegisterPage() {
     trigger,
     watch,
     formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { account_type: 'individual' } })
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { account_type: 'individual', accepted_terms: false },
+  })
 
   const accountType = watch('account_type')
   const [cnpjLookupDone, setCnpjLookupDone] = useState(false)
@@ -260,6 +267,33 @@ export default function RegisterPage() {
                 setValue={setValue as any}
                 errors={errors}
               />
+
+              <div>
+                <label className="flex items-start gap-2 cursor-pointer text-ink">
+                  <input
+                    type="checkbox"
+                    {...register('accepted_terms')}
+                    className="mt-0.5 text-primary rounded"
+                  />
+                  <span className="text-sm">
+                    {t.rich('acceptTerms', {
+                      terms: (chunks) => (
+                        <Link href="/termos" target="_blank" className="text-primary hover:text-primary-hover underline">
+                          {chunks}
+                        </Link>
+                      ),
+                      privacy: (chunks) => (
+                        <Link href="/privacidade" target="_blank" className="text-primary hover:text-primary-hover underline">
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
+                  </span>
+                </label>
+                {errors.accepted_terms && (
+                  <p className="text-danger text-xs mt-1">{errors.accepted_terms.message}</p>
+                )}
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <Button

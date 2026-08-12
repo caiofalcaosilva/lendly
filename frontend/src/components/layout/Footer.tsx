@@ -22,6 +22,8 @@ export default function Footer() {
           ) : (
             <Link href="/register" className="hover:text-ink transition-colors">{t('createAccount')}</Link>
           )}
+          <Link href="/termos" className="hover:text-ink transition-colors">{t('terms')}</Link>
+          <Link href="/privacidade" className="hover:text-ink transition-colors">{t('privacy')}</Link>
         </div>
       </div>
     </footer>

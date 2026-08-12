@@ -1,7 +1,7 @@
 import api from '@/lib/api'
 import { LoginResponse, TokenResponse, User } from '@/types'
 
-interface RegisterData {
+export interface RegisterData {
   name: string
   email: string
   password: string
@@ -18,6 +18,7 @@ interface RegisterData {
   trade_name?: string
   cnpj?: string
   business_category?: string
+  accepted_terms: boolean
 }
 
 export const authService = {

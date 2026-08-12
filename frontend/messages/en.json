@@ -67,7 +67,9 @@
       "tagline": "Share with your neighbors. Reduce consumption. Strengthen your community.",
       "explore": "Browse",
       "dashboard": "Dashboard",
-      "createAccount": "Sign up"
+      "createAccount": "Sign up",
+      "terms": "Terms of use",
+      "privacy": "Privacy"
     },
     "AddressFields": {
       "zipCode": "ZIP code",
@@ -1336,11 +1338,13 @@
     "submit": "Create account",
     "haveAccount": "Already have an account?",
     "login": "Log in",
+    "acceptTerms": "I've read and agree to the <terms>Terms of Use</terms> and <privacy>Privacy Policy</privacy>",
     "errors": {
       "minChars": "Minimum {count} characters",
       "invalidEmail": "Invalid email",
       "companyNameRequired": "Enter the legal company name",
       "invalidCnpj": "Invalid CNPJ",
+      "termsRequired": "You need to accept the terms of use and privacy policy",
       "genericError": "Error creating account"
     }
   },
@@ -1367,6 +1371,17 @@
     "errors": {
       "minChars": "Minimum {count} characters",
       "invalidOrExpired": "Invalid or expired link"
+    }
+  },
+  "Legal": {
+    "back": "Back",
+    "lastUpdated": "Last updated: {date}",
+    "ptOnlyNote": "This document is only available in Portuguese, the legally binding version for using the platform in Brazil.",
+    "Terms": {
+      "title": "Terms of Use"
+    },
+    "Privacy": {
+      "title": "Privacy Policy"
     }
   },
   "VerifyEmail": {

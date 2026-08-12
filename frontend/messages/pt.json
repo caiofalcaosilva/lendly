@@ -67,7 +67,9 @@
       "tagline": "Compartilhe com seus vizinhos. Reduza o consumo. Fortaleça a comunidade.",
       "explore": "Explorar",
       "dashboard": "Painel",
-      "createAccount": "Criar conta"
+      "createAccount": "Criar conta",
+      "terms": "Termos de uso",
+      "privacy": "Privacidade"
     },
     "AddressFields": {
       "zipCode": "CEP",
@@ -1336,11 +1338,13 @@
     "submit": "Criar conta",
     "haveAccount": "Já tem conta?",
     "login": "Entrar",
+    "acceptTerms": "Li e concordo com os <terms>Termos de Uso</terms> e a <privacy>Política de Privacidade</privacy>",
     "errors": {
       "minChars": "Mínimo {count} caracteres",
       "invalidEmail": "E-mail inválido",
       "companyNameRequired": "Informe a razão social",
       "invalidCnpj": "CNPJ inválido",
+      "termsRequired": "É preciso aceitar os termos de uso e a política de privacidade",
       "genericError": "Erro ao criar conta"
     }
   },
@@ -1367,6 +1371,17 @@
     "errors": {
       "minChars": "Mínimo {count} caracteres",
       "invalidOrExpired": "Link inválido ou expirado"
+    }
+  },
+  "Legal": {
+    "back": "Voltar",
+    "lastUpdated": "Última atualização: {date}",
+    "ptOnlyNote": "Este documento está disponível apenas em português, a versão que vale legalmente para o uso da plataforma no Brasil.",
+    "Terms": {
+      "title": "Termos de Uso"
+    },
+    "Privacy": {
+      "title": "Política de Privacidade"
     }
   },
   "VerifyEmail": {
