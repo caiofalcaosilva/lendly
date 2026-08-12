@@ -1194,7 +1194,9 @@
       "changePhoto": "Change group photo",
       "removePhoto": "Remove group photo",
       "discoverableLabel": "Make this group discoverable",
-      "discoverableHelp": "Neighbors near the group creator's address will be able to find it under \"Groups near you\" and join without an invite."
+      "discoverableHelp": "Neighbors near the group creator's address will be able to find it under \"Groups near you\" and join without an invite.",
+      "showQrCode": "Show invite QR code",
+      "qrCodeHelp": "Scan to join the group — great for printing and posting in a building or condo."
     },
     "Discover": {
       "title": "Groups near you",

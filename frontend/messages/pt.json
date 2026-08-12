@@ -1194,7 +1194,9 @@
       "changePhoto": "Alterar foto do grupo",
       "removePhoto": "Remover foto do grupo",
       "discoverableLabel": "Tornar este grupo descobrível",
-      "discoverableHelp": "Vizinhos perto do endereço de quem criou o grupo vão poder encontrá-lo em \"Grupos perto de você\" e entrar sem precisar de convite."
+      "discoverableHelp": "Vizinhos perto do endereço de quem criou o grupo vão poder encontrá-lo em \"Grupos perto de você\" e entrar sem precisar de convite.",
+      "showQrCode": "Ver QR code do convite",
+      "qrCodeHelp": "Escaneie para entrar no grupo — ótimo pra imprimir e pendurar no prédio ou condomínio."
     },
     "Discover": {
       "title": "Grupos perto de você",

@@ -2,9 +2,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import NextImage from 'next/image'
+import dynamic from 'next/dynamic'
 import { Link, useRouter } from '@/i18n/navigation'
-import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2 } from 'lucide-react'
+import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2, QrCode } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+
+// QRCode only runs on client (canvas)
+const QRCodeSVG = dynamic(() => import('qrcode.react').then((m) => m.QRCodeSVG), { ssr: false })
 import { Group, Item } from '@/types'
 import { groupsService } from '@/services/groups'
 import { useAuth } from '@/contexts/AuthContext'
@@ -43,6 +47,7 @@ export default function GroupDetailPage() {
   const [editError, setEditError] = useState('')
   const [photoBusy, setPhotoBusy] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  const [qrOpen, setQrOpen] = useState(false)
   const t = useTranslations('Groups.Id')
   const toast = useToast()
 
@@ -339,6 +344,14 @@ export default function GroupDetailPage() {
             </button>
           )}
           <button
+            onClick={() => setQrOpen(true)}
+            title={t('showQrCode')}
+            aria-label={t('showQrCode')}
+            className="flex items-center gap-1 text-xs font-medium text-ink-subtle hover:text-primary flex-shrink-0"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+          </button>
+          <button
             onClick={copyInvite}
             className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover flex-shrink-0"
           >
@@ -505,6 +518,18 @@ export default function GroupDetailPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={t('showQrCode')}>
+        <div className="space-y-4">
+          <p className="text-sm text-ink-muted">{t('qrCodeHelp')}</p>
+          <div className="flex justify-center py-2">
+            {inviteUrl && <QRCodeSVG value={inviteUrl} size={220} level="M" />}
+          </div>
+          <Button type="button" variant="outline" onClick={() => setQrOpen(false)} className="w-full">
+            {t('cancel')}
+          </Button>
+        </div>
       </Modal>
     </div>
   )
