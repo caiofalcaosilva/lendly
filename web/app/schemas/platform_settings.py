@@ -14,6 +14,8 @@ class PlatformSettingsUpdate(BaseModel):
     resend_verification_rate_limit_per_minute: int | None = Field(None, ge=1)
     chat_message_rate_limit_per_minute: int | None = Field(None, ge=1)
     password_reset_rate_limit_per_minute: int | None = Field(None, ge=1)
+    group_create_rate_limit_per_minute: int | None = Field(None, ge=1)
+    group_post_rate_limit_per_minute: int | None = Field(None, ge=1)
     handoff_confirmation_grace_hours: int | None = Field(None, ge=1)
     announcement_message: str | None = Field(None, max_length=280)
     announcement_active: bool | None = None
@@ -30,6 +32,8 @@ class PlatformSettingsResponse(BaseModel):
     resend_verification_rate_limit_per_minute: int
     chat_message_rate_limit_per_minute: int
     password_reset_rate_limit_per_minute: int
+    group_create_rate_limit_per_minute: int
+    group_post_rate_limit_per_minute: int
     handoff_confirmation_grace_hours: int
     announcement_message: str | None = None
     announcement_active: bool = False

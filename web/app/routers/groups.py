@@ -1,7 +1,8 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, UploadFile
 
 from app.dependencies import get_current_user
 from app.models.user import User
+from app.rate_limit import limiter
 from app.schemas.group import (
     GroupCreate,
     GroupResponse,
@@ -14,12 +15,18 @@ from app.schemas.group import (
 from app.schemas.group_post import GroupPostCreate, GroupPostResponse
 from app.schemas.item import ItemResponse
 from app.services import group_post_service, group_service, item_service
+from app.services.platform_settings_service import get_settings as get_platform_settings
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
 
 @router.post("/", response_model=GroupResponse, status_code=201)
-def create_group(data: GroupCreate, current_user: User = Depends(get_current_user)):
+@limiter.limit(
+    lambda: f"{get_platform_settings().group_create_rate_limit_per_minute}/minute"
+)
+def create_group(
+    data: GroupCreate, request: Request, current_user: User = Depends(get_current_user)
+):
     """Creates a private group with a shareable invite code — the creator
     becomes its first member."""
     return group_service.create_group(data, current_user)
@@ -113,9 +120,13 @@ def leave_group(group_id: str, current_user: User = Depends(get_current_user)):
 
 
 @router.delete("/{group_id}", status_code=204)
-def delete_group(group_id: str, current_user: User = Depends(get_current_user)):
+def delete_group(
+    group_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
     """Deletes a group — creator only."""
-    group_service.delete_group(group_id, current_user)
+    group_service.delete_group(group_id, current_user, background_tasks)
 
 
 @router.get("/{group_id}/items", response_model=list[ItemResponse])
@@ -137,9 +148,13 @@ def list_group_posts(
 
 
 @router.post("/{group_id}/posts", response_model=GroupPostResponse, status_code=201)
+@limiter.limit(
+    lambda: f"{get_platform_settings().group_post_rate_limit_per_minute}/minute"
+)
 def create_group_post(
     group_id: str,
     data: GroupPostCreate,
+    request: Request,
     current_user: User = Depends(get_current_user),
 ):
     """Posts to the group's mural — any member."""
@@ -182,25 +197,40 @@ def unvouch_for_member(
 
 @router.post("/{group_id}/members/{user_id}/moderator", response_model=GroupResponse)
 def add_moderator(
-    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+    group_id: str,
+    user_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ):
     """Appoints a fellow member as moderator — creator only."""
-    return group_service.add_moderator(group_id, user_id, current_user)
+    return group_service.add_moderator(
+        group_id, user_id, current_user, background_tasks
+    )
 
 
 @router.delete("/{group_id}/members/{user_id}/moderator", response_model=GroupResponse)
 def remove_moderator(
-    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+    group_id: str,
+    user_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ):
     """Revokes a member's moderator status — creator only."""
-    return group_service.remove_moderator(group_id, user_id, current_user)
+    return group_service.remove_moderator(
+        group_id, user_id, current_user, background_tasks
+    )
 
 
 @router.delete("/{group_id}/members/{user_id}", response_model=GroupResponse)
 def remove_member(
-    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+    group_id: str,
+    user_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ):
     """Kicks a regular member out of the group — creator or moderator.
     Unlike DELETE /admin/groups/{group_id}/members/{user_id}, this is
     group-level, not platform moderation."""
-    return group_service.remove_member(group_id, user_id, current_user)
+    return group_service.remove_member(
+        group_id, user_id, current_user, background_tasks
+    )

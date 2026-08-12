@@ -177,3 +177,82 @@ def test_creator_can_delete_others_post_but_regular_member_cannot(
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert resp.status_code == 204
+
+
+def test_deleting_group_also_deletes_its_mural_posts(client, register_user):
+    from app.models.group_post import GroupPost
+
+    _, creator_token = register_user("creator.postorphan@example.com")
+    group = _create_group(client, creator_token)
+    client.post(
+        f"/groups/{group['id']}/posts",
+        json={"body": "Vai ficar orfao se não limpar"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert GroupPost.objects(group=group["id"]).count() == 1
+
+    resp = client.delete(
+        f"/groups/{group['id']}",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 204
+    assert GroupPost.objects(group=group["id"]).count() == 0
+
+
+def test_admin_deleting_group_also_deletes_its_mural_posts(client, register_user):
+    from app.models.group_post import GroupPost
+
+    _, creator_token = register_user("creator.postorphanadmin@example.com")
+    group = _create_group(client, creator_token)
+    client.post(
+        f"/groups/{group['id']}/posts",
+        json={"body": "Vai ficar orfao se não limpar"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    admin_id, admin_token = register_user("admin.postorphanadmin@example.com")
+    _make_admin(admin_id)
+
+    resp = client.delete(
+        f"/admin/groups/{group['id']}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 204
+    assert GroupPost.objects(group=group["id"]).count() == 0
+
+
+def test_admin_deleting_group_notifies_members(client, register_user):
+    _, creator_token = register_user("creator.notifadmindelete@example.com")
+    group = _create_group(client, creator_token)
+    admin_id, admin_token = register_user("admin.notifadmindelete@example.com")
+    _make_admin(admin_id)
+
+    resp = client.delete(
+        f"/admin/groups/{group['id']}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 204
+
+    resp = client.get(
+        "/notifications/", headers={"Authorization": f"Bearer {creator_token}"}
+    )
+    assert "group_membership_changed" in [n["type"] for n in resp.json()]
+
+
+def test_admin_removing_member_notifies_target(client, register_user):
+    _, creator_token = register_user("creator.notifadminremove@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.notifadminremove@example.com")
+    _join(client, member_token, group["invite_code"])
+    admin_id, admin_token = register_user("admin.notifadminremove@example.com")
+    _make_admin(admin_id)
+
+    resp = client.delete(
+        f"/admin/groups/{group['id']}/members/{member_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    resp = client.get(
+        "/notifications/", headers={"Authorization": f"Bearer {member_token}"}
+    )
+    assert "group_membership_changed" in [n["type"] for n in resp.json()]

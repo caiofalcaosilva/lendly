@@ -8,6 +8,7 @@ from fastapi import BackgroundTasks, UploadFile
 
 from app.config import settings
 from app.models.group import Group, Vouch
+from app.models.group_post import GroupPost
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.group import (
@@ -54,6 +55,7 @@ def _member_response(
     return GroupMemberResponse(
         id=str(user.id),
         name=user.name,
+        avatar_url=user.avatar_url,
         average_rating=user.average_rating,
         vouch_count=len(vouches_for_user),
         vouched_by_me=vouched_by_me,
@@ -219,7 +221,12 @@ def regenerate_invite_code(group_id: str, current_user: User) -> GroupResponse:
     return _to_response(group, viewer=current_user)
 
 
-def add_moderator(group_id: str, user_id: str, current_user: User) -> GroupResponse:
+def add_moderator(
+    group_id: str,
+    user_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> GroupResponse:
     """Appoints a fellow member as moderator — creator only, so moderators
     can't appoint or remove each other."""
     group = _get_as_member(group_id, current_user)
@@ -242,10 +249,24 @@ def add_moderator(group_id: str, user_id: str, current_user: User) -> GroupRespo
             resource_id=str(group.id),
             resource_title=group.name,
         )
+        if background_tasks:
+            background_tasks.add_task(
+                notification_service.create_notification,
+                target,
+                "group_membership_changed",
+                f"Você virou moderador(a) do grupo {group.name}",
+                "Agora você pode editar o grupo e remover membros.",
+                f"/groups/{group.id}",
+            )
     return _to_response(group, viewer=current_user)
 
 
-def remove_moderator(group_id: str, user_id: str, current_user: User) -> GroupResponse:
+def remove_moderator(
+    group_id: str,
+    user_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> GroupResponse:
     """Revokes a moderator's status — creator only. Doesn't remove them
     from the group, just the extra power."""
     group = _get_as_member(group_id, current_user)
@@ -263,10 +284,24 @@ def remove_moderator(group_id: str, user_id: str, current_user: User) -> GroupRe
             resource_id=str(group.id),
             resource_title=group.name,
         )
+        if background_tasks:
+            background_tasks.add_task(
+                notification_service.create_notification,
+                target,
+                "group_membership_changed",
+                f"Você deixou de ser moderador(a) do grupo {group.name}",
+                None,
+                f"/groups/{group.id}",
+            )
     return _to_response(group, viewer=current_user)
 
 
-def remove_member(group_id: str, user_id: str, current_user: User) -> GroupResponse:
+def remove_member(
+    group_id: str,
+    user_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> GroupResponse:
     """Group-level moderation — the creator or a moderator kicks a regular
     member out. Unlike admin_remove_member below, this is scoped to
     people who already run the group, not platform staff. A moderator
@@ -297,6 +332,15 @@ def remove_member(group_id: str, user_id: str, current_user: User) -> GroupRespo
         resource_id=str(group.id),
         resource_title=group.name,
     )
+    if background_tasks:
+        background_tasks.add_task(
+            notification_service.create_notification,
+            member,
+            "group_membership_changed",
+            f"Você foi removido(a) do grupo {group.name}",
+            None,
+            "/groups",
+        )
     return _to_response(group, viewer=current_user)
 
 
@@ -443,7 +487,11 @@ def leave_group(group_id: str, current_user: User) -> dict:
     return {"detail": "Left the group"}
 
 
-def delete_group(group_id: str, current_user: User) -> None:
+def delete_group(
+    group_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> None:
     group = _get_as_member(group_id, current_user)
     if str(group.created_by.id) != str(current_user.id):
         raise errors.forbidden("Only the creator can delete the group")
@@ -451,6 +499,7 @@ def delete_group(group_id: str, current_user: User) -> None:
     group_name = group.name
     for member in members:
         _strip_group_from_items(group, member)
+    GroupPost.objects(group=group).delete()
     group.delete()
     for member in members:
         activity_service.record(
@@ -461,9 +510,20 @@ def delete_group(group_id: str, current_user: User) -> None:
             resource_id=group_id,
             resource_title=group_name,
         )
+        if background_tasks and str(member.id) != str(current_user.id):
+            background_tasks.add_task(
+                notification_service.create_notification,
+                member,
+                "group_membership_changed",
+                f"O grupo {group_name} foi excluído",
+                None,
+                "/groups",
+            )
 
 
-def admin_delete_group(group_id: str, admin: User) -> None:
+def admin_delete_group(
+    group_id: str, admin: User, background_tasks: BackgroundTasks | None = None
+) -> None:
     """Moderation action — deletes any group regardless of creator, unlike
     delete_group above which only the creator can invoke."""
     group = Group.objects(id=group_id).first()
@@ -473,6 +533,7 @@ def admin_delete_group(group_id: str, admin: User) -> None:
     group_name = group.name
     for member in members:
         _strip_group_from_items(group, member)
+    GroupPost.objects(group=group).delete()
     group.delete()
     for member in members:
         activity_service.record(
@@ -483,9 +544,23 @@ def admin_delete_group(group_id: str, admin: User) -> None:
             resource_id=group_id,
             resource_title=group_name,
         )
+        if background_tasks:
+            background_tasks.add_task(
+                notification_service.create_notification,
+                member,
+                "group_membership_changed",
+                f"O grupo {group_name} foi removido pela moderação",
+                None,
+                "/groups",
+            )
 
 
-def admin_remove_member(group_id: str, user_id: str, admin: User) -> GroupResponse:
+def admin_remove_member(
+    group_id: str,
+    user_id: str,
+    admin: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> GroupResponse:
     """Moderation action — kicks a member out of a group. The creator can't
     be removed this way (mirrors leave_group's block); delete the group
     instead."""
@@ -511,6 +586,15 @@ def admin_remove_member(group_id: str, user_id: str, admin: User) -> GroupRespon
         resource_id=str(group.id),
         resource_title=group.name,
     )
+    if background_tasks:
+        background_tasks.add_task(
+            notification_service.create_notification,
+            member,
+            "group_membership_changed",
+            f"Você foi removido(a) do grupo {group.name}",
+            None,
+            "/groups",
+        )
     return _to_response(group)
 
 

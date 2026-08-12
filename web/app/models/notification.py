@@ -17,6 +17,7 @@ NOTIFICATION_TYPES = [
     "group_vouch",
     "favorite_item_changed",
     "group_new_item",
+    "group_membership_changed",
     # Security — not toggleable at all (see
     # app.utils.notifications._SECURITY_CATEGORIES), mirrors send_new_login_email.
     "new_login",

@@ -1,3 +1,5 @@
+from fastapi import BackgroundTasks
+
 from app.models.group import Group
 from app.models.item import Item
 from app.models.report import Report
@@ -82,6 +84,22 @@ def create_report(data: ReportCreate, current_user: User) -> ReportResponse:
         if not reported_group:
             raise errors.not_found("Group not found")
 
+    # One pending report per (reporter, target) at a time — resubmitting
+    # while the first is still unreviewed would just clutter the admin
+    # queue with duplicates of the same complaint. A new report is fine
+    # once the earlier one has actually been reviewed.
+    duplicate = Report.objects(
+        reporter=current_user,
+        item=item,
+        reported_user=reported_user,
+        reported_group=reported_group,
+        status="pending",
+    ).first()
+    if duplicate:
+        raise errors.bad_request(
+            "You already have a pending report for this — wait for it to be reviewed"
+        )
+
     report = Report(
         reporter=current_user,
         item=item,
@@ -119,7 +137,9 @@ def dismiss_report(report_id: str, admin: User) -> ReportResponse:
     return _to_response(report)
 
 
-def action_report(report_id: str, admin: User) -> ReportResponse:
+def action_report(
+    report_id: str, admin: User, background_tasks: BackgroundTasks | None = None
+) -> ReportResponse:
     report = _get_pending_report(report_id)
     deleted_group_id = None
     deleted_group_title = None
@@ -144,7 +164,7 @@ def action_report(report_id: str, admin: User) -> ReportResponse:
     # so _to_response still shows the (now-deleted) group's name below.
     report.reload()
     if deleted_group_id:
-        group_service.admin_delete_group(deleted_group_id, admin)
+        group_service.admin_delete_group(deleted_group_id, admin, background_tasks)
     _record_report_activity(
         report, "admin.report_actioned", admin, target_title=deleted_group_title
     )

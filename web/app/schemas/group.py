@@ -25,6 +25,7 @@ class VouchCreate(BaseModel):
 class GroupMemberResponse(BaseModel):
     id: str
     name: str
+    avatar_url: str | None = None
     average_rating: float
     vouch_count: int = 0
     vouched_by_me: bool = False

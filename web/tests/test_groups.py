@@ -520,3 +520,91 @@ def test_revouching_does_not_overwrite_existing_note(client, register_user):
     member = next(m for m in resp.json()["members"] if m["id"] == member_id)
     assert member["vouch_count"] == 1
     assert member["vouch_notes"] == ["Vizinho de prédio"]
+
+
+# --- group_membership_changed notifications --------------------------------
+
+
+def _notif_types(client, token):
+    resp = client.get("/notifications/", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200, resp.text
+    return [n["type"] for n in resp.json()]
+
+
+def test_promoting_to_moderator_notifies_target(client, register_user):
+    _, creator_token = register_user("creator.notifmodadd@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.notifmodadd@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    client.post(
+        f"/groups/{group['id']}/members/{member_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert "group_membership_changed" in _notif_types(client, member_token)
+
+
+def test_revoking_moderator_notifies_target(client, register_user):
+    _, creator_token = register_user("creator.notifmodremove@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.notifmodremove@example.com")
+    _join(client, member_token, group["invite_code"])
+    client.post(
+        f"/groups/{group['id']}/members/{member_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+
+    client.delete(
+        f"/groups/{group['id']}/members/{member_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert _notif_types(client, member_token).count("group_membership_changed") == 2
+
+
+def test_removing_member_notifies_target(client, register_user):
+    _, creator_token = register_user("creator.notifremove@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.notifremove@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    client.delete(
+        f"/groups/{group['id']}/members/{member_id}",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert "group_membership_changed" in _notif_types(client, member_token)
+
+
+def test_deleting_group_notifies_members_but_not_the_deleter(client, register_user):
+    _, creator_token = register_user("creator.notifdelete@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.notifdelete@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    client.delete(
+        f"/groups/{group['id']}",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert "group_membership_changed" in _notif_types(client, member_token)
+    assert "group_membership_changed" not in _notif_types(client, creator_token)
+
+
+def test_disabling_group_membership_prefs_suppresses_notification(
+    client, register_user
+):
+    _, creator_token = register_user("creator.notifprefs@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.notifprefs@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    resp = client.put(
+        "/notifications/preferences",
+        json={"group_membership_changed": False},
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    client.post(
+        f"/groups/{group['id']}/members/{member_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert "group_membership_changed" not in _notif_types(client, member_token)

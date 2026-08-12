@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 
 from app.dependencies import get_current_admin, get_current_user
 from app.models.user import User
@@ -27,7 +27,11 @@ def dismiss_report(report_id: str, admin: User = Depends(get_current_admin)):
 
 
 @router.patch("/{report_id}/action", response_model=ReportResponse)
-def action_report(report_id: str, admin: User = Depends(get_current_admin)):
+def action_report(
+    report_id: str,
+    background_tasks: BackgroundTasks,
+    admin: User = Depends(get_current_admin),
+):
     """Admin — upholds a report: deactivates the item/user, or deletes
     the group."""
-    return report_service.action_report(report_id, admin)
+    return report_service.action_report(report_id, admin, background_tasks)

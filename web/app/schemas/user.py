@@ -121,6 +121,7 @@ class InAppNotificationPreferencesUpdate(BaseModel):
     group_vouch: bool | None = None
     favorite_item_changed: bool | None = None
     group_new_item: bool | None = None
+    group_membership_changed: bool | None = None
 
 
 class NotificationPreferencesUpdate(BaseModel):

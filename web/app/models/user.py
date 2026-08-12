@@ -51,6 +51,7 @@ class InAppNotificationPreferences(EmbeddedDocument):
     group_vouch = BooleanField(default=True)
     favorite_item_changed = BooleanField(default=True)
     group_new_item = BooleanField(default=True)
+    group_membership_changed = BooleanField(default=True)
 
 
 class User(Document):

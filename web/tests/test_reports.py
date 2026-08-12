@@ -31,6 +31,73 @@ def test_report_a_group(client, register_user):
     assert body["reported_user_id"] is None
 
 
+def test_duplicate_pending_report_is_rejected(client, register_user):
+    _, creator_token = register_user("creator.reportdup@example.com")
+    group = _create_group(client, creator_token)
+    _, reporter_token = register_user("reporter.reportdup@example.com")
+
+    resp = client.post(
+        "/reports/",
+        json={"reported_group_id": group["id"], "reason": "spam"},
+        headers={"Authorization": f"Bearer {reporter_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+
+    resp = client.post(
+        "/reports/",
+        json={"reported_group_id": group["id"], "reason": "inappropriate"},
+        headers={"Authorization": f"Bearer {reporter_token}"},
+    )
+    assert resp.status_code == 400
+
+
+def test_new_report_allowed_after_first_one_is_reviewed(client, register_user):
+    _, creator_token = register_user("creator.reportdupreview@example.com")
+    group = _create_group(client, creator_token)
+    _, reporter_token = register_user("reporter.reportdupreview@example.com")
+    admin_id, admin_token = register_user("admin.reportdupreview@example.com")
+    _make_admin(admin_id)
+
+    resp = client.post(
+        "/reports/",
+        json={"reported_group_id": group["id"], "reason": "spam"},
+        headers={"Authorization": f"Bearer {reporter_token}"},
+    )
+    report_id = resp.json()["id"]
+    client.patch(
+        f"/reports/{report_id}/dismiss",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    resp = client.post(
+        "/reports/",
+        json={"reported_group_id": group["id"], "reason": "spam"},
+        headers={"Authorization": f"Bearer {reporter_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+
+
+def test_different_reporters_can_both_report_the_same_group(client, register_user):
+    _, creator_token = register_user("creator.reportdupmulti@example.com")
+    group = _create_group(client, creator_token)
+    _, reporter_a_token = register_user("reportera.reportdupmulti@example.com")
+    _, reporter_b_token = register_user("reporterb.reportdupmulti@example.com")
+
+    resp = client.post(
+        "/reports/",
+        json={"reported_group_id": group["id"], "reason": "spam"},
+        headers={"Authorization": f"Bearer {reporter_a_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+
+    resp = client.post(
+        "/reports/",
+        json={"reported_group_id": group["id"], "reason": "spam"},
+        headers={"Authorization": f"Bearer {reporter_b_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+
+
 def test_report_requires_exactly_one_target(client, register_user):
     _, creator_token = register_user("creator.reporttargets@example.com")
     group = _create_group(client, creator_token)
