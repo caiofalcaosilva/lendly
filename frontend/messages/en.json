@@ -1198,7 +1198,7 @@
       "loadMoreMembers": "Load more",
       "vouchedTooltip": "You've confirmed you know this person",
       "vouchTooltip": "Confirm you know this person",
-      "vouchersTooltip": "Confirmed by:\n{list}",
+      "showVouchers": "See who confirmed",
       "vouchModalTitle": "Confirm you know {name}",
       "vouchNoteLabel": "Note (optional)",
       "vouchNotePlaceholder": "e.g. neighbor, coworker",

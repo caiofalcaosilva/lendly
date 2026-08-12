@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import NextImage from 'next/image'
 import dynamic from 'next/dynamic'
 import { Link, useRouter } from '@/i18n/navigation'
-import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2, QrCode, Flag, UserCog } from 'lucide-react'
+import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2, QrCode, Flag, UserCog, ChevronDown } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 // QRCode only runs on client (canvas)
@@ -55,6 +55,7 @@ export default function GroupDetailPage() {
   const [transferCandidates, setTransferCandidates] = useState<GroupMember[]>([])
   const [locationRefreshing, setLocationRefreshing] = useState(false)
   const [memberSearch, setMemberSearch] = useState('')
+  const [expandedVouchers, setExpandedVouchers] = useState<Set<string>>(new Set())
   const [editOpen, setEditOpen] = useState(false)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
@@ -111,7 +112,17 @@ export default function GroupDetailPage() {
   const closeMembersModal = () => {
     setMembersModalOpen(false)
     setMemberSearch('')
+    setExpandedVouchers(new Set())
     loadPreview()
+  }
+
+  const toggleVouchersExpanded = (memberId: string) => {
+    setExpandedVouchers((prev) => {
+      const next = new Set(prev)
+      if (next.has(memberId)) next.delete(memberId)
+      else next.add(memberId)
+      return next
+    })
   }
 
   const loadMoreMembers = async () => {
@@ -656,78 +667,92 @@ export default function GroupDetailPage() {
           )}
           <div className="divide-y divide-border max-h-[50vh] overflow-y-auto -mx-1">
             {members.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center justify-between gap-3 px-1 py-2 hover:bg-surface-2 transition-colors"
-              >
-                <Link
-                  href={`/users/${m.id}`}
-                  className="flex items-center gap-2.5 min-w-0 group"
-                >
-                  {m.avatar_url ? (
-                    <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                      <NextImage src={m.avatar_url} alt={m.name} fill unoptimized className="object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
-                    </div>
-                  )}
-                  <span className="text-sm text-ink truncate group-hover:text-primary transition-colors">
-                    {m.name}
-                  </span>
-                  {!isCreator && m.is_moderator && (
-                    <span title={t('moderatorBadge')} className="flex-shrink-0 text-accent">
-                      <Crown className="w-3.5 h-3.5 fill-accent-subtle" />
+              <div key={m.id}>
+                <div className="flex items-center justify-between gap-3 px-1 py-2 hover:bg-surface-2 transition-colors">
+                  <Link
+                    href={`/users/${m.id}`}
+                    className="flex items-center gap-2.5 min-w-0 group"
+                  >
+                    {m.avatar_url ? (
+                      <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                        <NextImage src={m.avatar_url} alt={m.name} fill unoptimized className="object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                    )}
+                    <span className="text-sm text-ink truncate group-hover:text-primary transition-colors">
+                      {m.name}
                     </span>
-                  )}
-                </Link>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {isMember && user && m.id !== user.id && (
-                    <button
-                      onClick={() => handleToggleVouch(m)}
-                      title={
-                        m.vouchers.length > 0
-                          ? t('vouchersTooltip', {
-                              list: m.vouchers
-                                .map((v) => (v.note ? `${v.name} — ${v.note}` : v.name))
-                                .join('\n'),
-                            })
-                          : m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')
-                      }
-                      aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
-                      className={`flex items-center gap-1 px-2 py-1.5 rounded-control text-xs font-medium transition-colors ${
-                        m.vouched_by_me
-                          ? 'bg-primary-subtle text-primary'
-                          : 'text-ink-subtle hover:text-primary hover:bg-surface-2'
-                      }`}
-                    >
-                      <ShieldCheck className={`w-4 h-4 ${m.vouched_by_me ? 'fill-primary-subtle' : ''}`} />
-                      {m.vouch_count > 0 && m.vouch_count}
-                    </button>
-                  )}
-                  {isCreator && m.id !== group.created_by && (
-                    <button
-                      onClick={() => handleToggleModerator(m)}
-                      disabled={busy}
-                      title={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
-                      aria-label={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
-                      className={`p-1.5 rounded-control transition-colors ${
-                        m.is_moderator
-                          ? 'bg-accent-subtle text-accent'
-                          : 'text-ink-subtle hover:text-accent hover:bg-surface-2'
-                      }`}
-                    >
-                      <Crown className={`w-4 h-4 ${m.is_moderator ? 'fill-accent-subtle' : ''}`} />
-                    </button>
-                  )}
-                  {canManageMembers &&
-                    m.id !== group.created_by &&
-                    !(m.is_moderator && !isCreator) && (
+                    {!isCreator && m.is_moderator && (
+                      <span title={t('moderatorBadge')} className="flex-shrink-0 text-accent">
+                        <Crown className="w-3.5 h-3.5 fill-accent-subtle" />
+                      </span>
+                    )}
+                  </Link>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {isMember && user && m.id !== user.id && (
                       <button
-                        onClick={() =>
-                          setPendingAction({ kind: 'removeMemberGroup', memberId: m.id, memberName: m.name })
-                        }
+                        onClick={() => handleToggleVouch(m)}
+                        title={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
+                        aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
+                        className={`flex items-center gap-1 px-2 py-1.5 rounded-control text-xs font-medium transition-colors ${
+                          m.vouched_by_me
+                            ? 'bg-primary-subtle text-primary'
+                            : 'text-ink-subtle hover:text-primary hover:bg-surface-2'
+                        }`}
+                      >
+                        <ShieldCheck className={`w-4 h-4 ${m.vouched_by_me ? 'fill-primary-subtle' : ''}`} />
+                        {m.vouch_count > 0 && m.vouch_count}
+                      </button>
+                    )}
+                    {m.vouchers.length > 0 && (
+                      <button
+                        onClick={() => toggleVouchersExpanded(m.id)}
+                        title={t('showVouchers')}
+                        aria-label={t('showVouchers')}
+                        aria-expanded={expandedVouchers.has(m.id)}
+                        className="p-1.5 rounded-control text-ink-subtle hover:text-primary hover:bg-surface-2 transition-colors"
+                      >
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform ${expandedVouchers.has(m.id) ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                    )}
+                    {isCreator && m.id !== group.created_by && (
+                      <button
+                        onClick={() => handleToggleModerator(m)}
+                        disabled={busy}
+                        title={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
+                        aria-label={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
+                        className={`p-1.5 rounded-control transition-colors ${
+                          m.is_moderator
+                            ? 'bg-accent-subtle text-accent'
+                            : 'text-ink-subtle hover:text-accent hover:bg-surface-2'
+                        }`}
+                      >
+                        <Crown className={`w-4 h-4 ${m.is_moderator ? 'fill-accent-subtle' : ''}`} />
+                      </button>
+                    )}
+                    {canManageMembers &&
+                      m.id !== group.created_by &&
+                      !(m.is_moderator && !isCreator) && (
+                        <button
+                          onClick={() =>
+                            setPendingAction({ kind: 'removeMemberGroup', memberId: m.id, memberName: m.name })
+                          }
+                          disabled={busy}
+                          title={t('removeFromGroup')}
+                          aria-label={t('removeFromGroup')}
+                          className="p-1.5 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    {!isMember && user?.is_admin && m.id !== group.created_by && (
+                      <button
+                        onClick={() => setPendingAction({ kind: 'removeMember', memberId: m.id, memberName: m.name })}
                         disabled={busy}
                         title={t('removeFromGroup')}
                         aria-label={t('removeFromGroup')}
@@ -736,18 +761,18 @@ export default function GroupDetailPage() {
                         <X className="w-4 h-4" />
                       </button>
                     )}
-                  {!isMember && user?.is_admin && m.id !== group.created_by && (
-                    <button
-                      onClick={() => setPendingAction({ kind: 'removeMember', memberId: m.id, memberName: m.name })}
-                      disabled={busy}
-                      title={t('removeFromGroup')}
-                      aria-label={t('removeFromGroup')}
-                      className="p-1.5 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
+                  </div>
                 </div>
+                {expandedVouchers.has(m.id) && (
+                  <div className="pl-11 pr-2 pb-2 -mt-1 space-y-1">
+                    {m.vouchers.map((v) => (
+                      <p key={v.id} className="text-xs text-ink-muted">
+                        <span className="font-medium text-ink">{v.name}</span>
+                        {v.note && <span> — {v.note}</span>}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
