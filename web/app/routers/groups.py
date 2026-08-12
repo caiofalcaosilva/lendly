@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, UploadFile
 
 from app.dependencies import get_current_user
 from app.models.user import User
@@ -8,6 +8,7 @@ from app.schemas.group import (
     GroupSummary,
     GroupUpdate,
     JoinGroupRequest,
+    NearbyGroup,
 )
 from app.schemas.item import ItemResponse
 from app.services import group_service, item_service
@@ -32,6 +33,25 @@ def my_groups(current_user: User = Depends(get_current_user)):
 def join_group(data: JoinGroupRequest, current_user: User = Depends(get_current_user)):
     """Joins a group via its invite code."""
     return group_service.join_group(data.invite_code, current_user)
+
+
+@router.get("/discover", response_model=list[NearbyGroup])
+def discover_groups(
+    lat: float | None = Query(None, description="Primary origin (e.g. home address)"),
+    lng: float | None = Query(None),
+    lat2: float | None = Query(
+        None, description="Secondary origin (e.g. live location)"
+    ),
+    lng2: float | None = Query(None),
+    radius_km: float | None = Query(None, ge=0.1),
+    current_user: User = Depends(get_current_user),
+):
+    """Discoverable groups near the given origin(s) (home address and/or
+    live browser location) that the caller isn't already in — "grupos perto
+    de você". Empty without at least one origin."""
+    return group_service.list_nearby_groups(
+        current_user, lat, lng, lat2, lng2, radius_km
+    )
 
 
 @router.get("/{group_id}", response_model=GroupResponse)
@@ -72,6 +92,15 @@ def regenerate_invite_code(
     """Reissues the group's invite code, invalidating the old one —
     creator or moderator."""
     return group_service.regenerate_invite_code(group_id, current_user)
+
+
+@router.post("/{group_id}/join", response_model=GroupResponse)
+def join_discoverable_group(
+    group_id: str, current_user: User = Depends(get_current_user)
+):
+    """Joins a group found via /groups/discover — no invite code needed,
+    since the group opted into being discoverable."""
+    return group_service.join_discoverable_group(group_id, current_user)
 
 
 @router.post("/{group_id}/leave")

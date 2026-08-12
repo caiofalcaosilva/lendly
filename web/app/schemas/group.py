@@ -11,6 +11,7 @@ class GroupCreate(BaseModel):
 class GroupUpdate(BaseModel):
     name: str | None = Field(None, min_length=2, max_length=100)
     description: str | None = Field(None, max_length=500)
+    is_discoverable: bool | None = None
 
 
 class JoinGroupRequest(BaseModel):
@@ -39,7 +40,21 @@ class GroupResponse(BaseModel):
     description: str | None = None
     photo_url: str | None = None
     invite_code: str
+    is_discoverable: bool = False
+    neighborhood: str | None = None
+    city: str | None = None
     member_count: int
     members: list[GroupMemberResponse]
     created_by: str
     created_at: datetime
+
+
+class NearbyGroup(BaseModel):
+    id: str
+    name: str
+    description: str | None = None
+    photo_url: str | None = None
+    neighborhood: str | None = None
+    city: str | None = None
+    member_count: int
+    distance_km: float

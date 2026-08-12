@@ -331,3 +331,135 @@ def test_regular_member_cannot_upload_group_photo(client, register_user):
         headers={"Authorization": f"Bearer {member_token}"},
     )
     assert resp.status_code == 403
+
+
+# --- Discovery ("grupos perto de você") -------------------------------------
+
+# São Paulo (creator) and a point ~1km away (nearby visitor) vs. Rio (far
+# visitor, ~360km from São Paulo).
+SP_LAT, SP_LNG = -23.5505, -46.6333
+SP_NEARBY_LAT, SP_NEARBY_LNG = -23.5599, -46.6333
+RIO_LAT, RIO_LNG = -22.9068, -43.1729
+
+
+def test_creator_can_make_group_discoverable(client, register_user):
+    _, creator_token = register_user(
+        "creator.discoverable@example.com", latitude=SP_LAT, longitude=SP_LNG
+    )
+    group = _create_group(client, creator_token)
+
+    resp = client.patch(
+        f"/groups/{group['id']}",
+        json={"is_discoverable": True},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["is_discoverable"] is True
+
+
+def test_cannot_make_group_discoverable_without_creator_location(client, register_user):
+    _, creator_token = register_user("creator.discoverablenoloc@example.com")
+    group = _create_group(client, creator_token)
+
+    resp = client.patch(
+        f"/groups/{group['id']}",
+        json={"is_discoverable": True},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 400
+
+
+def test_discover_returns_nearby_discoverable_groups_only(client, register_user):
+    _, creator_token = register_user(
+        "creator.discoverfeed@example.com", latitude=SP_LAT, longitude=SP_LNG
+    )
+    nearby_group = _create_group(client, creator_token, name="Grupo Pertinho")
+    client.patch(
+        f"/groups/{nearby_group['id']}",
+        json={"is_discoverable": True},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    # A second group by the same creator, never made discoverable.
+    _create_group(client, creator_token, name="Grupo Privado")
+
+    _, visitor_token = register_user(
+        "visitor.discoverfeed@example.com",
+        latitude=SP_NEARBY_LAT,
+        longitude=SP_NEARBY_LNG,
+    )
+    resp = client.get(
+        f"/groups/discover?lat={SP_NEARBY_LAT}&lng={SP_NEARBY_LNG}",
+        headers={"Authorization": f"Bearer {visitor_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    names = [g["name"] for g in resp.json()]
+    assert names == ["Grupo Pertinho"]
+    assert resp.json()[0]["distance_km"] < 5
+
+
+def test_discover_excludes_far_and_own_groups(client, register_user):
+    _, creator_token = register_user(
+        "creator.discoverfar@example.com", latitude=SP_LAT, longitude=SP_LNG
+    )
+    group = _create_group(client, creator_token)
+    client.patch(
+        f"/groups/{group['id']}",
+        json={"is_discoverable": True},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+
+    resp = client.get(
+        f"/groups/discover?lat={SP_LAT}&lng={SP_LNG}",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json() == []
+
+    _, far_token = register_user(
+        "visitor.discoverfar@example.com", latitude=RIO_LAT, longitude=RIO_LNG
+    )
+    resp = client.get(
+        f"/groups/discover?lat={RIO_LAT}&lng={RIO_LNG}",
+        headers={"Authorization": f"Bearer {far_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json() == []
+
+
+def test_discover_without_origin_returns_empty(client, register_user):
+    _, token = register_user("visitor.discovernoorigin@example.com")
+    resp = client.get("/groups/discover", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json() == []
+
+
+def test_join_discoverable_group(client, register_user):
+    _, creator_token = register_user(
+        "creator.joindiscoverable@example.com", latitude=SP_LAT, longitude=SP_LNG
+    )
+    group = _create_group(client, creator_token)
+    client.patch(
+        f"/groups/{group['id']}",
+        json={"is_discoverable": True},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+
+    _, visitor_token = register_user("visitor.joindiscoverable@example.com")
+    resp = client.post(
+        f"/groups/{group['id']}/join",
+        headers={"Authorization": f"Bearer {visitor_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert any(m["name"] == "Test User" for m in resp.json()["members"])
+
+
+def test_cannot_join_non_discoverable_group_directly(client, register_user):
+    _, creator_token = register_user("creator.joinreject@example.com")
+    group = _create_group(client, creator_token)
+
+    _, visitor_token = register_user("visitor.joinreject@example.com")
+    resp = client.post(
+        f"/groups/{group['id']}/join",
+        headers={"Authorization": f"Bearer {visitor_token}"},
+    )
+    assert resp.status_code == 404

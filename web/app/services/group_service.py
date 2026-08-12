@@ -1,3 +1,4 @@
+import math
 import os
 import secrets
 import uuid
@@ -15,12 +16,30 @@ from app.schemas.group import (
     GroupResponse,
     GroupSummary,
     GroupUpdate,
+    NearbyGroup,
 )
 from app.services import activity_service, notification_service
 from app.utils import errors
 from app.utils.images import load_and_resize
 
 GROUP_PHOTO_DIMENSION = 400
+
+# Same cap as items' "no meu bairro" feed (item_service/crud.py) — a
+# neighbor-lending app has no business surfacing a group hundreds of km away.
+DEFAULT_MAX_RADIUS_KM = 50
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    earth_radius_km = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    return earth_radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 def _member_response(
@@ -55,6 +74,9 @@ def _to_response(group: Group, viewer: User | None = None) -> GroupResponse:
         description=group.description,
         photo_url=group.photo_url,
         invite_code=group.invite_code,
+        is_discoverable=group.is_discoverable,
+        neighborhood=group.neighborhood,
+        city=group.city,
         member_count=len(group.members),
         members=[_member_response(m, group, viewer) for m in group.members],
         created_by=str(group.created_by.id),
@@ -114,6 +136,13 @@ def create_group(data: GroupCreate, current_user: User) -> GroupResponse:
         invite_code=secrets.token_urlsafe(12),
         created_by=current_user,
         members=[current_user],
+        # Denormalized from the creator, same idea as Item's address fields —
+        # only used if they later opt the group into "grupos perto de você".
+        neighborhood=current_user.neighborhood,
+        city=current_user.city,
+        state=current_user.state,
+        latitude=current_user.latitude,
+        longitude=current_user.longitude,
     )
     group.save()
     activity_service.record(
@@ -131,6 +160,11 @@ def update_group(group_id: str, data: GroupUpdate, current_user: User) -> GroupR
     group = _get_as_member(group_id, current_user)
     if not _is_creator_or_moderator(group, current_user):
         raise errors.forbidden("Only the creator or a moderator can edit the group")
+    if data.is_discoverable and (group.latitude is None or group.longitude is None):
+        raise errors.bad_request(
+            "O criador do grupo precisa ter um endereço com CEP cadastrado "
+            "para tornar o grupo descobrível"
+        )
     updates = data.model_dump(exclude_none=True)
     if updates:
         group.update(**updates)
@@ -269,6 +303,78 @@ def get_my_groups(current_user: User) -> list[GroupSummary]:
     return [
         _to_summary(g) for g in Group.objects(members=current_user).order_by("name")
     ]
+
+
+def list_nearby_groups(
+    current_user: User,
+    lat: float | None,
+    lng: float | None,
+    lat2: float | None,
+    lng2: float | None,
+    radius_km: float | None,
+) -> list[NearbyGroup]:
+    """Discoverable groups near the given origin(s) that current_user isn't
+    already in — same "up to two origins, union, capped radius" approach as
+    item_service.list_items's neighborhood feed, just applied to Group
+    instead of an actual geospatial query."""
+    origin_candidates = [(lat, lng), (lat2, lng2)]
+    origins = [
+        (o_lat, o_lng)
+        for o_lat, o_lng in origin_candidates
+        if o_lat is not None and o_lng is not None
+    ]
+    if not origins:
+        return []
+    effective_radius = radius_km or DEFAULT_MAX_RADIUS_KM
+
+    candidates = Group.objects(is_discoverable=True, members__ne=current_user).order_by(
+        "name"
+    )
+    nearby = []
+    for group in candidates:
+        if group.latitude is None or group.longitude is None:
+            continue
+        distance = min(
+            _haversine_km(o_lat, o_lng, group.latitude, group.longitude)
+            for o_lat, o_lng in origins
+        )
+        if distance <= effective_radius:
+            nearby.append((distance, group))
+    nearby.sort(key=lambda pair: pair[0])
+    return [
+        NearbyGroup(
+            id=str(group.id),
+            name=group.name,
+            description=group.description,
+            photo_url=group.photo_url,
+            neighborhood=group.neighborhood,
+            city=group.city,
+            member_count=len(group.members),
+            distance_km=round(distance, 1),
+        )
+        for distance, group in nearby
+    ]
+
+
+def join_discoverable_group(group_id: str, current_user: User) -> GroupResponse:
+    """Joins a group found via "grupos perto de você" — no invite code
+    needed, since the group itself opted into being discoverable."""
+    group = Group.objects(id=group_id, is_discoverable=True).first()
+    if not group:
+        raise errors.not_found("Group not found")
+    is_member = any(str(m.id) == str(current_user.id) for m in group.members)
+    if not is_member and not current_user.is_admin:
+        group.update(push__members=current_user)
+        group.reload()
+        activity_service.record(
+            recipient=current_user,
+            event="group.joined",
+            actor=current_user,
+            resource_type="group",
+            resource_id=str(group.id),
+            resource_title=group.name,
+        )
+    return _to_response(group, viewer=current_user)
 
 
 def _get_group_readable(group_id: str, current_user: User) -> Group:

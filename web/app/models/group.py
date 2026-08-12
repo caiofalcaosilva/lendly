@@ -1,8 +1,10 @@
 from mongoengine import (
+    BooleanField,
     DateTimeField,
     Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
+    FloatField,
     ListField,
     ReferenceField,
     StringField,
@@ -34,9 +36,24 @@ class Group(Document):
     # or remove one, so two moderators can't strip each other out.
     moderators = ListField(ReferenceField("User"), default=list)
     vouches = ListField(EmbeddedDocumentField(Vouch), default=list)
+    # Denormalized from the creator's address at creation time (same idea as
+    # Item.latitude/longitude) — lets "grupos perto de você" reuse the same
+    # haversine-in-Python approach as the neighborhood item feed, with no
+    # geospatial index. Opt-in: a group only shows up there once its
+    # creator/moderator flips is_discoverable, so private groups stay private.
+    is_discoverable = BooleanField(default=False)
+    neighborhood = StringField(max_length=100)
+    city = StringField(max_length=100)
+    state = StringField(max_length=2)
+    latitude = FloatField()
+    longitude = FloatField()
     created_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "groups",
-        "indexes": ["members", {"fields": ["invite_code"], "unique": True}],
+        "indexes": [
+            "members",
+            {"fields": ["invite_code"], "unique": True},
+            "is_discoverable",
+        ],
     }
