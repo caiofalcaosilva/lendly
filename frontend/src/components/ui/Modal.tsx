@@ -20,6 +20,12 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
   const previouslyFocused = useRef<HTMLElement | null>(null)
   const t = useTranslations('Common.Modal')
 
+  // Callers pass onClose as a fresh inline function on every render; keeping
+  // it out of the effect's deps (via this ref) stops the effect from
+  // re-running - and re-stealing focus - on every keystroke inside the modal.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     if (!open) return
     document.body.style.overflow = 'hidden'
@@ -32,7 +38,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
         return
       }
       if (e.key !== 'Tab' || !dialogRef.current) return
@@ -57,7 +63,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
       document.removeEventListener('keydown', onKeyDown)
       previouslyFocused.current?.focus()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
