@@ -1204,7 +1204,8 @@
       "discoverableHelp": "Neighbors near the group creator's address will be able to find it under \"Groups near you\" and join without an invite.",
       "showQrCode": "Show invite QR code",
       "qrCodeHelp": "Scan to join the group — great for printing and posting in a building or condo.",
-      "mural": "Mural"
+      "mural": "Mural",
+      "activityFeed": "Activity"
     },
     "Mural": {
       "placeholder": "Write an announcement for the group — e.g. \"meeting Saturday at 10am\"",
@@ -1217,6 +1218,11 @@
       "error": "Couldn't load the mural.",
       "postError": "Couldn't post the announcement.",
       "deleteError": "Couldn't delete the announcement."
+    },
+    "ActivityFeed": {
+      "subtitle": "What happened in this group and showed up in your history — most recent first.",
+      "emptyTitle": "No activity yet",
+      "emptyDescription": "Joins, new-item alerts, and other group changes show up here."
     },
     "Discover": {
       "title": "Groups near you",

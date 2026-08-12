@@ -10,10 +10,17 @@ export const activitiesService = {
     limit = 20,
     event?: ActivityEventType,
     resourceType?: ActivityResourceType,
+    resourceId?: string,
   ) =>
     api
       .get<Activity[]>('/activities/', {
-        params: { before_id: beforeId, limit, event, resource_type: resourceType },
+        params: {
+          before_id: beforeId,
+          limit,
+          event,
+          resource_type: resourceType,
+          resource_id: resourceId,
+        },
       })
       .then((r) => r.data),
 }

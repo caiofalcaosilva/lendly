@@ -21,6 +21,7 @@ import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import GroupMural from '@/components/groups/GroupMural'
+import GroupActivityFeed from '@/components/groups/GroupActivityFeed'
 import { useToast } from '@/contexts/ToastContext'
 
 export default function GroupDetailPage() {
@@ -464,6 +465,13 @@ export default function GroupDetailPage() {
         canPost={isMember}
         canModerate={canManageMembers}
       />
+
+      {isMember && (
+        <>
+          <h2 className="text-lg font-semibold text-ink mb-4 mt-10">{t('activityFeed')}</h2>
+          <GroupActivityFeed groupId={id} />
+        </>
+      )}
 
       <ConfirmDialog
         open={pendingAction !== null}
