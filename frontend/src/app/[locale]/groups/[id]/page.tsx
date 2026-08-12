@@ -484,8 +484,12 @@ export default function GroupDetailPage() {
                   <button
                     onClick={() => handleToggleVouch(m)}
                     title={
-                      m.vouch_notes.length > 0
-                        ? t('vouchNotesTooltip', { notes: m.vouch_notes.join(', ') })
+                      m.vouchers.length > 0
+                        ? t('vouchersTooltip', {
+                            list: m.vouchers
+                              .map((v) => (v.note ? `${v.name} — ${v.note}` : v.name))
+                              .join('\n'),
+                          })
                         : m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')
                     }
                     aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}

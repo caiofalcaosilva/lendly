@@ -1195,7 +1195,7 @@
       "noMembersFound": "No members found.",
       "vouchedTooltip": "You've confirmed you know this person",
       "vouchTooltip": "Confirm you know this person",
-      "vouchNotesTooltip": "Confirmed by: {notes}",
+      "vouchersTooltip": "Confirmed by:\n{list}",
       "vouchModalTitle": "Confirm you know {name}",
       "vouchNoteLabel": "Note (optional)",
       "vouchNotePlaceholder": "e.g. neighbor, coworker",

@@ -503,6 +503,13 @@ export interface Item {
   created_at: string
 }
 
+export interface Voucher {
+  id: string
+  name: string
+  avatar_url?: string | null
+  note?: string | null
+}
+
 export interface GroupMember {
   id: string
   name: string
@@ -511,7 +518,7 @@ export interface GroupMember {
   vouch_count: number
   vouched_by_me: boolean
   is_moderator: boolean
-  vouch_notes: string[]
+  vouchers: Voucher[]
 }
 
 export interface GroupSummary {
