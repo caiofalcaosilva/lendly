@@ -145,6 +145,14 @@ def health_check():
     return {"status": "ok", "service": "lendly-api"}
 
 
+@app.get("/config", tags=["public"])
+def get_public_config():
+    """Deploy-level feature flags the frontend needs before login — env-var
+    backed, unlike /announcement, so a redeploy is what changes these, not
+    the admin panel."""
+    return {"free_lending_only": settings.FREE_LENDING_ONLY}
+
+
 @app.get("/announcement", response_model=AnnouncementResponse, tags=["public"])
 def get_announcement():
     """The platform-wide banner shown to every visitor, logged in or not."""

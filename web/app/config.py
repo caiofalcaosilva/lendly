@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # Lendly's cut of every paid loan, taken from the seller's payout.
     PLATFORM_FEE_PERCENT: float = 0.05
 
+    # Kill switch for the paid-rental side of the marketplace — set to true
+    # to run a free-lending-only pilot before the business has a CNPJ (Mercado
+    # Pago's marketplace split needs one). Blocks creating/editing items as
+    # paid at the API, regardless of what the frontend shows.
+    FREE_LENDING_ONLY: bool = False
+
     model_config = {"env_file": ".env"}
 
 

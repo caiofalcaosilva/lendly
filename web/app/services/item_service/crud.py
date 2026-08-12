@@ -3,6 +3,7 @@ import math
 from fastapi import BackgroundTasks
 from mongoengine import Q
 
+from app.config import settings
 from app.models.group import Group
 from app.models.item import Item
 from app.models.user import User
@@ -108,6 +109,11 @@ def create_item(
     if current_user.is_paused:
         raise errors.bad_request(
             "Reative sua conta antes de cadastrar um novo item",
+        )
+
+    if data.availability_type.value == "paid" and settings.FREE_LENDING_ONLY:
+        raise errors.bad_request(
+            "No momento o Lendly só aceita itens em empréstimo gratuito."
         )
 
     if data.availability_type.value == "paid" and not data.daily_rate:
@@ -297,6 +303,10 @@ def update_item(
         _validate_category(effective_category, updates.get("subcategory"))
 
     effective_availability = updates.get("availability_type", item.availability_type)
+    if effective_availability == "paid" and settings.FREE_LENDING_ONLY:
+        raise errors.bad_request(
+            "No momento o Lendly só aceita itens em empréstimo gratuito."
+        )
     if effective_availability == "paid" and not current_user.mp_user_id:
         raise errors.bad_request(
             "Conecte sua conta Mercado Pago antes de tornar este item pago. "
