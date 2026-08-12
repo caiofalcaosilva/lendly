@@ -1148,6 +1148,7 @@
     "title": "My groups",
     "subtitle": "Private, invite-only neighbor groups — share items only with people you trust.",
     "createGroup": "Create group",
+    "discoverNearby": "Discover groups near you",
     "emptyTitle": "You're not in any group yet",
     "emptyDescription": "Create a group for your building or street, or ask for an invite link from someone who already has one.",
     "memberCount": "{count, plural, one {# member} other {# members}}",
@@ -1191,7 +1192,25 @@
       "regenerateInvite": "Generate new invite link",
       "confirmRegenerateInvite": "The current invite link will stop working and a new one will be generated. Continue?",
       "changePhoto": "Change group photo",
-      "removePhoto": "Remove group photo"
+      "removePhoto": "Remove group photo",
+      "discoverableLabel": "Make this group discoverable",
+      "discoverableHelp": "Neighbors near the group creator's address will be able to find it under \"Groups near you\" and join without an invite."
+    },
+    "Discover": {
+      "title": "Groups near you",
+      "subtitle": "Groups that opted into being discoverable near your location.",
+      "back": "My groups",
+      "join": "Join",
+      "joined": "You've joined!",
+      "error": "Couldn't load groups.",
+      "joinError": "Couldn't join the group.",
+      "memberCount": "{count, plural, one {# member} other {# members}}",
+      "distanceAway": "{km} km away",
+      "noLocationTitle": "Add your address to discover groups",
+      "noLocationDescription": "Set your zip code in your profile to see discoverable groups near you.",
+      "goToProfile": "Go to profile",
+      "emptyTitle": "No discoverable groups nearby",
+      "emptyDescription": "There are no discoverable groups near your location yet."
     },
     "Join": {
       "Code": {

@@ -515,10 +515,24 @@ export interface Group {
   description?: string
   photo_url?: string | null
   invite_code: string
+  is_discoverable: boolean
+  neighborhood?: string | null
+  city?: string | null
   member_count: number
   members: GroupMember[]
   created_by: string
   created_at: string
+}
+
+export interface NearbyGroup {
+  id: string
+  name: string
+  description?: string | null
+  photo_url?: string | null
+  neighborhood?: string | null
+  city?: string | null
+  member_count: number
+  distance_km: number
 }
 
 export type RequestStatus =

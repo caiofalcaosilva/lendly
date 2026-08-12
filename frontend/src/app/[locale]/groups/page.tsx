@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import NextImage from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
-import { Users, Plus } from 'lucide-react'
+import { Users, Plus, MapPin } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { GroupSummary } from '@/types'
 import { groupsService } from '@/services/groups'
@@ -42,11 +42,18 @@ export default function GroupsPage() {
             {t('subtitle')}
           </p>
         </div>
-        <Link href="/groups/new">
-          <Button>
-            <Plus className="w-4 h-4" /> {t('createGroup')}
-          </Button>
-        </Link>
+        <div className="flex gap-2 flex-shrink-0">
+          <Link href="/groups/discover">
+            <Button variant="outline">
+              <MapPin className="w-4 h-4" /> {t('discoverNearby')}
+            </Button>
+          </Link>
+          <Link href="/groups/new">
+            <Button>
+              <Plus className="w-4 h-4" /> {t('createGroup')}
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {loading ? (

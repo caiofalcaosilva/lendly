@@ -38,6 +38,7 @@ export default function GroupDetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
+  const [editDiscoverable, setEditDiscoverable] = useState(false)
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
   const [photoBusy, setPhotoBusy] = useState(false)
@@ -177,6 +178,7 @@ export default function GroupDetailPage() {
     if (!group) return
     setEditName(group.name)
     setEditDescription(group.description || '')
+    setEditDiscoverable(group.is_discoverable)
     setEditError('')
     setEditOpen(true)
   }
@@ -189,6 +191,7 @@ export default function GroupDetailPage() {
       const updated = await groupsService.update(id, {
         name: editName,
         description: editDescription || undefined,
+        is_discoverable: editDiscoverable,
       })
       setGroup(updated)
       setEditOpen(false)
@@ -481,6 +484,18 @@ export default function GroupDetailPage() {
             onChange={(e) => setEditDescription(e.target.value)}
             rows={3}
           />
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer text-ink">
+              <input
+                type="checkbox"
+                checked={editDiscoverable}
+                onChange={(e) => setEditDiscoverable(e.target.checked)}
+                className="text-primary rounded"
+              />
+              <span className="text-sm">{t('discoverableLabel')}</span>
+            </label>
+            <p className="text-xs text-ink-subtle mt-1 ml-6">{t('discoverableHelp')}</p>
+          </div>
           <div className="flex gap-3 pt-1">
             <Button type="submit" loading={editSaving} disabled={!editName.trim()} className="flex-1">
               {t('saveChanges')}

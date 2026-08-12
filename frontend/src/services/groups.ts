@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { Group, GroupSummary, Item } from '@/types'
+import { Group, GroupSummary, Item, NearbyGroup } from '@/types'
 
 export const groupsService = {
   create: (data: { name: string; description?: string }) =>
@@ -9,11 +9,17 @@ export const groupsService = {
 
   get: (id: string) => api.get<Group>(`/groups/${id}`).then((r) => r.data),
 
-  update: (id: string, data: { name?: string; description?: string }) =>
+  update: (id: string, data: { name?: string; description?: string; is_discoverable?: boolean }) =>
     api.patch<Group>(`/groups/${id}`, data).then((r) => r.data),
 
   join: (inviteCode: string) =>
     api.post<Group>('/groups/join', { invite_code: inviteCode }).then((r) => r.data),
+
+  discover: (params: { lat?: number; lng?: number; lat2?: number; lng2?: number; radius_km?: number }) =>
+    api.get<NearbyGroup[]>('/groups/discover', { params }).then((r) => r.data),
+
+  joinDiscoverable: (id: string) =>
+    api.post<Group>(`/groups/${id}/join`).then((r) => r.data),
 
   leave: (id: string) => api.post(`/groups/${id}/leave`).then((r) => r.data),
 

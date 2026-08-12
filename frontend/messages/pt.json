@@ -1148,6 +1148,7 @@
     "title": "Meus grupos",
     "subtitle": "Grupos privados de vizinhos, por convite — compartilhe itens só com quem você confia.",
     "createGroup": "Criar grupo",
+    "discoverNearby": "Descobrir grupos perto de você",
     "emptyTitle": "Você ainda não está em nenhum grupo",
     "emptyDescription": "Crie um grupo pro seu condomínio ou sua rua, ou peça um link de convite pra alguém que já tem um.",
     "memberCount": "{count, plural, one {# membro} other {# membros}}",
@@ -1191,7 +1192,25 @@
       "regenerateInvite": "Gerar novo link de convite",
       "confirmRegenerateInvite": "O link de convite atual deixará de funcionar e um novo será gerado. Continuar?",
       "changePhoto": "Alterar foto do grupo",
-      "removePhoto": "Remover foto do grupo"
+      "removePhoto": "Remover foto do grupo",
+      "discoverableLabel": "Tornar este grupo descobrível",
+      "discoverableHelp": "Vizinhos perto do endereço de quem criou o grupo vão poder encontrá-lo em \"Grupos perto de você\" e entrar sem precisar de convite."
+    },
+    "Discover": {
+      "title": "Grupos perto de você",
+      "subtitle": "Grupos que se tornaram descobríveis perto da sua localização.",
+      "back": "Meus grupos",
+      "join": "Entrar",
+      "joined": "Você entrou!",
+      "error": "Não foi possível carregar os grupos.",
+      "joinError": "Não foi possível entrar no grupo.",
+      "memberCount": "{count, plural, one {# membro} other {# membros}}",
+      "distanceAway": "{km} km de você",
+      "noLocationTitle": "Adicione seu endereço para descobrir grupos",
+      "noLocationDescription": "Cadastre seu CEP no perfil pra ver grupos descobríveis perto de você.",
+      "goToProfile": "Ir para o perfil",
+      "emptyTitle": "Nenhum grupo descobrível por perto",
+      "emptyDescription": "Ainda não há grupos descobríveis perto da sua localização."
     },
     "Join": {
       "Code": {
