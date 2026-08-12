@@ -111,7 +111,7 @@ export const ACTIVITY_EVENTS = [
   'group.created', 'group.joined', 'group.left', 'group.deleted',
   'group.vouch_received', 'group.vouch_withdrawn',
   'group.moderator_added', 'group.moderator_removed', 'group.member_removed',
-  'group.item_shared',
+  'group.item_shared', 'group.ownership_transferred',
   'report.filed',
   'account.new_login', 'account.password_changed', 'account.email_changed',
   'account.paused', 'account.resumed', 'account.2fa_enabled',
@@ -519,6 +519,12 @@ export interface GroupSummary {
   name: string
   member_count: number
   photo_url?: string | null
+}
+
+export interface AdminGroupSummary extends GroupSummary {
+  is_discoverable: boolean
+  created_by_name: string
+  created_at: string
 }
 
 export interface Group {

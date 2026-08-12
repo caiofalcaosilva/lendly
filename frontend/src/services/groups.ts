@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { Group, GroupSummary, Item, NearbyGroup } from '@/types'
+import { AdminGroupSummary, Group, GroupSummary, Item, NearbyGroup } from '@/types'
 
 export const groupsService = {
   create: (data: { name: string; description?: string }) =>
@@ -43,6 +43,14 @@ export const groupsService = {
   regenerateInviteCode: (id: string) =>
     api.post<Group>(`/groups/${id}/invite-code/regenerate`).then((r) => r.data),
 
+  refreshLocation: (id: string) =>
+    api.post<Group>(`/groups/${id}/refresh-location`).then((r) => r.data),
+
+  transferOwnership: (id: string, newCreatorId: string) =>
+    api
+      .post<Group>(`/groups/${id}/transfer-ownership`, { new_creator_id: newCreatorId })
+      .then((r) => r.data),
+
   uploadPhoto: (id: string, file: File) => {
     const formData = new FormData()
     formData.append('file', file)
@@ -59,7 +67,8 @@ export const groupsService = {
   // Admin-only — every group on the platform, not just ones the admin
   // belongs to. GET /groups/{id} itself already lets an admin view any
   // group's detail, so this only needs a listing endpoint.
-  all: () => api.get<GroupSummary[]>('/admin/groups').then((r) => r.data),
+  all: (params: { search?: string; skip?: number; limit?: number } = {}) =>
+    api.get<AdminGroupSummary[]>('/admin/groups', { params }).then((r) => r.data),
 
   // Admin-only moderation — delete any group, or kick a member out of one,
   // regardless of who created it.

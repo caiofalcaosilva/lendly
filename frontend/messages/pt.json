@@ -569,7 +569,11 @@
     "Groups": {
       "title": "Todos os grupos",
       "subtitle": "Todo grupo da plataforma, mesmo os que você não participa.",
-      "emptyTitle": "Nenhum grupo cadastrado ainda"
+      "emptyTitle": "Nenhum grupo cadastrado ainda",
+      "searchPlaceholder": "Buscar por nome do grupo...",
+      "discoverable": "Descobrível",
+      "createdBy": "Criado por {name} em {date}",
+      "loadMore": "Carregar mais"
     },
     "Export": {
       "title": "Exportação de relatórios",
@@ -1122,7 +1126,8 @@
         "moderator_added": "{actor} te tornou moderador(a) do grupo {resource}",
         "moderator_removed": "{actor} removeu você como moderador(a) do grupo {resource}",
         "member_removed": "{actor} removeu você do grupo {resource}",
-        "item_shared": "{actor} compartilhou um item novo no grupo {resource}"
+        "item_shared": "{actor} compartilhou um item novo no grupo {resource}",
+        "ownership_transferred": "{actor} transferiu a propriedade do grupo {resource} pra você"
       },
       "report": {
         "filed": "Você denunciou {resource}"
@@ -1186,6 +1191,8 @@
       "copied": "Copiado!",
       "copyInvite": "Copiar convite",
       "memberCount": "{count, plural, one {# membro} other {# membros}}",
+      "searchMembers": "Buscar por nome...",
+      "noMembersFound": "Nenhum membro encontrado.",
       "vouchedTooltip": "Você confirma conhecer essa pessoa",
       "vouchTooltip": "Confirmar que conhece essa pessoa",
       "vouchNotesTooltip": "Confirmações: {notes}",
@@ -1211,10 +1218,18 @@
       "moderatorBadge": "Moderador(a) do grupo",
       "regenerateInvite": "Gerar novo link de convite",
       "confirmRegenerateInvite": "O link de convite atual deixará de funcionar e um novo será gerado. Continuar?",
+      "transferOwnership": "Transferir liderança",
+      "transferOwnershipHelp": "Escolha um membro pra virar o(a) novo(a) criador(a) do grupo. Você vira um membro comum e pode sair do grupo depois, se quiser.",
+      "transferOwnershipLabel": "Novo(a) criador(a)",
+      "transferOwnershipSelect": "Selecione um membro...",
+      "transferOwnershipContinue": "Continuar",
+      "confirmTransferOwnership": "Transferir a liderança do grupo pra {name}? Você vira um membro comum.",
       "changePhoto": "Alterar foto do grupo",
       "removePhoto": "Remover foto do grupo",
       "discoverableLabel": "Tornar este grupo descobrível",
       "discoverableHelp": "Vizinhos perto do endereço de quem criou o grupo vão poder encontrá-lo em \"Grupos perto de você\" e entrar sem precisar de convite.",
+      "refreshLocation": "Atualizar localização (endereço atual de quem criou o grupo)",
+      "refreshLocationSuccess": "Localização do grupo atualizada.",
       "showQrCode": "Ver QR code do convite",
       "qrCodeHelp": "Escaneie para entrar no grupo — ótimo pra imprimir e pendurar no prédio ou condomínio.",
       "mural": "Mural",

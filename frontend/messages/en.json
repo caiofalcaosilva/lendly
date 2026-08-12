@@ -569,7 +569,11 @@
     "Groups": {
       "title": "All groups",
       "subtitle": "Every group on the platform, even ones you're not part of.",
-      "emptyTitle": "No groups registered yet"
+      "emptyTitle": "No groups registered yet",
+      "searchPlaceholder": "Search by group name...",
+      "discoverable": "Discoverable",
+      "createdBy": "Created by {name} on {date}",
+      "loadMore": "Load more"
     },
     "Export": {
       "title": "Report export",
@@ -1122,7 +1126,8 @@
         "moderator_added": "{actor} made you a moderator of {resource}",
         "moderator_removed": "{actor} removed you as a moderator of {resource}",
         "member_removed": "{actor} removed you from {resource}",
-        "item_shared": "{actor} shared a new item in {resource}"
+        "item_shared": "{actor} shared a new item in {resource}",
+        "ownership_transferred": "{actor} transferred ownership of {resource} to you"
       },
       "report": {
         "filed": "You reported {resource}"
@@ -1186,6 +1191,8 @@
       "copied": "Copied!",
       "copyInvite": "Copy invite",
       "memberCount": "{count, plural, one {# member} other {# members}}",
+      "searchMembers": "Search by name...",
+      "noMembersFound": "No members found.",
       "vouchedTooltip": "You've confirmed you know this person",
       "vouchTooltip": "Confirm you know this person",
       "vouchNotesTooltip": "Confirmed by: {notes}",
@@ -1211,10 +1218,18 @@
       "moderatorBadge": "Group moderator",
       "regenerateInvite": "Generate new invite link",
       "confirmRegenerateInvite": "The current invite link will stop working and a new one will be generated. Continue?",
+      "transferOwnership": "Transfer ownership",
+      "transferOwnershipHelp": "Pick a member to become the group's new creator. You'll become a regular member, and can leave the group afterward if you want.",
+      "transferOwnershipLabel": "New creator",
+      "transferOwnershipSelect": "Select a member...",
+      "transferOwnershipContinue": "Continue",
+      "confirmTransferOwnership": "Transfer group ownership to {name}? You'll become a regular member.",
       "changePhoto": "Change group photo",
       "removePhoto": "Remove group photo",
       "discoverableLabel": "Make this group discoverable",
       "discoverableHelp": "Neighbors near the group creator's address will be able to find it under \"Groups near you\" and join without an invite.",
+      "refreshLocation": "Refresh location (group creator's current address)",
+      "refreshLocationSuccess": "Group location updated.",
       "showQrCode": "Show invite QR code",
       "qrCodeHelp": "Scan to join the group — great for printing and posting in a building or condo.",
       "mural": "Mural",

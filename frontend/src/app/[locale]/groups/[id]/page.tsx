@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import NextImage from 'next/image'
 import dynamic from 'next/dynamic'
 import { Link, useRouter } from '@/i18n/navigation'
-import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2, QrCode, Flag } from 'lucide-react'
+import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2, QrCode, Flag, UserCog } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 // QRCode only runs on client (canvas)
@@ -20,6 +20,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
+import Select from '@/components/ui/Select'
 import GroupMural from '@/components/groups/GroupMural'
 import GroupActivityFeed from '@/components/groups/GroupActivityFeed'
 import ReportModal from '@/components/reports/ReportModal'
@@ -41,7 +42,12 @@ export default function GroupDetailPage() {
     | { kind: 'removeMember'; memberId: string; memberName: string }
     | { kind: 'removeMemberGroup'; memberId: string; memberName: string }
     | { kind: 'regenerateInvite' }
+    | { kind: 'transferOwnership'; memberId: string; memberName: string }
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [transferTargetId, setTransferTargetId] = useState('')
+  const [locationRefreshing, setLocationRefreshing] = useState(false)
+  const [memberSearch, setMemberSearch] = useState('')
   const [editOpen, setEditOpen] = useState(false)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
@@ -72,6 +78,10 @@ export default function GroupDetailPage() {
     user && group && group.members.some((m) => m.id === user.id && m.is_moderator)
   )
   const canManageMembers = isMember && (isCreator || isModerator)
+
+  const visibleMembers = group
+    ? group.members.filter((m) => m.name.toLowerCase().includes(memberSearch.trim().toLowerCase()))
+    : []
 
   const inviteUrl = typeof window !== 'undefined' && group
     ? `${window.location.origin}/groups/join/${group.invite_code}`
@@ -153,6 +163,31 @@ export default function GroupDetailPage() {
     }
   }
 
+  const handleRefreshLocation = async () => {
+    setLocationRefreshing(true)
+    try {
+      const updated = await groupsService.refreshLocation(id)
+      setGroup(updated)
+      toast.success(t('refreshLocationSuccess'))
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setLocationRefreshing(false)
+    }
+  }
+
+  const handleTransferOwnership = async (memberId: string) => {
+    setBusy(true)
+    try {
+      const updated = await groupsService.transferOwnership(id, memberId)
+      setGroup(updated)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const confirmPendingAction = () => {
     if (!pendingAction) return
     const action = pendingAction
@@ -162,6 +197,7 @@ export default function GroupDetailPage() {
     else if (action.kind === 'adminDelete') handleAdminDelete()
     else if (action.kind === 'removeMemberGroup') handleRemoveMemberGroup(action.memberId)
     else if (action.kind === 'regenerateInvite') handleRegenerateInvite()
+    else if (action.kind === 'transferOwnership') handleTransferOwnership(action.memberId)
     else handleRemoveMember(action.memberId)
   }
 
@@ -348,6 +384,16 @@ export default function GroupDetailPage() {
                 <Flag className="w-3.5 h-3.5" />
               </button>
             )}
+            {isCreator && group.member_count > 1 && (
+              <button
+                onClick={() => { setTransferTargetId(''); setTransferOpen(true) }}
+                title={t('transferOwnership')}
+                aria-label={t('transferOwnership')}
+                className="flex items-center gap-1 text-xs text-ink-subtle hover:text-primary transition-colors"
+              >
+                <UserCog className="w-3.5 h-3.5" />
+              </button>
+            )}
             {isMember && (
               <Button
                 size="sm"
@@ -401,8 +447,20 @@ export default function GroupDetailPage() {
           <p className="text-xs font-medium text-ink-muted mb-2">
             {t('memberCount', { count: group.member_count })}
           </p>
+          {group.member_count > 8 && (
+            <input
+              type="text"
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+              placeholder={t('searchMembers')}
+              className="w-full max-w-xs mb-3 px-3 py-1.5 bg-surface text-ink border border-border rounded-control text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          )}
+          {memberSearch && visibleMembers.length === 0 && (
+            <p className="text-xs text-ink-subtle mb-2">{t('noMembersFound')}</p>
+          )}
           <div className="flex flex-wrap gap-2">
-            {group.members.map((m) => (
+            {visibleMembers.map((m) => (
               <div
                 key={m.id}
                 className="flex items-center gap-1 bg-surface-2 rounded-full pl-1 pr-1 py-1"
@@ -529,6 +587,7 @@ export default function GroupDetailPage() {
           pendingAction?.kind === 'leave' ? t('leave')
             : pendingAction?.kind === 'removeMember' || pendingAction?.kind === 'removeMemberGroup' ? t('removeFromGroup')
             : pendingAction?.kind === 'regenerateInvite' ? t('regenerateInvite')
+            : pendingAction?.kind === 'transferOwnership' ? t('transferOwnership')
             : t('deleteGroup')
         }
         description={
@@ -538,6 +597,7 @@ export default function GroupDetailPage() {
             : pendingAction?.kind === 'removeMember' ? t('confirmRemoveMember', { name: pendingAction.memberName })
             : pendingAction?.kind === 'removeMemberGroup' ? t('confirmRemoveMember', { name: pendingAction.memberName })
             : pendingAction?.kind === 'regenerateInvite' ? t('confirmRegenerateInvite')
+            : pendingAction?.kind === 'transferOwnership' ? t('confirmTransferOwnership', { name: pendingAction.memberName })
             : ''
         }
         loading={busy}
@@ -573,6 +633,15 @@ export default function GroupDetailPage() {
               <span className="text-sm">{t('discoverableLabel')}</span>
             </label>
             <p className="text-xs text-ink-subtle mt-1 ml-6">{t('discoverableHelp')}</p>
+            <button
+              type="button"
+              onClick={handleRefreshLocation}
+              disabled={locationRefreshing}
+              className="flex items-center gap-1 text-xs font-medium text-ink-subtle hover:text-primary transition-colors mt-2 ml-6 disabled:opacity-50"
+            >
+              {locationRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {t('refreshLocation')}
+            </button>
           </div>
           <div className="flex gap-3 pt-1">
             <Button type="submit" loading={editSaving} disabled={!editName.trim()} className="flex-1">
@@ -629,6 +698,40 @@ export default function GroupDetailPage() {
           onSuccess={() => { setShowReport(false); toast.success(t('reportSent')) }}
         />
       )}
+
+      <Modal open={transferOpen} onClose={() => setTransferOpen(false)} title={t('transferOwnership')}>
+        <div className="space-y-4">
+          <p className="text-sm text-ink-muted">{t('transferOwnershipHelp')}</p>
+          <Select
+            label={t('transferOwnershipLabel')}
+            value={transferTargetId}
+            onChange={(e) => setTransferTargetId(e.target.value)}
+          >
+            <option value="">{t('transferOwnershipSelect')}</option>
+            {group.members.filter((m) => m.id !== group.created_by).map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </Select>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              disabled={!transferTargetId}
+              className="flex-1"
+              onClick={() => {
+                const target = group.members.find((m) => m.id === transferTargetId)
+                if (!target) return
+                setTransferOpen(false)
+                setPendingAction({ kind: 'transferOwnership', memberId: target.id, memberName: target.name })
+              }}
+            >
+              {t('transferOwnershipContinue')}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setTransferOpen(false)}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
