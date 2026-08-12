@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Link, useRouter } from '@/i18n/navigation'
-import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown } from 'lucide-react'
+import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Group, Item } from '@/types'
 import { groupsService } from '@/services/groups'
@@ -32,6 +32,7 @@ export default function GroupDetailPage() {
     | { kind: 'adminDelete' }
     | { kind: 'removeMember'; memberId: string; memberName: string }
     | { kind: 'removeMemberGroup'; memberId: string; memberName: string }
+    | { kind: 'regenerateInvite' }
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [editName, setEditName] = useState('')
@@ -123,6 +124,19 @@ export default function GroupDetailPage() {
     }
   }
 
+  const handleRegenerateInvite = async () => {
+    setBusy(true)
+    try {
+      const updated = await groupsService.regenerateInviteCode(id)
+      setGroup(updated)
+      setCopied(false)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const confirmPendingAction = () => {
     if (!pendingAction) return
     const action = pendingAction
@@ -131,6 +145,7 @@ export default function GroupDetailPage() {
     else if (action.kind === 'delete') handleDelete()
     else if (action.kind === 'adminDelete') handleAdminDelete()
     else if (action.kind === 'removeMemberGroup') handleRemoveMemberGroup(action.memberId)
+    else if (action.kind === 'regenerateInvite') handleRegenerateInvite()
     else handleRemoveMember(action.memberId)
   }
 
@@ -238,6 +253,17 @@ export default function GroupDetailPage() {
 
         <div className="flex items-center gap-2 p-3 bg-surface-2 rounded-control mb-4">
           <span className="text-xs text-ink-muted flex-1 truncate font-mono">{inviteUrl}</span>
+          {canManageMembers && (
+            <button
+              onClick={() => setPendingAction({ kind: 'regenerateInvite' })}
+              disabled={busy}
+              title={t('regenerateInvite')}
+              aria-label={t('regenerateInvite')}
+              className="flex items-center gap-1 text-xs font-medium text-ink-subtle hover:text-primary flex-shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button
             onClick={copyInvite}
             className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover flex-shrink-0"
@@ -350,6 +376,7 @@ export default function GroupDetailPage() {
         title={
           pendingAction?.kind === 'leave' ? t('leave')
             : pendingAction?.kind === 'removeMember' || pendingAction?.kind === 'removeMemberGroup' ? t('removeFromGroup')
+            : pendingAction?.kind === 'regenerateInvite' ? t('regenerateInvite')
             : t('deleteGroup')
         }
         description={
@@ -358,6 +385,7 @@ export default function GroupDetailPage() {
             : pendingAction?.kind === 'adminDelete' ? t('confirmAdminDelete')
             : pendingAction?.kind === 'removeMember' ? t('confirmRemoveMember', { name: pendingAction.memberName })
             : pendingAction?.kind === 'removeMemberGroup' ? t('confirmRemoveMember', { name: pendingAction.memberName })
+            : pendingAction?.kind === 'regenerateInvite' ? t('confirmRegenerateInvite')
             : ''
         }
         loading={busy}

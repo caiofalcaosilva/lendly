@@ -1187,7 +1187,9 @@
       "editError": "Não foi possível salvar as alterações.",
       "makeModerator": "Tornar moderador(a)",
       "revokeModerator": "Remover como moderador(a)",
-      "moderatorBadge": "Moderador(a) do grupo"
+      "moderatorBadge": "Moderador(a) do grupo",
+      "regenerateInvite": "Gerar novo link de convite",
+      "confirmRegenerateInvite": "O link de convite atual deixará de funcionar e um novo será gerado. Continuar?"
     },
     "Join": {
       "Code": {

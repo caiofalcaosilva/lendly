@@ -34,6 +34,9 @@ export const groupsService = {
   removeModerator: (id: string, userId: string) =>
     api.delete<Group>(`/groups/${id}/members/${userId}/moderator`).then((r) => r.data),
 
+  regenerateInviteCode: (id: string) =>
+    api.post<Group>(`/groups/${id}/invite-code/regenerate`).then((r) => r.data),
+
   // Group-level moderation (creator or a moderator) — distinct from
   // adminRemoveMember below, which is platform staff acting on any group.
   removeMember: (id: string, userId: string) =>

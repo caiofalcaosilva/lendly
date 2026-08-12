@@ -1187,7 +1187,9 @@
       "editError": "Couldn't save the changes.",
       "makeModerator": "Make moderator",
       "revokeModerator": "Remove as moderator",
-      "moderatorBadge": "Group moderator"
+      "moderatorBadge": "Group moderator",
+      "regenerateInvite": "Generate new invite link",
+      "confirmRegenerateInvite": "The current invite link will stop working and a new one will be generated. Continue?"
     },
     "Join": {
       "Code": {
