@@ -32,6 +32,8 @@ export default function GroupDetailPage() {
   const { user } = useAuth()
   const [group, setGroup] = useState<Group | null>(null)
   const [items, setItems] = useState<Item[]>([])
+  const [itemsLoadingMore, setItemsLoadingMore] = useState(false)
+  const [itemsHasMore, setItemsHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
   const [previewMembers, setPreviewMembers] = useState<GroupMember[]>([])
   const [membersModalOpen, setMembersModalOpen] = useState(false)
@@ -74,14 +76,33 @@ export default function GroupDetailPage() {
 
   const MEMBERS_LIMIT = 30
   const PREVIEW_LIMIT = 8
+  const ITEMS_LIMIT = 24
 
   const load = useCallback(() => {
-    Promise.all([groupsService.get(id), groupsService.items(id)])
-      .then(([g, i]) => { setGroup(g); setItems(i) })
+    Promise.all([groupsService.get(id), groupsService.items(id, { limit: ITEMS_LIMIT })])
+      .then(([g, i]) => {
+        setGroup(g)
+        setItems(i)
+        setItemsHasMore(i.length === ITEMS_LIMIT)
+      })
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   useEffect(() => { load() }, [load])
+
+  const loadMoreItems = async () => {
+    setItemsLoadingMore(true)
+    try {
+      const data = await groupsService.items(id, { skip: items.length, limit: ITEMS_LIMIT })
+      setItems((prev) => [...prev, ...data])
+      setItemsHasMore(data.length === ITEMS_LIMIT)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setItemsLoadingMore(false)
+    }
+  }
 
   const loadPreview = useCallback(() => {
     groupsService.members(id, { limit: PREVIEW_LIMIT }).then(setPreviewMembers).catch(() => {})
@@ -561,11 +582,20 @@ export default function GroupDetailPage() {
           description={t('emptyItemsDescription')}
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {items.map((item) => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {items.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
+          {itemsHasMore && (
+            <div className="flex justify-center mt-4">
+              <Button variant="outline" size="sm" loading={itemsLoadingMore} onClick={loadMoreItems}>
+                {t('loadMoreItems')}
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       <h2 className="text-lg font-semibold text-ink mb-4 mt-10">{t('mural')}</h2>

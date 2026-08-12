@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { GroupPost } from '@/types'
 import { groupPostsService } from '@/services/groupPosts'
 import { formatDate } from '@/lib/utils'
+import { getAccessToken } from '@/lib/tokenStorage'
 import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -13,6 +14,12 @@ import Skeleton from '@/components/ui/Skeleton'
 import { useToast } from '@/contexts/ToastContext'
 
 const LIMIT = 20
+
+function wsUrl(groupId: string, token: string) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const base = apiUrl.replace(/^http/, 'ws')
+  return `${base}/groups/${groupId}/posts/ws?token=${encodeURIComponent(token)}`
+}
 
 function SkeletonPost() {
   return (
@@ -46,6 +53,7 @@ export default function GroupMural({
   const t = useTranslations('Groups.Mural')
   const toast = useToast()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const seenIds = useRef<Set<string>>(new Set())
 
   // Grows the field to fit its content, starting at a single line, instead
   // of reserving multiple rows of height up front.
@@ -61,6 +69,7 @@ export default function GroupMural({
     groupPostsService
       .list(groupId, undefined, LIMIT)
       .then((data) => {
+        data.forEach((p) => seenIds.current.add(p.id))
         setPosts(data)
         setHasMore(data.length === LIMIT)
       })
@@ -71,11 +80,50 @@ export default function GroupMural({
 
   useEffect(() => { load() }, [load])
 
+  // Live updates for other members' posts/deletes — connects once per
+  // mount, auto-reconnects on drop, same pattern as ChatPanel's socket.
+  useEffect(() => {
+    let socket: WebSocket | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
+
+    const connect = () => {
+      const token = getAccessToken()
+      if (!token || cancelled) return
+      socket = new WebSocket(wsUrl(groupId, token))
+      socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data)
+        if (msg.type === 'created') {
+          const post: GroupPost = msg.post
+          if (seenIds.current.has(post.id)) return
+          seenIds.current.add(post.id)
+          setPosts((prev) => [post, ...prev])
+        } else if (msg.type === 'deleted') {
+          const postId: string = msg.post_id
+          seenIds.current.delete(postId)
+          setPosts((prev) => prev.filter((p) => p.id !== postId))
+          setDeleteTarget((prev) => (prev?.id === postId ? null : prev))
+        }
+      }
+      socket.onclose = () => {
+        if (!cancelled) reconnectTimer = setTimeout(connect, 3000)
+      }
+    }
+    connect()
+
+    return () => {
+      cancelled = true
+      socket?.close()
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+    }
+  }, [groupId])
+
   const loadMore = async () => {
     setLoadingMore(true)
     try {
       const lastId = posts[posts.length - 1]?.id
       const data = await groupPostsService.list(groupId, lastId, LIMIT)
+      data.forEach((p) => seenIds.current.add(p.id))
       setPosts((prev) => [...prev, ...data])
       setHasMore(data.length === LIMIT)
     } catch {
@@ -90,6 +138,7 @@ export default function GroupMural({
     setPosting(true)
     try {
       const post = await groupPostsService.create(groupId, body.trim())
+      seenIds.current.add(post.id)
       setPosts((prev) => [post, ...prev])
       setBody('')
     } catch {

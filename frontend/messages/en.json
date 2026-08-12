@@ -1210,6 +1210,7 @@
       "groupItems": "Group items",
       "emptyItemsTitle": "No items shared yet",
       "emptyItemsDescription": "When listing or editing an item, check this group under 'Visibility' to share it here.",
+      "loadMoreItems": "Load more",
       "editGroup": "Edit group",
       "groupName": "Group name",
       "description": "Description",
@@ -1270,7 +1271,8 @@
       "noLocationDescription": "Set your zip code in your profile to see discoverable groups near you.",
       "goToProfile": "Go to profile",
       "emptyTitle": "No discoverable groups nearby",
-      "emptyDescription": "There are no discoverable groups near your location yet."
+      "emptyDescription": "There are no discoverable groups near your location yet.",
+      "loadMore": "Load more"
     },
     "Join": {
       "Code": {

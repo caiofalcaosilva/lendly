@@ -20,8 +20,17 @@ export const groupsService = {
   join: (inviteCode: string) =>
     api.post<Group>('/groups/join', { invite_code: inviteCode }).then((r) => r.data),
 
-  discover: (params: { lat?: number; lng?: number; lat2?: number; lng2?: number; radius_km?: number }) =>
-    api.get<NearbyGroup[]>('/groups/discover', { params }).then((r) => r.data),
+  discover: (
+    params: {
+      lat?: number
+      lng?: number
+      lat2?: number
+      lng2?: number
+      radius_km?: number
+      skip?: number
+      limit?: number
+    },
+  ) => api.get<NearbyGroup[]>('/groups/discover', { params }).then((r) => r.data),
 
   joinDiscoverable: (id: string) =>
     api.post<Group>(`/groups/${id}/join`).then((r) => r.data),
@@ -30,7 +39,10 @@ export const groupsService = {
 
   remove: (id: string) => api.delete(`/groups/${id}`),
 
-  items: (id: string) => api.get<Item[]>(`/groups/${id}/items`).then((r) => r.data),
+  // Newest first, paginated — a long-lived group can accumulate far more
+  // items than fit on one screen.
+  items: (id: string, params: { skip?: number; limit?: number } = {}) =>
+    api.get<Item[]>(`/groups/${id}/items`, { params }).then((r) => r.data),
 
   vouch: (id: string, userId: string, note?: string) =>
     api

@@ -49,9 +49,13 @@ export default function DiscoverGroupsPage() {
   const live = useLiveLocation()
   const [groups, setGroups] = useState<NearbyGroup[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
   const [joiningId, setJoiningId] = useState<string | null>(null)
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
   const t = useTranslations('Groups.Discover')
+
+  const DISCOVER_LIMIT = 20
 
   const hasHomeLocation = !!(user?.latitude && user?.longitude)
 
@@ -67,14 +71,38 @@ export default function DiscoverGroupsPage() {
         lng: user?.longitude ?? undefined,
         lat2: live?.lat,
         lng2: live?.lng,
+        limit: DISCOVER_LIMIT,
       })
-      .then(setGroups)
+      .then((data) => {
+        setGroups(data)
+        setHasMore(data.length === DISCOVER_LIMIT)
+      })
       .catch(() => toast.error(t('error')))
       .finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasHomeLocation, live, user?.latitude, user?.longitude])
 
   useEffect(() => { load() }, [load])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const data = await groupsService.discover({
+        lat: user?.latitude ?? undefined,
+        lng: user?.longitude ?? undefined,
+        lat2: live?.lat,
+        lng2: live?.lng,
+        skip: groups.length,
+        limit: DISCOVER_LIMIT,
+      })
+      setGroups((prev) => [...prev, ...data])
+      setHasMore(data.length === DISCOVER_LIMIT)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   const handleJoin = async (groupId: string) => {
     setJoiningId(groupId)
@@ -171,6 +199,13 @@ export default function DiscoverGroupsPage() {
               </div>
             )
           })}
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <Button variant="outline" size="sm" loading={loadingMore} onClick={loadMore}>
+                {t('loadMore')}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1210,6 +1210,7 @@
       "groupItems": "Itens do grupo",
       "emptyItemsTitle": "Nenhum item compartilhado ainda",
       "emptyItemsDescription": "Ao cadastrar ou editar um item, marque este grupo em 'Visibilidade' pra compartilhar aqui.",
+      "loadMoreItems": "Carregar mais",
       "editGroup": "Editar grupo",
       "groupName": "Nome do grupo",
       "description": "Descrição",
@@ -1270,7 +1271,8 @@
       "noLocationDescription": "Cadastre seu CEP no perfil pra ver grupos descobríveis perto de você.",
       "goToProfile": "Ir para o perfil",
       "emptyTitle": "Nenhum grupo descobrível por perto",
-      "emptyDescription": "Ainda não há grupos descobríveis perto da sua localização."
+      "emptyDescription": "Ainda não há grupos descobríveis perto da sua localização.",
+      "loadMore": "Carregar mais"
     },
     "Join": {
       "Code": {
