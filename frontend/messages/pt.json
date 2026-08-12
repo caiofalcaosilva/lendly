@@ -1178,7 +1178,16 @@
       "removeFromGroup": "Remover do grupo",
       "groupItems": "Itens do grupo",
       "emptyItemsTitle": "Nenhum item compartilhado ainda",
-      "emptyItemsDescription": "Ao cadastrar ou editar um item, marque este grupo em 'Visibilidade' pra compartilhar aqui."
+      "emptyItemsDescription": "Ao cadastrar ou editar um item, marque este grupo em 'Visibilidade' pra compartilhar aqui.",
+      "editGroup": "Editar grupo",
+      "groupName": "Nome do grupo",
+      "description": "Descrição",
+      "saveChanges": "Salvar alterações",
+      "cancel": "Cancelar",
+      "editError": "Não foi possível salvar as alterações.",
+      "makeModerator": "Tornar moderador(a)",
+      "revokeModerator": "Remover como moderador(a)",
+      "moderatorBadge": "Moderador(a) do grupo"
     },
     "Join": {
       "Code": {

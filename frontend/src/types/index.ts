@@ -499,6 +499,7 @@ export interface GroupMember {
   average_rating: number
   vouch_count: number
   vouched_by_me: boolean
+  is_moderator: boolean
 }
 
 export interface GroupSummary {

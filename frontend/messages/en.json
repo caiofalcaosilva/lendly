@@ -1178,7 +1178,16 @@
       "removeFromGroup": "Remove from group",
       "groupItems": "Group items",
       "emptyItemsTitle": "No items shared yet",
-      "emptyItemsDescription": "When listing or editing an item, check this group under 'Visibility' to share it here."
+      "emptyItemsDescription": "When listing or editing an item, check this group under 'Visibility' to share it here.",
+      "editGroup": "Edit group",
+      "groupName": "Group name",
+      "description": "Description",
+      "saveChanges": "Save changes",
+      "cancel": "Cancel",
+      "editError": "Couldn't save the changes.",
+      "makeModerator": "Make moderator",
+      "revokeModerator": "Remove as moderator",
+      "moderatorBadge": "Group moderator"
     },
     "Join": {
       "Code": {

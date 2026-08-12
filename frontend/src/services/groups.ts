@@ -9,6 +9,9 @@ export const groupsService = {
 
   get: (id: string) => api.get<Group>(`/groups/${id}`).then((r) => r.data),
 
+  update: (id: string, data: { name?: string; description?: string }) =>
+    api.patch<Group>(`/groups/${id}`, data).then((r) => r.data),
+
   join: (inviteCode: string) =>
     api.post<Group>('/groups/join', { invite_code: inviteCode }).then((r) => r.data),
 
@@ -23,6 +26,18 @@ export const groupsService = {
 
   unvouch: (id: string, userId: string) =>
     api.delete<Group>(`/groups/${id}/members/${userId}/vouch`).then((r) => r.data),
+
+  // Co-admins — creator-only to grant/revoke.
+  addModerator: (id: string, userId: string) =>
+    api.post<Group>(`/groups/${id}/members/${userId}/moderator`).then((r) => r.data),
+
+  removeModerator: (id: string, userId: string) =>
+    api.delete<Group>(`/groups/${id}/members/${userId}/moderator`).then((r) => r.data),
+
+  // Group-level moderation (creator or a moderator) — distinct from
+  // adminRemoveMember below, which is platform staff acting on any group.
+  removeMember: (id: string, userId: string) =>
+    api.delete<Group>(`/groups/${id}/members/${userId}`).then((r) => r.data),
 
   // Admin-only — every group on the platform, not just ones the admin
   // belongs to. GET /groups/{id} itself already lets an admin view any

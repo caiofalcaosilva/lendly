@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Link, useRouter } from '@/i18n/navigation'
-import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck } from 'lucide-react'
+import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Group, Item } from '@/types'
 import { groupsService } from '@/services/groups'
@@ -12,6 +12,9 @@ import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
 import ItemCard from '@/components/items/ItemCard'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import Modal from '@/components/ui/Modal'
+import Input from '@/components/ui/Input'
+import Textarea from '@/components/ui/Textarea'
 import { useToast } from '@/contexts/ToastContext'
 
 export default function GroupDetailPage() {
@@ -28,7 +31,13 @@ export default function GroupDetailPage() {
     | { kind: 'delete' }
     | { kind: 'adminDelete' }
     | { kind: 'removeMember'; memberId: string; memberName: string }
+    | { kind: 'removeMemberGroup'; memberId: string; memberName: string }
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
   const t = useTranslations('Groups.Id')
   const toast = useToast()
 
@@ -42,6 +51,10 @@ export default function GroupDetailPage() {
 
   const isCreator = user && group && user.id === group.created_by
   const isMember = !!(user && group && group.members.some((m) => m.id === user.id))
+  const isModerator = !!(
+    user && group && group.members.some((m) => m.id === user.id && m.is_moderator)
+  )
+  const canManageMembers = isMember && (isCreator || isModerator)
 
   const inviteUrl = typeof window !== 'undefined' && group
     ? `${window.location.origin}/groups/join/${group.invite_code}`
@@ -98,6 +111,18 @@ export default function GroupDetailPage() {
     }
   }
 
+  const handleRemoveMemberGroup = async (memberId: string) => {
+    setBusy(true)
+    try {
+      const updated = await groupsService.removeMember(id, memberId)
+      setGroup(updated)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const confirmPendingAction = () => {
     if (!pendingAction) return
     const action = pendingAction
@@ -105,7 +130,22 @@ export default function GroupDetailPage() {
     if (action.kind === 'leave') handleLeave()
     else if (action.kind === 'delete') handleDelete()
     else if (action.kind === 'adminDelete') handleAdminDelete()
+    else if (action.kind === 'removeMemberGroup') handleRemoveMemberGroup(action.memberId)
     else handleRemoveMember(action.memberId)
+  }
+
+  const handleToggleModerator = async (member: { id: string; is_moderator: boolean }) => {
+    setBusy(true)
+    try {
+      const updated = member.is_moderator
+        ? await groupsService.removeModerator(id, member.id)
+        : await groupsService.addModerator(id, member.id)
+      setGroup(updated)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setBusy(false)
+    }
   }
 
   const handleToggleVouch = async (member: { id: string; vouched_by_me: boolean }) => {
@@ -113,6 +153,32 @@ export default function GroupDetailPage() {
       ? await groupsService.unvouch(id, member.id)
       : await groupsService.vouch(id, member.id)
     setGroup(updated)
+  }
+
+  const openEdit = () => {
+    if (!group) return
+    setEditName(group.name)
+    setEditDescription(group.description || '')
+    setEditError('')
+    setEditOpen(true)
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEditSaving(true)
+    setEditError('')
+    try {
+      const updated = await groupsService.update(id, {
+        name: editName,
+        description: editDescription || undefined,
+      })
+      setGroup(updated)
+      setEditOpen(false)
+    } catch (err: any) {
+      setEditError(err.response?.data?.detail || t('editError'))
+    } finally {
+      setEditSaving(false)
+    }
   }
 
   if (loading) return (
@@ -136,7 +202,19 @@ export default function GroupDetailPage() {
               <Users className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight text-ink">{group.name}</h1>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-xl font-extrabold tracking-tight text-ink">{group.name}</h1>
+                {canManageMembers && (
+                  <button
+                    onClick={openEdit}
+                    aria-label={t('editGroup')}
+                    title={t('editGroup')}
+                    className="p-1 rounded-control text-ink-subtle hover:text-primary hover:bg-surface-2 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
               {group.description && <p className="text-sm text-ink-muted">{group.description}</p>}
             </div>
           </div>
@@ -200,7 +278,40 @@ export default function GroupDetailPage() {
                     {m.vouch_count > 0 && m.vouch_count}
                   </button>
                 )}
-                {user?.is_admin && m.id !== group.created_by && (
+                {isCreator && m.id !== group.created_by && (
+                  <button
+                    onClick={() => handleToggleModerator(m)}
+                    disabled={busy}
+                    title={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
+                    aria-label={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
+                    className={`flex items-center px-1 py-0.5 rounded-full transition-colors ${
+                      m.is_moderator ? 'text-accent' : 'text-ink-subtle hover:text-accent'
+                    }`}
+                  >
+                    <Crown className={`w-3 h-3 ${m.is_moderator ? 'fill-accent-subtle' : ''}`} />
+                  </button>
+                )}
+                {!isCreator && m.is_moderator && (
+                  <span title={t('moderatorBadge')} className="flex items-center px-1 text-accent">
+                    <Crown className="w-3 h-3 fill-accent-subtle" />
+                  </span>
+                )}
+                {canManageMembers &&
+                  m.id !== group.created_by &&
+                  !(m.is_moderator && !isCreator) && (
+                    <button
+                      onClick={() =>
+                        setPendingAction({ kind: 'removeMemberGroup', memberId: m.id, memberName: m.name })
+                      }
+                      disabled={busy}
+                      title={t('removeFromGroup')}
+                      aria-label={t('removeFromGroup')}
+                      className="p-0.5 rounded-full text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                {!isMember && user?.is_admin && m.id !== group.created_by && (
                   <button
                     onClick={() => setPendingAction({ kind: 'removeMember', memberId: m.id, memberName: m.name })}
                     disabled={busy}
@@ -238,7 +349,7 @@ export default function GroupDetailPage() {
         onConfirm={confirmPendingAction}
         title={
           pendingAction?.kind === 'leave' ? t('leave')
-            : pendingAction?.kind === 'removeMember' ? t('removeFromGroup')
+            : pendingAction?.kind === 'removeMember' || pendingAction?.kind === 'removeMemberGroup' ? t('removeFromGroup')
             : t('deleteGroup')
         }
         description={
@@ -246,10 +357,41 @@ export default function GroupDetailPage() {
             : pendingAction?.kind === 'delete' ? t('confirmDelete')
             : pendingAction?.kind === 'adminDelete' ? t('confirmAdminDelete')
             : pendingAction?.kind === 'removeMember' ? t('confirmRemoveMember', { name: pendingAction.memberName })
+            : pendingAction?.kind === 'removeMemberGroup' ? t('confirmRemoveMember', { name: pendingAction.memberName })
             : ''
         }
         loading={busy}
       />
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title={t('editGroup')}>
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          {editError && (
+            <div className="p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
+              {editError}
+            </div>
+          )}
+          <Input
+            label={t('groupName')}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            required
+          />
+          <Textarea
+            label={t('description')}
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+            rows={3}
+          />
+          <div className="flex gap-3 pt-1">
+            <Button type="submit" loading={editSaving} disabled={!editName.trim()} className="flex-1">
+              {t('saveChanges')}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
