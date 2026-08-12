@@ -81,6 +81,9 @@ export default function DiscoverGroupsPage() {
     try {
       await groupsService.joinDiscoverable(groupId)
       setJoinedIds((prev) => new Set(prev).add(groupId))
+      setGroups((prev) =>
+        prev.map((g) => (g.id === groupId ? { ...g, member_count: g.member_count + 1 } : g)),
+      )
       toast.success(t('joined'))
     } catch {
       toast.error(t('joinError'))
@@ -144,18 +147,27 @@ export default function DiscoverGroupsPage() {
                       {t('distanceAway', { km: group.distance_km })}
                       {group.neighborhood ? ` · ${group.neighborhood}` : ''}
                     </p>
+                    {group.description && (
+                      <p className="text-xs text-ink-muted truncate mt-0.5">{group.description}</p>
+                    )}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant={joined ? 'outline' : 'primary'}
-                  disabled={joined}
-                  loading={joiningId === group.id}
-                  onClick={() => handleJoin(group.id)}
-                  className="flex-shrink-0"
-                >
-                  {joined ? t('joined') : t('join')}
-                </Button>
+                {joined ? (
+                  <Link href={`/groups/${group.id}`} className="flex-shrink-0">
+                    <Button size="sm" variant="outline">
+                      {t('viewGroup')}
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    size="sm"
+                    loading={joiningId === group.id}
+                    onClick={() => handleJoin(group.id)}
+                    className="flex-shrink-0"
+                  >
+                    {t('join')}
+                  </Button>
+                )}
               </div>
             )
           })}

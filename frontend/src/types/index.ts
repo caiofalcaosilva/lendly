@@ -65,6 +65,7 @@ export interface InAppNotificationPreferences {
   group_vouch: boolean
   favorite_item_changed: boolean
   group_new_item: boolean
+  group_membership_changed: boolean
 }
 
 export type NotificationType =
@@ -76,6 +77,7 @@ export type NotificationType =
   | 'group_vouch'
   | 'favorite_item_changed'
   | 'group_new_item'
+  | 'group_membership_changed'
   | 'new_login'
 
 // Named AppNotification, not Notification — the DOM lib already declares a
@@ -389,6 +391,8 @@ export interface PlatformSettings {
   resend_verification_rate_limit_per_minute: number
   chat_message_rate_limit_per_minute: number
   password_reset_rate_limit_per_minute: number
+  group_create_rate_limit_per_minute: number
+  group_post_rate_limit_per_minute: number
   handoff_confirmation_grace_hours: number
   announcement_message?: string | null
   announcement_active: boolean
@@ -502,6 +506,7 @@ export interface Item {
 export interface GroupMember {
   id: string
   name: string
+  avatar_url?: string | null
   average_rating: number
   vouch_count: number
   vouched_by_me: boolean

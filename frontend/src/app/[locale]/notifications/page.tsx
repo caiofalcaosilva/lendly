@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
-import { Bell, MessageCircle, ShieldCheck, Package, Star, ClipboardCheck, HeartHandshake, Tag, CheckCheck, ShieldAlert, X, Trash2 } from 'lucide-react'
+import { Bell, MessageCircle, ShieldCheck, Package, Star, ClipboardCheck, HeartHandshake, Tag, CheckCheck, ShieldAlert, X, Trash2, Users } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { AppNotification, NotificationType } from '@/types'
 import { notificationsService } from '@/services/notifications'
@@ -35,12 +35,14 @@ const TYPE_ICONS: Record<NotificationType, typeof Bell> = {
   group_vouch: HeartHandshake,
   favorite_item_changed: Tag,
   group_new_item: Package,
+  group_membership_changed: Users,
   new_login: ShieldAlert,
 }
 
 const TYPE_KEYS: NotificationType[] = [
   'request_status', 'new_message', 'verification_result', 'item_available',
-  'review_reminder', 'group_vouch', 'favorite_item_changed', 'group_new_item', 'new_login',
+  'review_reminder', 'group_vouch', 'favorite_item_changed', 'group_new_item',
+  'group_membership_changed', 'new_login',
 ]
 
 export default function NotificationsPage() {

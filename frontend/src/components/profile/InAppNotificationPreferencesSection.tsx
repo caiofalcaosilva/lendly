@@ -8,7 +8,7 @@ import { useToast } from '@/contexts/ToastContext'
 
 const OPTION_KEYS: (keyof InAppNotificationPreferences)[] = [
   'request_status', 'new_message', 'verification_result', 'item_available', 'review_reminder',
-  'group_vouch', 'favorite_item_changed', 'group_new_item',
+  'group_vouch', 'favorite_item_changed', 'group_new_item', 'group_membership_changed',
 ]
 
 export default function InAppNotificationPreferencesSection({

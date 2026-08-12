@@ -17,6 +17,7 @@ const FIELD_KEYS: (keyof PlatformSettings)[] = [
   'login_rate_limit_per_minute', 'register_rate_limit_per_minute', 'complete_2fa_rate_limit_per_minute',
   'refresh_rate_limit_per_minute', 'resend_verification_rate_limit_per_minute',
   'chat_message_rate_limit_per_minute', 'password_reset_rate_limit_per_minute',
+  'group_create_rate_limit_per_minute', 'group_post_rate_limit_per_minute',
   'handoff_confirmation_grace_hours',
 ]
 
@@ -64,6 +65,8 @@ export default function AdminSettingsPage() {
           settings.resend_verification_rate_limit_per_minute,
         chat_message_rate_limit_per_minute: settings.chat_message_rate_limit_per_minute,
         password_reset_rate_limit_per_minute: settings.password_reset_rate_limit_per_minute,
+        group_create_rate_limit_per_minute: settings.group_create_rate_limit_per_minute,
+        group_post_rate_limit_per_minute: settings.group_post_rate_limit_per_minute,
         handoff_confirmation_grace_hours: settings.handoff_confirmation_grace_hours,
         announcement_message: settings.announcement_message ?? '',
         announcement_active: settings.announcement_active,

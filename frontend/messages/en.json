@@ -422,7 +422,8 @@
         "review_reminder": "Reminder to review a finished loan",
         "group_vouch": "Someone confirmed they know you in a group",
         "favorite_item_changed": "A favorited item's price or availability changed",
-        "group_new_item": "A new item was shared in one of your groups"
+        "group_new_item": "A new item was shared in one of your groups",
+        "group_membership_changed": "Changes to your role or membership in a group"
       }
     },
     "AvatarUploader": {
@@ -616,6 +617,8 @@
         "resend_verification_rate_limit_per_minute": { "label": "Verification resend limit per minute", "helper": "Per IP — protects against verification email spam." },
         "chat_message_rate_limit_per_minute": { "label": "Chat message limit per minute", "helper": "Per user — protects the loan chat against flooding." },
         "password_reset_rate_limit_per_minute": { "label": "Password reset request limit per minute", "helper": "Per IP — protects \"forgot my password\" against abuse." },
+        "group_create_rate_limit_per_minute": { "label": "Group creation limit per minute", "helper": "Per user — protects against group spam." },
+        "group_post_rate_limit_per_minute": { "label": "Mural post limit per minute", "helper": "Per user — protects each group's mural against flooding." },
         "handoff_confirmation_grace_hours": { "label": "Grace period to force pickup/return confirmation (hours)", "helper": "After this period since the owner's confirmation, they can force it even without the requester confirming." }
       },
       "announcement": "Platform announcement",
@@ -1053,6 +1056,7 @@
       "group_vouch": "Group vouches",
       "favorite_item_changed": "Favorites",
       "group_new_item": "New items in groups",
+      "group_membership_changed": "Role/membership in groups",
       "new_login": "Security"
     },
     "emptyFilteredTitle": "Nothing here",
@@ -1239,6 +1243,7 @@
       "back": "My groups",
       "join": "Join",
       "joined": "You've joined!",
+      "viewGroup": "View group",
       "error": "Couldn't load groups.",
       "joinError": "Couldn't join the group.",
       "memberCount": "{count, plural, one {# member} other {# members}}",

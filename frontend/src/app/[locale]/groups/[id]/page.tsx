@@ -189,7 +189,8 @@ export default function GroupDetailPage() {
     }
   }
 
-  const submitVouch = async () => {
+  const submitVouch = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!vouchTarget) return
     setVouchSaving(true)
     try {
@@ -404,15 +405,24 @@ export default function GroupDetailPage() {
             {group.members.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-1 bg-surface-2 rounded-full pl-2.5 pr-1 py-1"
+                className="flex items-center gap-1 bg-surface-2 rounded-full pl-1 pr-1 py-1"
               >
                 <Link
                   href={`/users/${m.id}`}
-                  className="text-xs text-ink-muted hover:text-primary transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-ink-muted hover:text-primary transition-colors"
                 >
+                  {m.avatar_url ? (
+                    <div className="relative w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
+                      <NextImage src={m.avatar_url} alt={m.name} fill unoptimized className="object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
+                      <span className="text-[9px] font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
                   {m.name}
                 </Link>
-                {user && m.id !== user.id && (
+                {isMember && user && m.id !== user.id && (
                   <button
                     onClick={() => handleToggleVouch(m)}
                     title={
@@ -592,7 +602,7 @@ export default function GroupDetailPage() {
         onClose={() => setVouchTarget(null)}
         title={vouchTarget ? t('vouchModalTitle', { name: vouchTarget.name }) : ''}
       >
-        <div className="space-y-4">
+        <form onSubmit={submitVouch} className="space-y-4">
           <Input
             label={t('vouchNoteLabel')}
             value={vouchNote}
@@ -601,14 +611,14 @@ export default function GroupDetailPage() {
             maxLength={200}
           />
           <div className="flex gap-3">
-            <Button onClick={submitVouch} loading={vouchSaving} className="flex-1">
+            <Button type="submit" loading={vouchSaving} className="flex-1">
               {t('vouchConfirm')}
             </Button>
             <Button type="button" variant="outline" onClick={() => setVouchTarget(null)}>
               {t('cancel')}
             </Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {showReport && (
