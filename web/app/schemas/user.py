@@ -29,6 +29,7 @@ class UserCreate(BaseModel):
     website: str | None = Field(None, max_length=200)
     instagram: str | None = Field(None, max_length=100)
     whatsapp: str | None = Field(None, max_length=20)
+    accepted_terms: bool = False
 
     @model_validator(mode="after")
     def _validate_business_fields(self):
@@ -39,6 +40,15 @@ class UserCreate(BaseModel):
                 raise ValueError("A valid cnpj is required for business accounts")
         if self.website and not is_valid_website_url(self.website):
             raise ValueError("website must be an http(s) URL")
+        return self
+
+    @model_validator(mode="after")
+    def _require_terms_acceptance(self):
+        if not self.accepted_terms:
+            raise ValueError(
+                "accepted_terms must be true — the terms of use and privacy "
+                "policy checkbox wasn't checked"
+            )
         return self
 
 

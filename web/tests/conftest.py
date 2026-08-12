@@ -58,6 +58,7 @@ def register_user(client):
             "email": email,
             "password": password,
             "account_type": "individual",
+            "accepted_terms": True,
             **overrides,
         }
         resp = client.post("/auth/register", json=payload)

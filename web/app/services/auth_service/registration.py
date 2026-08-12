@@ -18,6 +18,11 @@ from app.utils import errors
 from app.utils.security import hash_password
 from app.utils.time import utcnow
 
+# Bumped whenever the terms of use / privacy policy text changes materially —
+# stamped on the user at registration as consent evidence (see
+# terms_accepted_version on the User model). Not tied to app releases.
+CURRENT_TERMS_VERSION = "2026-08-12"
+
 
 def register_user(
     data: UserCreate, background_tasks: BackgroundTasks, request: Request | None = None
@@ -34,6 +39,7 @@ def register_user(
 
     verification_token = secrets.token_urlsafe(32)
     device_token = new_device_token()
+    ip, user_agent = client_info(request)
 
     user = User(
         name=data.name,
@@ -50,6 +56,9 @@ def register_user(
         longitude=data.longitude,
         password_hash=hash_password(data.password),
         is_verified=False,
+        terms_accepted_version=CURRENT_TERMS_VERSION,
+        terms_accepted_at=utcnow(),
+        terms_accepted_ip=ip,
         email_verification_token=verification_token,
         email_verification_expires=utcnow()
         + timedelta(hours=get_platform_settings().email_verification_expire_hours),
@@ -72,7 +81,6 @@ def register_user(
         verification_token,
     )
 
-    ip, user_agent = client_info(request)
     return TokenResponse(
         access_token=make_access_token(user),
         refresh_token=new_refresh_session(user, ip, user_agent),

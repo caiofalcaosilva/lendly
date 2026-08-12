@@ -1539,7 +1539,7 @@ def seed():
         f"{len(USERS) - BUSINESS_START_IDX} empresas)..."
     )
     for u in USERS:
-        r = post_retrying(f"{BASE}/auth/register", json=u)
+        r = post_retrying(f"{BASE}/auth/register", json={**u, "accepted_terms": True})
         if r.status_code == 201:
             _verify_user_in_db(u["email"])
             tokens.append(r.json()["access_token"])

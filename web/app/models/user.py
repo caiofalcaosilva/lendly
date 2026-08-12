@@ -106,6 +106,11 @@ class User(Document):
     mp_connected_at = DateTimeField()
     mp_oauth_state = StringField()
     is_verified = BooleanField(default=False)
+    # Recorded at registration for LGPD consent evidence — which version of
+    # the terms/privacy policy they agreed to, and when/from where.
+    terms_accepted_version = StringField()
+    terms_accepted_at = DateTimeField()
+    terms_accepted_ip = StringField()
     email_verification_token = StringField()
     email_verification_expires = DateTimeField()
     password_reset_token = StringField()
