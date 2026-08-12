@@ -164,6 +164,7 @@ def update_inapp_prefs(
         favorite_item_changed=updates.get(
             "favorite_item_changed", current.favorite_item_changed
         ),
+        group_new_item=updates.get("group_new_item", current.group_new_item),
     )
     current_user.update(inapp_notification_prefs=merged, updated_at=utcnow())
     current_user.reload()

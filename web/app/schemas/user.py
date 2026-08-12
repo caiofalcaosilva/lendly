@@ -120,6 +120,7 @@ class InAppNotificationPreferencesUpdate(BaseModel):
     review_reminder: bool | None = None
     group_vouch: bool | None = None
     favorite_item_changed: bool | None = None
+    group_new_item: bool | None = None
 
 
 class NotificationPreferencesUpdate(BaseModel):

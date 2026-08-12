@@ -60,7 +60,46 @@ def _validate_category(category: str, subcategory: str | None) -> None:
         )
 
 
-def create_item(data: ItemCreate, current_user: User) -> ItemResponse:
+def _notify_groups_of_new_item(
+    groups: list[Group],
+    item: Item,
+    current_user: User,
+    background_tasks: BackgroundTasks,
+) -> None:
+    """One Activity row + one notification per (recipient, group) — an item
+    shared into 2 of your groups is 2 distinct contextual events, same
+    reasoning as every other multi-recipient loop in this codebase. Uses
+    resource_type="group" (not "item") so this shows up when the group's
+    own activity feed filters by (resource_type=group, resource_id):
+    scoping it to "item" would make it invisible there."""
+    for group in groups:
+        for member in group.members:
+            if member.id == current_user.id:
+                continue
+            activity_service.record(
+                recipient=member,
+                event="group.item_shared",
+                actor=current_user,
+                resource_type="group",
+                resource_id=str(group.id),
+                resource_title=group.name,
+                metadata={"item_id": str(item.id), "item_title": item.title},
+            )
+            background_tasks.add_task(
+                notification_service.create_notification,
+                member,
+                "group_new_item",
+                item.title,
+                f"Novo item no grupo {group.name}",
+                f"/items/{item.id}",
+            )
+
+
+def create_item(
+    data: ItemCreate,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> ItemResponse:
     if current_user.is_admin:
         raise errors.bad_request(
             "Contas administrativas não podem cadastrar itens",
@@ -127,6 +166,8 @@ def create_item(data: ItemCreate, current_user: User) -> ItemResponse:
         resource_id=str(item.id),
         resource_title=item.title,
     )
+    if background_tasks and groups:
+        _notify_groups_of_new_item(groups, item, current_user, background_tasks)
     return to_response(item)
 
 
@@ -262,10 +303,12 @@ def update_item(
             "Faça isso em /profile."
         )
 
+    newly_added_groups: list[Group] = []
     if "group_ids" in updates:
-        updates["groups"] = _resolve_member_groups(
-            updates.pop("group_ids"), current_user
-        )
+        new_groups = _resolve_member_groups(updates.pop("group_ids"), current_user)
+        old_group_ids = {str(g.id) for g in item.groups}
+        newly_added_groups = [g for g in new_groups if str(g.id) not in old_group_ids]
+        updates["groups"] = new_groups
 
     effective_is_public = updates.get("is_public", item.is_public)
     effective_groups = updates.get("groups", item.groups)
@@ -274,6 +317,11 @@ def update_item(
     updates["updated_at"] = utcnow()
     item.update(**updates)
     item.reload()
+
+    if background_tasks and newly_added_groups:
+        _notify_groups_of_new_item(
+            newly_added_groups, item, current_user, background_tasks
+        )
 
     price_changed = "daily_rate" in updates and updates["daily_rate"] != old_daily_rate
     availability_changed = (

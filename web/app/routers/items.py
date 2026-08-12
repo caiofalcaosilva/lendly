@@ -60,10 +60,14 @@ def get_item(
 
 
 @router.post("/", response_model=ItemResponse, status_code=201)
-def create_item(data: ItemCreate, current_user: User = Depends(get_current_user)):
+def create_item(
+    data: ItemCreate,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
     """Lists a new item. Paid items require the owner to already have a
     Mercado Pago account connected."""
-    return item_service.create_item(data, current_user)
+    return item_service.create_item(data, current_user, background_tasks)
 
 
 @router.put("/{item_id}", response_model=ItemResponse)

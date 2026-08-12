@@ -14,6 +14,7 @@ _EMAIL_CATEGORIES = (
 _INAPP_ONLY_CATEGORIES = (
     "group_vouch",
     "favorite_item_changed",
+    "group_new_item",
 )
 
 _INAPP_CATEGORIES = _EMAIL_CATEGORIES + _INAPP_ONLY_CATEGORIES

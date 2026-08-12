@@ -42,6 +42,7 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `group.vouch_withdrawn` | `group_service.py::unvouch_for_member` | Membro que perdeu o vouch |
 | `group.moderator_added` / `moderator_removed` | `group_service.py::add_moderator` / `remove_moderator` (criador only) | O membro promovido/rebaixado |
 | `group.member_removed` | `group_service.py::remove_member` (criador ou moderador) | Membro removido |
+| `group.item_shared` | `item_service/crud.py::create_item`/`update_item` (item compartilhado com um grupo, na criação ou depois) | Cada membro do grupo, exceto quem compartilhou. `resource_type="group"` (não `"item"`) de propósito — é o que faz esse evento aparecer no feed de atividades do próprio grupo |
 | `report.filed` | `report_service.py::create_report` | O próprio reporter |
 | `account.new_login` | `auth_service/session.py::login_user` / `complete_2fa` (só dispositivo não confiável) | O próprio usuário |
 | `account.password_changed` | `auth_service/account.py::change_password` | O próprio usuário |

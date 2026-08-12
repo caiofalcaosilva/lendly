@@ -50,6 +50,7 @@ class InAppNotificationPreferences(EmbeddedDocument):
     review_reminder = BooleanField(default=True)
     group_vouch = BooleanField(default=True)
     favorite_item_changed = BooleanField(default=True)
+    group_new_item = BooleanField(default=True)
 
 
 class User(Document):
