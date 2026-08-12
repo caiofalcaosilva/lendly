@@ -27,8 +27,8 @@ export const groupsService = {
 
   items: (id: string) => api.get<Item[]>(`/groups/${id}/items`).then((r) => r.data),
 
-  vouch: (id: string, userId: string) =>
-    api.post<Group>(`/groups/${id}/members/${userId}/vouch`).then((r) => r.data),
+  vouch: (id: string, userId: string, note?: string) =>
+    api.post<Group>(`/groups/${id}/members/${userId}/vouch`, { note }).then((r) => r.data),
 
   unvouch: (id: string, userId: string) =>
     api.delete<Group>(`/groups/${id}/members/${userId}/vouch`).then((r) => r.data),

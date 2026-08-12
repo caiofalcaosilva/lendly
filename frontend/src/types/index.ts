@@ -224,6 +224,8 @@ export interface Report {
   item_title?: string
   reported_user_id?: string
   reported_user_name?: string
+  reported_group_id?: string
+  reported_group_name?: string
   reason: ReportReason
   description?: string
   status: ReportStatus
@@ -504,6 +506,7 @@ export interface GroupMember {
   vouch_count: number
   vouched_by_me: boolean
   is_moderator: boolean
+  vouch_notes: string[]
 }
 
 export interface GroupSummary {

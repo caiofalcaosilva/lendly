@@ -584,7 +584,7 @@
     },
     "Moderation": {
       "title": "Moderação",
-      "subtitle": "Denúncias de itens e perfis, pra revisar e agir.",
+      "subtitle": "Denúncias de itens, perfis e grupos, pra revisar e agir.",
       "pending": "Pendentes",
       "resolved": "Resolvidas",
       "emptyPending": "Nenhuma denúncia pendente",
@@ -598,7 +598,8 @@
       "reviewedBy": "Revisado por {name} em {date}",
       "remove": "Remover",
       "dismiss": "Dispensar",
-      "error": "Não foi possível concluir a ação."
+      "error": "Não foi possível concluir a ação.",
+      "groupDeleted": "Grupo excluído"
     },
     "Settings": {
       "errorSaving": "Erro ao salvar configurações",
@@ -1183,6 +1184,14 @@
       "memberCount": "{count, plural, one {# membro} other {# membros}}",
       "vouchedTooltip": "Você confirma conhecer essa pessoa",
       "vouchTooltip": "Confirmar que conhece essa pessoa",
+      "vouchNotesTooltip": "Confirmações: {notes}",
+      "vouchModalTitle": "Confirmar que conhece {name}",
+      "vouchNoteLabel": "Nota (opcional)",
+      "vouchNotePlaceholder": "Ex: vizinho de prédio, colega de trabalho",
+      "vouchConfirm": "Confirmar",
+      "report": "Denunciar grupo",
+      "reportTargetLabel": "grupo",
+      "reportSent": "Denúncia enviada. Obrigado por ajudar a manter a comunidade segura.",
       "removeFromGroup": "Remover do grupo",
       "groupItems": "Itens do grupo",
       "emptyItemsTitle": "Nenhum item compartilhado ainda",

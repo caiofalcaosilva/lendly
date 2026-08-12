@@ -11,6 +11,7 @@ import Textarea from '@/components/ui/Textarea'
 interface Props {
   itemId?: string
   reportedUserId?: string
+  reportedGroupId?: string
   targetLabel: string
   onClose: () => void
   onSuccess: () => void
@@ -18,7 +19,7 @@ interface Props {
 
 const REASONS: ReportReason[] = ['spam', 'fake_item', 'inappropriate', 'fraud', 'other']
 
-export default function ReportModal({ itemId, reportedUserId, targetLabel, onClose, onSuccess }: Props) {
+export default function ReportModal({ itemId, reportedUserId, reportedGroupId, targetLabel, onClose, onSuccess }: Props) {
   const [reason, setReason] = useState<ReportReason | ''>('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
@@ -33,6 +34,7 @@ export default function ReportModal({ itemId, reportedUserId, targetLabel, onClo
       await reportsService.create({
         item_id: itemId,
         reported_user_id: reportedUserId,
+        reported_group_id: reportedGroupId,
         reason,
         description: description || undefined,
       })

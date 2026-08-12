@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import NextImage from 'next/image'
 import dynamic from 'next/dynamic'
 import { Link, useRouter } from '@/i18n/navigation'
-import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2, QrCode } from 'lucide-react'
+import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2, QrCode, Flag } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 // QRCode only runs on client (canvas)
@@ -22,6 +22,7 @@ import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import GroupMural from '@/components/groups/GroupMural'
 import GroupActivityFeed from '@/components/groups/GroupActivityFeed'
+import ReportModal from '@/components/reports/ReportModal'
 import { useToast } from '@/contexts/ToastContext'
 
 export default function GroupDetailPage() {
@@ -50,6 +51,10 @@ export default function GroupDetailPage() {
   const [photoBusy, setPhotoBusy] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [qrOpen, setQrOpen] = useState(false)
+  const [vouchTarget, setVouchTarget] = useState<{ id: string; name: string } | null>(null)
+  const [vouchNote, setVouchNote] = useState('')
+  const [vouchSaving, setVouchSaving] = useState(false)
+  const [showReport, setShowReport] = useState(false)
   const t = useTranslations('Groups.Id')
   const toast = useToast()
 
@@ -174,11 +179,28 @@ export default function GroupDetailPage() {
     }
   }
 
-  const handleToggleVouch = async (member: { id: string; vouched_by_me: boolean }) => {
-    const updated = member.vouched_by_me
-      ? await groupsService.unvouch(id, member.id)
-      : await groupsService.vouch(id, member.id)
-    setGroup(updated)
+  const handleToggleVouch = async (member: { id: string; name: string; vouched_by_me: boolean }) => {
+    if (member.vouched_by_me) {
+      const updated = await groupsService.unvouch(id, member.id)
+      setGroup(updated)
+    } else {
+      setVouchTarget(member)
+      setVouchNote('')
+    }
+  }
+
+  const submitVouch = async () => {
+    if (!vouchTarget) return
+    setVouchSaving(true)
+    try {
+      const updated = await groupsService.vouch(id, vouchTarget.id, vouchNote.trim() || undefined)
+      setGroup(updated)
+      setVouchTarget(null)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setVouchSaving(false)
+    }
   }
 
   const openEdit = () => {
@@ -314,17 +336,29 @@ export default function GroupDetailPage() {
               {group.description && <p className="text-sm text-ink-muted">{group.description}</p>}
             </div>
           </div>
-          {isMember && (
-            <Button
-              size="sm"
-              variant={isCreator ? 'danger' : 'outline'}
-              loading={busy}
-              onClick={() => setPendingAction(isCreator ? { kind: 'delete' } : { kind: 'leave' })}
-            >
-              {isCreator ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
-              {isCreator ? t('deleteGroup') : t('leave')}
-            </Button>
-          )}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {isMember && !isCreator && (
+              <button
+                onClick={() => setShowReport(true)}
+                title={t('report')}
+                aria-label={t('report')}
+                className="flex items-center gap-1 text-xs text-ink-subtle hover:text-danger transition-colors"
+              >
+                <Flag className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {isMember && (
+              <Button
+                size="sm"
+                variant={isCreator ? 'danger' : 'outline'}
+                loading={busy}
+                onClick={() => setPendingAction(isCreator ? { kind: 'delete' } : { kind: 'leave' })}
+              >
+                {isCreator ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
+                {isCreator ? t('deleteGroup') : t('leave')}
+              </Button>
+            )}
+          </div>
           {!isMember && user?.is_admin && (
             <Button size="sm" variant="danger" loading={busy} onClick={() => setPendingAction({ kind: 'adminDelete' })}>
               <Trash2 className="w-4 h-4" /> {t('deleteGroup')}
@@ -381,7 +415,11 @@ export default function GroupDetailPage() {
                 {user && m.id !== user.id && (
                   <button
                     onClick={() => handleToggleVouch(m)}
-                    title={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
+                    title={
+                      m.vouch_notes.length > 0
+                        ? t('vouchNotesTooltip', { notes: m.vouch_notes.join(', ') })
+                        : m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')
+                    }
                     aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
                     className={`flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[10px] transition-colors ${
                       m.vouched_by_me
@@ -548,6 +586,39 @@ export default function GroupDetailPage() {
           </Button>
         </div>
       </Modal>
+
+      <Modal
+        open={vouchTarget !== null}
+        onClose={() => setVouchTarget(null)}
+        title={vouchTarget ? t('vouchModalTitle', { name: vouchTarget.name }) : ''}
+      >
+        <div className="space-y-4">
+          <Input
+            label={t('vouchNoteLabel')}
+            value={vouchNote}
+            onChange={(e) => setVouchNote(e.target.value)}
+            placeholder={t('vouchNotePlaceholder')}
+            maxLength={200}
+          />
+          <div className="flex gap-3">
+            <Button onClick={submitVouch} loading={vouchSaving} className="flex-1">
+              {t('vouchConfirm')}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setVouchTarget(null)}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {showReport && (
+        <ReportModal
+          reportedGroupId={id}
+          targetLabel={t('reportTargetLabel')}
+          onClose={() => setShowReport(false)}
+          onSuccess={() => { setShowReport(false); toast.success(t('reportSent')) }}
+        />
+      )}
     </div>
   )
 }

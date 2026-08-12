@@ -584,7 +584,7 @@
     },
     "Moderation": {
       "title": "Moderation",
-      "subtitle": "Item and profile reports, to review and act on.",
+      "subtitle": "Item, profile, and group reports, to review and act on.",
       "pending": "Pending",
       "resolved": "Resolved",
       "emptyPending": "No pending reports",
@@ -598,7 +598,8 @@
       "reviewedBy": "Reviewed by {name} on {date}",
       "remove": "Remove",
       "dismiss": "Dismiss",
-      "error": "Couldn't complete the action."
+      "error": "Couldn't complete the action.",
+      "groupDeleted": "Group deleted"
     },
     "Settings": {
       "errorSaving": "Error saving settings",
@@ -1183,6 +1184,14 @@
       "memberCount": "{count, plural, one {# member} other {# members}}",
       "vouchedTooltip": "You've confirmed you know this person",
       "vouchTooltip": "Confirm you know this person",
+      "vouchNotesTooltip": "Confirmed by: {notes}",
+      "vouchModalTitle": "Confirm you know {name}",
+      "vouchNoteLabel": "Note (optional)",
+      "vouchNotePlaceholder": "e.g. neighbor, coworker",
+      "vouchConfirm": "Confirm",
+      "report": "Report group",
+      "reportTargetLabel": "group",
+      "reportSent": "Report sent. Thanks for helping keep the community safe.",
       "removeFromGroup": "Remove from group",
       "groupItems": "Group items",
       "emptyItemsTitle": "No items shared yet",

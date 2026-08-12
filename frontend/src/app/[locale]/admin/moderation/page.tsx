@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
-import { ShieldAlert, Package, User as UserIcon, Check, Ban } from 'lucide-react'
+import { ShieldAlert, Package, User as UserIcon, Users, Check, Ban } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Report } from '@/types'
 import { reportsService } from '@/services/reports'
@@ -112,15 +112,32 @@ export default function ModerationPage() {
             <div key={report.id} className="bg-surface rounded-panel border border-border p-5">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  {report.item_id ? <Package className="w-4 h-4 text-ink-subtle flex-shrink-0" /> : <UserIcon className="w-4 h-4 text-ink-subtle flex-shrink-0" />}
                   {report.item_id ? (
-                    <Link href={`/items/${report.item_id}`} className="font-medium text-ink hover:text-primary transition-colors truncate">
-                      {report.item_title}
-                    </Link>
+                    <>
+                      <Package className="w-4 h-4 text-ink-subtle flex-shrink-0" />
+                      <Link href={`/items/${report.item_id}`} className="font-medium text-ink hover:text-primary transition-colors truncate">
+                        {report.item_title}
+                      </Link>
+                    </>
+                  ) : report.reported_user_id ? (
+                    <>
+                      <UserIcon className="w-4 h-4 text-ink-subtle flex-shrink-0" />
+                      <Link href={`/users/${report.reported_user_id}`} className="font-medium text-ink hover:text-primary transition-colors truncate">
+                        {report.reported_user_name}
+                      </Link>
+                    </>
+                  ) : report.reported_group_id ? (
+                    <>
+                      <Users className="w-4 h-4 text-ink-subtle flex-shrink-0" />
+                      <Link href={`/groups/${report.reported_group_id}`} className="font-medium text-ink hover:text-primary transition-colors truncate">
+                        {report.reported_group_name}
+                      </Link>
+                    </>
                   ) : (
-                    <Link href={`/users/${report.reported_user_id}`} className="font-medium text-ink hover:text-primary transition-colors truncate">
-                      {report.reported_user_name}
-                    </Link>
+                    <>
+                      <Users className="w-4 h-4 text-ink-subtle flex-shrink-0" />
+                      <span className="font-medium text-ink-subtle italic truncate">{t('groupDeleted')}</span>
+                    </>
                   )}
                 </div>
                 <Badge variant={report.status === 'pending' ? 'yellow' : report.status === 'actioned' ? 'red' : 'gray'}>
