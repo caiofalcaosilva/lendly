@@ -498,6 +498,7 @@ export interface Item {
   is_waitlisted: boolean
   is_public: boolean
   groups: string[]
+  group_summaries: { id: string; name: string }[]
   available_days: number[]
   requires_identity_verification: boolean
   created_at: string

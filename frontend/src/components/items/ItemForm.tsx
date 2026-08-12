@@ -50,6 +50,7 @@ export default function ItemForm({ item }: { item?: Item }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [myGroups, setMyGroups] = useState<GroupSummary[]>([])
+  const [groupSearch, setGroupSearch] = useState('')
   const [isPublic, setIsPublic] = useState(item?.is_public ?? true)
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(item?.groups ?? [])
   const [selectedDays, setSelectedDays] = useState<number[]>(item?.available_days ?? [])
@@ -98,7 +99,7 @@ export default function ItemForm({ item }: { item?: Item }) {
   }
 
   useEffect(() => {
-    groupsService.mine().then(setMyGroups).catch(() => {})
+    groupsService.mine({ limit: 200 }).then(setMyGroups).catch(() => {})
   }, [])
 
   const toggleGroup = (groupId: string) => {
@@ -360,18 +361,29 @@ export default function ItemForm({ item }: { item?: Item }) {
             <span className="text-sm">{t('visibleInPublicSearch')}</span>
           </label>
           <p className="text-xs text-ink-subtle mb-2">{t('alsoShareInGroups')}</p>
-          <div className="space-y-1.5">
-            {myGroups.map((g) => (
-              <label key={g.id} className="flex items-center gap-2 cursor-pointer text-ink">
-                <input
-                  type="checkbox"
-                  checked={selectedGroupIds.includes(g.id)}
-                  onChange={() => toggleGroup(g.id)}
-                  className="text-primary rounded"
-                />
-                <span className="text-sm">{g.name}</span>
-              </label>
-            ))}
+          {myGroups.length > 8 && (
+            <input
+              type="text"
+              value={groupSearch}
+              onChange={(e) => setGroupSearch(e.target.value)}
+              placeholder={t('searchGroupsPlaceholder')}
+              className="w-full mb-2 px-3 py-1.5 bg-surface text-ink border border-border rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          )}
+          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+            {myGroups
+              .filter((g) => g.name.toLowerCase().includes(groupSearch.trim().toLowerCase()))
+              .map((g) => (
+                <label key={g.id} className="flex items-center gap-2 cursor-pointer text-ink">
+                  <input
+                    type="checkbox"
+                    checked={selectedGroupIds.includes(g.id)}
+                    onChange={() => toggleGroup(g.id)}
+                    className="text-primary rounded"
+                  />
+                  <span className="text-sm">{g.name}</span>
+                </label>
+              ))}
           </div>
         </div>
       )}

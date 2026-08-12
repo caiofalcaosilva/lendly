@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import { Link, useRouter } from '@/i18n/navigation'
 import {
-  MapPin, Star, Tag, Package, AlertTriangle, ArrowLeft, Edit, Trash2, Flag, BellRing, BellOff, CalendarDays, ShieldCheck,
+  MapPin, Star, Tag, Package, AlertTriangle, ArrowLeft, Edit, Trash2, Flag, BellRing, BellOff, CalendarDays, ShieldCheck, Users,
 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Category, Item } from '@/types'
@@ -232,6 +232,23 @@ export default function ItemDetailClient() {
             <div className="flex items-center gap-1.5 text-ink-muted text-sm mb-5">
               <CalendarDays className="w-4 h-4" />
               {t('availableOn', { days: item.available_days.map((d) => t(`weekdays.${WEEKDAY_KEYS[d]}`)).join(', ') })}
+            </div>
+          )}
+
+          {item.group_summaries.length > 0 && (
+            <div className="flex items-start gap-1.5 text-ink-muted text-sm mb-5">
+              <Users className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p>
+                {t('sharedWithGroups')}{' '}
+                {item.group_summaries.map((g, i) => (
+                  <span key={g.id}>
+                    <Link href={`/groups/${g.id}`} className="text-primary hover:text-primary-hover transition-colors">
+                      {g.name}
+                    </Link>
+                    {i < item.group_summaries.length - 1 ? ', ' : ''}
+                  </span>
+                ))}
+              </p>
             </div>
           )}
 

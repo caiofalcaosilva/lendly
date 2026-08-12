@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import NextImage from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
@@ -10,6 +10,8 @@ import { groupsService } from '@/services/groups'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/Skeleton'
+
+const LIMIT = 20
 
 function SkeletonRow() {
   return (
@@ -27,11 +29,43 @@ export default function GroupsPage() {
   const router = useRouter()
   const [groups, setGroups] = useState<GroupSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [search, setSearch] = useState('')
+  const [everHadGroups, setEverHadGroups] = useState(false)
   const t = useTranslations('Groups')
 
-  useEffect(() => {
-    groupsService.mine().then(setGroups).finally(() => setLoading(false))
+  const load = useCallback((query: string) => {
+    setLoading(true)
+    groupsService
+      .mine({ search: query.trim() || undefined, limit: LIMIT })
+      .then((data) => {
+        setGroups(data)
+        setHasMore(data.length === LIMIT)
+        if (data.length > 0) setEverHadGroups(true)
+      })
+      .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => load(search), search ? 300 : 0)
+    return () => clearTimeout(timer)
+  }, [search, load])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const data = await groupsService.mine({
+        search: search.trim() || undefined,
+        skip: groups.length,
+        limit: LIMIT,
+      })
+      setGroups((prev) => [...prev, ...data])
+      setHasMore(data.length === LIMIT)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -56,17 +90,31 @@ export default function GroupsPage() {
         </div>
       </div>
 
+      {everHadGroups && (
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('searchGroups')}
+          className="w-full max-w-xs mb-4 px-3 py-1.5 bg-surface text-ink border border-border rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      )}
+
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
         </div>
       ) : groups.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title={t('emptyTitle')}
-          description={t('emptyDescription')}
-          action={{ label: t('createGroup'), onClick: () => router.push('/groups/new') }}
-        />
+        search ? (
+          <p className="text-sm text-ink-subtle">{t('noGroupsFound')}</p>
+        ) : (
+          <EmptyState
+            icon={Users}
+            title={t('emptyTitle')}
+            description={t('emptyDescription')}
+            action={{ label: t('createGroup'), onClick: () => router.push('/groups/new') }}
+          />
+        )
       ) : (
         <div className="space-y-3">
           {groups.map((group) => (
@@ -92,6 +140,13 @@ export default function GroupsPage() {
               </span>
             </Link>
           ))}
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <Button variant="outline" size="sm" loading={loadingMore} onClick={loadMore}>
+                {t('loadMore')}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

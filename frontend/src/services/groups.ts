@@ -5,7 +5,10 @@ export const groupsService = {
   create: (data: { name: string; description?: string }) =>
     api.post<Group>('/groups', data).then((r) => r.data),
 
-  mine: () => api.get<GroupSummary[]>('/groups/me').then((r) => r.data),
+  // Alphabetical and paginated — a very active user can belong to more
+  // groups than fit on one screen.
+  mine: (params: { search?: string; skip?: number; limit?: number } = {}) =>
+    api.get<GroupSummary[]>('/groups/me', { params }).then((r) => r.data),
 
   get: (id: string) => api.get<Group>(`/groups/${id}`).then((r) => r.data),
 
