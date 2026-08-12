@@ -128,6 +128,19 @@ def update_group(group_id: str, data: GroupUpdate, current_user: User) -> GroupR
     return _to_response(group, viewer=current_user)
 
 
+def regenerate_invite_code(group_id: str, current_user: User) -> GroupResponse:
+    """Reissues the invite code — creator or moderator, e.g. after it leaked
+    or the group wants to stop accepting new members via the old link."""
+    group = _get_as_member(group_id, current_user)
+    if not _is_creator_or_moderator(group, current_user):
+        raise errors.forbidden(
+            "Only the creator or a moderator can regenerate the invite code"
+        )
+    group.update(invite_code=secrets.token_urlsafe(12))
+    group.reload()
+    return _to_response(group, viewer=current_user)
+
+
 def add_moderator(group_id: str, user_id: str, current_user: User) -> GroupResponse:
     """Appoints a fellow member as moderator — creator only, so moderators
     can't appoint or remove each other."""

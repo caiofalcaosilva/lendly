@@ -49,6 +49,15 @@ def update_group(
     return group_service.update_group(group_id, data, current_user)
 
 
+@router.post("/{group_id}/invite-code/regenerate", response_model=GroupResponse)
+def regenerate_invite_code(
+    group_id: str, current_user: User = Depends(get_current_user)
+):
+    """Reissues the group's invite code, invalidating the old one —
+    creator or moderator."""
+    return group_service.regenerate_invite_code(group_id, current_user)
+
+
 @router.post("/{group_id}/leave")
 def leave_group(group_id: str, current_user: User = Depends(get_current_user)):
     """Leaves a group — the creator can't leave (delete the group

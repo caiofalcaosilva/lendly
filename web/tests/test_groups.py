@@ -203,3 +203,64 @@ def test_leaving_group_clears_moderator_status(client, register_user):
     )
     member = next(m for m in resp.json()["members"] if m["id"] == mod_id)
     assert member["is_moderator"] is False
+
+
+# --- Regenerate invite code -----------------------------------------------
+
+
+def test_creator_can_regenerate_invite_code(client, register_user):
+    _, creator_token = register_user("creator.inviteregen@example.com")
+    group = _create_group(client, creator_token)
+    old_code = group["invite_code"]
+
+    resp = client.post(
+        f"/groups/{group['id']}/invite-code/regenerate",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    new_code = resp.json()["invite_code"]
+    assert new_code != old_code
+
+    resp = client.post(
+        "/groups/join",
+        json={"invite_code": old_code},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 404
+
+    resp = client.post(
+        "/groups/join",
+        json={"invite_code": new_code},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200
+
+
+def test_moderator_can_regenerate_invite_code(client, register_user):
+    _, creator_token = register_user("creator.inviteregenmod@example.com")
+    group = _create_group(client, creator_token)
+    mod_id, mod_token = register_user("mod.inviteregenmod@example.com")
+    _join(client, mod_token, group["invite_code"])
+    client.post(
+        f"/groups/{group['id']}/members/{mod_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+
+    resp = client.post(
+        f"/groups/{group['id']}/invite-code/regenerate",
+        headers={"Authorization": f"Bearer {mod_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+
+def test_regular_member_cannot_regenerate_invite_code(client, register_user):
+    _, creator_token = register_user("creator.inviteregenreject@example.com")
+    group = _create_group(client, creator_token)
+    _, member_token = register_user("member.inviteregenreject@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    resp = client.post(
+        f"/groups/{group['id']}/invite-code/regenerate",
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    assert resp.status_code == 403
