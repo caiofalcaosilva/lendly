@@ -12,6 +12,7 @@ from app.models.group_post import GroupPost
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.group import (
+    AdminGroupSummary,
     GroupCreate,
     GroupMemberResponse,
     GroupResponse,
@@ -93,6 +94,18 @@ def _to_summary(group: Group) -> GroupSummary:
         name=group.name,
         member_count=len(group.members),
         photo_url=group.photo_url,
+    )
+
+
+def _to_admin_summary(group: Group) -> AdminGroupSummary:
+    return AdminGroupSummary(
+        id=str(group.id),
+        name=group.name,
+        member_count=len(group.members),
+        photo_url=group.photo_url,
+        is_discoverable=group.is_discoverable,
+        created_by_name=group.created_by.name,
+        created_at=group.created_at,
     )
 
 
@@ -208,6 +221,32 @@ def remove_photo(group_id: str, current_user: User) -> GroupResponse:
     return _to_response(group, viewer=current_user)
 
 
+def refresh_location(group_id: str, current_user: User) -> GroupResponse:
+    """Re-syncs the group's denormalized location from its creator's
+    *current* address. create_group only captures it once, at creation
+    time (see the field comments on Group) — a creator who's since moved
+    left the group showing stale coordinates in "grupos perto de você"
+    with no way to fix it until now. Always pulls from the creator's
+    address specifically, regardless of who (creator or moderator)
+    clicks refresh, to keep the "group location = creator's location"
+    invariant create_group established."""
+    group = _get_as_member(group_id, current_user)
+    if not _is_creator_or_moderator(group, current_user):
+        raise errors.forbidden(
+            "Only the creator or a moderator can refresh the group's location"
+        )
+    creator = group.created_by
+    group.update(
+        neighborhood=creator.neighborhood,
+        city=creator.city,
+        state=creator.state,
+        latitude=creator.latitude,
+        longitude=creator.longitude,
+    )
+    group.reload()
+    return _to_response(group, viewer=current_user)
+
+
 def regenerate_invite_code(group_id: str, current_user: User) -> GroupResponse:
     """Reissues the invite code — creator or moderator, e.g. after it leaked
     or the group wants to stop accepting new members via the old link."""
@@ -218,6 +257,48 @@ def regenerate_invite_code(group_id: str, current_user: User) -> GroupResponse:
         )
     group.update(invite_code=secrets.token_urlsafe(12))
     group.reload()
+    return _to_response(group, viewer=current_user)
+
+
+def transfer_ownership(
+    group_id: str,
+    new_creator_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> GroupResponse:
+    """Hands the group's creator role to another member — only the current
+    creator can do this (unusually consequential, so no moderator can
+    trigger it on their behalf). The old creator becomes a regular
+    member; if the new creator happened to be a moderator, that's now
+    redundant (creator is implicitly the group's top authority) and gets
+    cleared, same as the invariant add_moderator already enforces."""
+    group = _get_as_member(group_id, current_user)
+    if str(group.created_by.id) != str(current_user.id):
+        raise errors.forbidden("Only the creator can transfer ownership")
+    if new_creator_id == str(current_user.id):
+        raise errors.bad_request("Already the creator")
+    new_creator = next((m for m in group.members if str(m.id) == new_creator_id), None)
+    if not new_creator:
+        raise errors.not_found("Member not found in this group")
+    group.update(created_by=new_creator, pull__moderators=new_creator)
+    group.reload()
+    activity_service.record(
+        recipient=new_creator,
+        event="group.ownership_transferred",
+        actor=current_user,
+        resource_type="group",
+        resource_id=str(group.id),
+        resource_title=group.name,
+    )
+    if background_tasks:
+        background_tasks.add_task(
+            notification_service.create_notification,
+            new_creator,
+            "group_membership_changed",
+            f"Você agora é o(a) criador(a) do grupo {group.name}",
+            f"{current_user.name} transferiu a propriedade pra você.",
+            f"/groups/{group.id}",
+        )
     return _to_response(group, viewer=current_user)
 
 
@@ -441,10 +522,18 @@ def get_group(group_id: str, current_user: User) -> GroupResponse:
     return _to_response(group, viewer=current_user)
 
 
-def list_all_groups() -> list[GroupSummary]:
+def list_all_groups(
+    search: str | None = None, skip: int = 0, limit: int = 50
+) -> list[AdminGroupSummary]:
     """Admin-only — every group on the platform, not just ones the caller
-    belongs to. See routers/admin/groups.py."""
-    return [_to_summary(g) for g in Group.objects().order_by("name")]
+    belongs to. See routers/admin/groups.py. Newest first, since that's
+    the direction a moderator scanning for freshly-created spam groups
+    cares about most; `search` narrows by name (case-insensitive)."""
+    qs = Group.objects()
+    if search:
+        qs = qs.filter(name__icontains=search)
+    groups = qs.order_by("-created_at").skip(skip).limit(limit)
+    return [_to_admin_summary(g) for g in groups]
 
 
 def join_group(invite_code: str, current_user: User) -> GroupResponse:

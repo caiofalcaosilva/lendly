@@ -10,6 +10,7 @@ from app.schemas.group import (
     GroupUpdate,
     JoinGroupRequest,
     NearbyGroup,
+    TransferOwnershipRequest,
     VouchCreate,
 )
 from app.schemas.group_post import GroupPostCreate, GroupPostResponse
@@ -103,6 +104,13 @@ def regenerate_invite_code(
     return group_service.regenerate_invite_code(group_id, current_user)
 
 
+@router.post("/{group_id}/refresh-location", response_model=GroupResponse)
+def refresh_location(group_id: str, current_user: User = Depends(get_current_user)):
+    """Re-syncs the group's location from its creator's current address —
+    creator or moderator."""
+    return group_service.refresh_location(group_id, current_user)
+
+
 @router.post("/{group_id}/join", response_model=GroupResponse)
 def join_discoverable_group(
     group_id: str, current_user: User = Depends(get_current_user)
@@ -193,6 +201,19 @@ def unvouch_for_member(
 ):
     """Withdraws a vouch given earlier."""
     return group_service.unvouch_for_member(group_id, user_id, current_user)
+
+
+@router.post("/{group_id}/transfer-ownership", response_model=GroupResponse)
+def transfer_ownership(
+    group_id: str,
+    data: TransferOwnershipRequest,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Hands the group's creator role to another member — creator only."""
+    return group_service.transfer_ownership(
+        group_id, data.new_creator_id, current_user, background_tasks
+    )
 
 
 @router.post("/{group_id}/members/{user_id}/moderator", response_model=GroupResponse)

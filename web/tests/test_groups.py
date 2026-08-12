@@ -608,3 +608,245 @@ def test_disabling_group_membership_prefs_suppresses_notification(
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert "group_membership_changed" not in _notif_types(client, member_token)
+
+
+# --- Admin group listing: search + pagination + extra fields ---------------
+
+
+def _make_admin(user_id):
+    from app.models.user import User
+
+    User.objects(id=user_id).update(is_admin=True)
+
+
+def test_admin_list_groups_includes_creator_name_and_discoverable(
+    client, register_user
+):
+    _, creator_token = register_user(
+        "creator.adminlistfields@example.com", latitude=-23.5505, longitude=-46.6333
+    )
+    group = _create_group(client, creator_token, name="Grupo Admin List")
+    client.patch(
+        f"/groups/{group['id']}",
+        json={"is_discoverable": True},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    admin_id, admin_token = register_user("admin.adminlistfields@example.com")
+    _make_admin(admin_id)
+
+    resp = client.get(
+        "/admin/groups", headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert resp.status_code == 200, resp.text
+    listed = next(g for g in resp.json() if g["id"] == group["id"])
+    assert listed["created_by_name"] == "Test User"
+    assert listed["is_discoverable"] is True
+    assert "created_at" in listed
+
+
+def test_admin_list_groups_filters_by_search(client, register_user):
+    _, creator_token = register_user("creator.adminlistsearch@example.com")
+    _create_group(client, creator_token, name="Condomínio Jardins")
+    _create_group(client, creator_token, name="Rua das Flores")
+    admin_id, admin_token = register_user("admin.adminlistsearch@example.com")
+    _make_admin(admin_id)
+
+    resp = client.get(
+        "/admin/groups?search=jardins",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    names = [g["name"] for g in resp.json()]
+    assert names == ["Condomínio Jardins"]
+
+
+def test_admin_list_groups_paginates(client, register_user):
+    _, creator_token = register_user("creator.adminlistpage@example.com")
+    for i in range(3):
+        _create_group(client, creator_token, name=f"Grupo Página {i}")
+    admin_id, admin_token = register_user("admin.adminlistpage@example.com")
+    _make_admin(admin_id)
+
+    resp = client.get(
+        "/admin/groups?limit=2", headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert resp.status_code == 200, resp.text
+    assert len(resp.json()) == 2
+
+    resp = client.get(
+        "/admin/groups?limit=2&skip=2",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert len(resp.json()) == 1
+
+
+# --- Ownership transfer ------------------------------------------------------
+
+
+def test_creator_can_transfer_ownership(client, register_user):
+    _, creator_token = register_user("creator.transfer@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.transfer@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    resp = client.post(
+        f"/groups/{group['id']}/transfer-ownership",
+        json={"new_creator_id": member_id},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["created_by"] == member_id
+
+    # Old creator can now leave (they're a regular member) — previously
+    # they couldn't.
+    resp = client.post(
+        f"/groups/{group['id']}/leave",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    # New creator can now delete the group — old creator couldn't anymore.
+    resp = client.delete(
+        f"/groups/{group['id']}",
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    assert resp.status_code == 204
+
+
+def test_transferring_to_a_moderator_clears_their_moderator_status(
+    client, register_user
+):
+    _, creator_token = register_user("creator.transfermod@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.transfermod@example.com")
+    _join(client, member_token, group["invite_code"])
+    client.post(
+        f"/groups/{group['id']}/members/{member_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+
+    resp = client.post(
+        f"/groups/{group['id']}/transfer-ownership",
+        json={"new_creator_id": member_id},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    new_creator_row = next(m for m in resp.json()["members"] if m["id"] == member_id)
+    assert new_creator_row["is_moderator"] is False
+
+
+def test_only_creator_can_transfer_ownership(client, register_user):
+    _, creator_token = register_user("creator.transferreject@example.com")
+    group = _create_group(client, creator_token)
+    a_id, a_token = register_user("a.transferreject@example.com")
+    b_id, b_token = register_user("b.transferreject@example.com")
+    _join(client, a_token, group["invite_code"])
+    _join(client, b_token, group["invite_code"])
+
+    resp = client.post(
+        f"/groups/{group['id']}/transfer-ownership",
+        json={"new_creator_id": b_id},
+        headers={"Authorization": f"Bearer {a_token}"},
+    )
+    assert resp.status_code == 403
+
+
+def test_cannot_transfer_ownership_to_a_non_member(client, register_user):
+    _, creator_token = register_user("creator.transfernonmember@example.com")
+    group = _create_group(client, creator_token)
+    outsider_id, _ = register_user("outsider.transfernonmember@example.com")
+
+    resp = client.post(
+        f"/groups/{group['id']}/transfer-ownership",
+        json={"new_creator_id": outsider_id},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 404
+
+
+def test_cannot_transfer_ownership_to_self(client, register_user):
+    _, creator_token = register_user("creator.transferself@example.com")
+    group = _create_group(client, creator_token)
+    creator_id = _me_id(client, creator_token)
+
+    resp = client.post(
+        f"/groups/{group['id']}/transfer-ownership",
+        json={"new_creator_id": creator_id},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 400
+
+
+def test_transferring_ownership_notifies_new_creator(client, register_user):
+    _, creator_token = register_user("creator.transfernotif@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.transfernotif@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    client.post(
+        f"/groups/{group['id']}/transfer-ownership",
+        json={"new_creator_id": member_id},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert "group_membership_changed" in _notif_types(client, member_token)
+
+
+# --- Refresh location --------------------------------------------------------
+
+
+def test_refresh_location_syncs_from_creators_current_address(client, register_user):
+    _, creator_token = register_user(
+        "creator.refreshlocation@example.com", latitude=SP_LAT, longitude=SP_LNG
+    )
+    group = _create_group(client, creator_token)
+
+    # Creator moves.
+    client.put(
+        "/users/me",
+        json={
+            "latitude": SP_NEARBY_LAT,
+            "longitude": SP_NEARBY_LNG,
+            "city": "Nova Cidade",
+        },
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+
+    resp = client.post(
+        f"/groups/{group['id']}/refresh-location",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["city"] == "Nova Cidade"
+
+
+def test_moderator_can_refresh_location(client, register_user):
+    _, creator_token = register_user(
+        "creator.refreshlocationmod@example.com", latitude=SP_LAT, longitude=SP_LNG
+    )
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.refreshlocationmod@example.com")
+    _join(client, member_token, group["invite_code"])
+    client.post(
+        f"/groups/{group['id']}/members/{member_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+
+    resp = client.post(
+        f"/groups/{group['id']}/refresh-location",
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+
+
+def test_regular_member_cannot_refresh_location(client, register_user):
+    _, creator_token = register_user("creator.refreshlocationreject@example.com")
+    group = _create_group(client, creator_token)
+    _, member_token = register_user("member.refreshlocationreject@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    resp = client.post(
+        f"/groups/{group['id']}/refresh-location",
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    assert resp.status_code == 403

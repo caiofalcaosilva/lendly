@@ -22,6 +22,10 @@ class VouchCreate(BaseModel):
     note: str | None = Field(None, max_length=200)
 
 
+class TransferOwnershipRequest(BaseModel):
+    new_creator_id: str
+
+
 class GroupMemberResponse(BaseModel):
     id: str
     name: str
@@ -40,6 +44,16 @@ class GroupSummary(BaseModel):
     name: str
     member_count: int
     photo_url: str | None = None
+
+
+class AdminGroupSummary(BaseModel):
+    id: str
+    name: str
+    member_count: int
+    photo_url: str | None = None
+    is_discoverable: bool = False
+    created_by_name: str
+    created_at: datetime
 
 
 class GroupResponse(BaseModel):

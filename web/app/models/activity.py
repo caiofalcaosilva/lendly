@@ -39,6 +39,7 @@ ACTIVITY_EVENTS = [
     "group.moderator_removed",
     "group.member_removed",
     "group.item_shared",
+    "group.ownership_transferred",
     "report.filed",
     "account.new_login",
     "account.password_changed",
