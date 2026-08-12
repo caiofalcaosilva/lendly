@@ -10,8 +10,9 @@ from app.schemas.group import (
     JoinGroupRequest,
     NearbyGroup,
 )
+from app.schemas.group_post import GroupPostCreate, GroupPostResponse
 from app.schemas.item import ItemResponse
-from app.services import group_service, item_service
+from app.services import group_post_service, group_service, item_service
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
@@ -120,6 +121,37 @@ def delete_group(group_id: str, current_user: User = Depends(get_current_user)):
 def group_items(group_id: str, current_user: User = Depends(get_current_user)):
     """Items shared with a group — members only."""
     return item_service.list_group_items(group_id, current_user)
+
+
+@router.get("/{group_id}/posts", response_model=list[GroupPostResponse])
+def list_group_posts(
+    group_id: str,
+    before_id: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+):
+    """The group's mural — a simple text announcement board, newest first.
+    Members only."""
+    return group_post_service.list_posts(group_id, current_user, before_id, limit)
+
+
+@router.post("/{group_id}/posts", response_model=GroupPostResponse, status_code=201)
+def create_group_post(
+    group_id: str,
+    data: GroupPostCreate,
+    current_user: User = Depends(get_current_user),
+):
+    """Posts to the group's mural — any member."""
+    return group_post_service.create_post(group_id, data, current_user)
+
+
+@router.delete("/{group_id}/posts/{post_id}", status_code=204)
+def delete_group_post(
+    group_id: str, post_id: str, current_user: User = Depends(get_current_user)
+):
+    """Deletes a mural post — its author, the group's creator, or a
+    moderator."""
+    group_post_service.delete_post(group_id, post_id, current_user)
 
 
 @router.post("/{group_id}/members/{user_id}/vouch", response_model=GroupResponse)
