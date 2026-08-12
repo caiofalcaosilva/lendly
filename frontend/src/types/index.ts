@@ -528,6 +528,14 @@ export interface Group {
   created_at: string
 }
 
+export interface GroupPost {
+  id: string
+  group_id: string
+  author: { id: string; name: string }
+  body: string
+  created_at: string
+}
+
 export interface NearbyGroup {
   id: string
   name: string

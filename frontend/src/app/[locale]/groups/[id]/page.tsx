@@ -20,6 +20,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
+import GroupMural from '@/components/groups/GroupMural'
 import { useToast } from '@/contexts/ToastContext'
 
 export default function GroupDetailPage() {
@@ -455,6 +456,14 @@ export default function GroupDetailPage() {
           ))}
         </div>
       )}
+
+      <h2 className="text-lg font-semibold text-ink mb-4 mt-10">{t('mural')}</h2>
+      <GroupMural
+        groupId={id}
+        currentUserId={user?.id}
+        canPost={isMember}
+        canModerate={canManageMembers}
+      />
 
       <ConfirmDialog
         open={pendingAction !== null}

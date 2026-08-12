@@ -1203,7 +1203,20 @@
       "discoverableLabel": "Make this group discoverable",
       "discoverableHelp": "Neighbors near the group creator's address will be able to find it under \"Groups near you\" and join without an invite.",
       "showQrCode": "Show invite QR code",
-      "qrCodeHelp": "Scan to join the group — great for printing and posting in a building or condo."
+      "qrCodeHelp": "Scan to join the group — great for printing and posting in a building or condo.",
+      "mural": "Mural"
+    },
+    "Mural": {
+      "placeholder": "Write an announcement for the group — e.g. \"meeting Saturday at 10am\"",
+      "post": "Post",
+      "emptyTitle": "No announcements yet",
+      "emptyDescription": "The group's first announcement shows up here.",
+      "loadMore": "Load more",
+      "deletePost": "Delete announcement",
+      "confirmDelete": "Delete this mural announcement?",
+      "error": "Couldn't load the mural.",
+      "postError": "Couldn't post the announcement.",
+      "deleteError": "Couldn't delete the announcement."
     },
     "Discover": {
       "title": "Groups near you",

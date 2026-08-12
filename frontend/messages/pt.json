@@ -1203,7 +1203,20 @@
       "discoverableLabel": "Tornar este grupo descobrível",
       "discoverableHelp": "Vizinhos perto do endereço de quem criou o grupo vão poder encontrá-lo em \"Grupos perto de você\" e entrar sem precisar de convite.",
       "showQrCode": "Ver QR code do convite",
-      "qrCodeHelp": "Escaneie para entrar no grupo — ótimo pra imprimir e pendurar no prédio ou condomínio."
+      "qrCodeHelp": "Escaneie para entrar no grupo — ótimo pra imprimir e pendurar no prédio ou condomínio.",
+      "mural": "Mural"
+    },
+    "Mural": {
+      "placeholder": "Escreva um aviso pro grupo — ex: \"reunião sábado às 10h\"",
+      "post": "Publicar",
+      "emptyTitle": "Nenhum aviso ainda",
+      "emptyDescription": "O primeiro aviso do grupo aparece aqui.",
+      "loadMore": "Carregar mais",
+      "deletePost": "Excluir aviso",
+      "confirmDelete": "Excluir este aviso do mural?",
+      "error": "Não foi possível carregar o mural.",
+      "postError": "Não foi possível publicar o aviso.",
+      "deleteError": "Não foi possível excluir o aviso."
     },
     "Discover": {
       "title": "Grupos perto de você",
