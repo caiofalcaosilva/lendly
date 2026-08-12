@@ -8,9 +8,10 @@ REPORT_STATUSES = ["pending", "dismissed", "actioned"]
 
 class Report(Document):
     reporter = ReferenceField("User", required=True)
-    # Exactly one of these two is set, based on the report's target.
+    # Exactly one of these three is set, based on the report's target.
     item = ReferenceField("Item")
     reported_user = ReferenceField("User")
+    reported_group = ReferenceField("Group")
     reason = StringField(required=True, choices=REPORT_REASONS)
     description = StringField(max_length=500)
     status = StringField(default="pending", choices=REPORT_STATUSES)
@@ -24,6 +25,7 @@ class Report(Document):
             "reporter",
             "item",
             "reported_user",
+            "reported_group",
             "status",
             # Admin action history, queried with a $ne: None filter.
             "reviewed_by",

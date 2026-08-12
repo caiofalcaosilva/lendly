@@ -10,7 +10,7 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.post("/", response_model=ReportResponse, status_code=201)
 def create_report(data: ReportCreate, current_user: User = Depends(get_current_user)):
-    """Flags an item or user for admin review."""
+    """Flags an item, user, or group for admin review."""
     return report_service.create_report(data, current_user)
 
 
@@ -28,5 +28,6 @@ def dismiss_report(report_id: str, admin: User = Depends(get_current_admin)):
 
 @router.patch("/{report_id}/action", response_model=ReportResponse)
 def action_report(report_id: str, admin: User = Depends(get_current_admin)):
-    """Admin — upholds a report, deactivating the reported item or user."""
+    """Admin — upholds a report: deactivates the item/user, or deletes
+    the group."""
     return report_service.action_report(report_id, admin)
