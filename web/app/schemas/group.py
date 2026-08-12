@@ -71,9 +71,14 @@ class GroupResponse(BaseModel):
     neighborhood: str | None = None
     city: str | None = None
     member_count: int
-    members: list[GroupMemberResponse]
     created_by: str
     created_at: datetime
+    # Whether the caller themself is a member/moderator — members are no
+    # longer embedded here (a group can have hundreds or thousands; see
+    # GET /{group_id}/members), so the frontend needs another way to answer
+    # "is it me" without paging through the whole list.
+    is_viewer_member: bool = False
+    is_viewer_moderator: bool = False
 
 
 class NearbyGroup(BaseModel):

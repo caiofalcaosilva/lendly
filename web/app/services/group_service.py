@@ -81,6 +81,12 @@ def _is_creator_or_moderator(group: Group, user: User) -> bool:
 
 
 def _to_response(group: Group, viewer: User | None = None) -> GroupResponse:
+    is_viewer_member = bool(
+        viewer and any(str(m.id) == str(viewer.id) for m in group.members)
+    )
+    is_viewer_moderator = bool(
+        viewer and any(str(m.id) == str(viewer.id) for m in group.moderators)
+    )
     return GroupResponse(
         id=str(group.id),
         name=group.name,
@@ -91,9 +97,10 @@ def _to_response(group: Group, viewer: User | None = None) -> GroupResponse:
         neighborhood=group.neighborhood,
         city=group.city,
         member_count=len(group.members),
-        members=[_member_response(m, group, viewer) for m in group.members],
         created_by=str(group.created_by.id),
         created_at=group.created_at,
+        is_viewer_member=is_viewer_member,
+        is_viewer_moderator=is_viewer_moderator,
     )
 
 
@@ -316,7 +323,7 @@ def add_moderator(
     user_id: str,
     current_user: User,
     background_tasks: BackgroundTasks | None = None,
-) -> GroupResponse:
+) -> GroupMemberResponse:
     """Appoints a fellow member as moderator — creator only, so moderators
     can't appoint or remove each other."""
     group = _get_as_member(group_id, current_user)
@@ -348,7 +355,7 @@ def add_moderator(
                 "Agora você pode editar o grupo e remover membros.",
                 f"/groups/{group.id}",
             )
-    return _to_response(group, viewer=current_user)
+    return _member_response(target, group, current_user)
 
 
 def remove_moderator(
@@ -356,14 +363,17 @@ def remove_moderator(
     user_id: str,
     current_user: User,
     background_tasks: BackgroundTasks | None = None,
-) -> GroupResponse:
+) -> GroupMemberResponse:
     """Revokes a moderator's status — creator only. Doesn't remove them
     from the group, just the extra power."""
     group = _get_as_member(group_id, current_user)
     if str(group.created_by.id) != str(current_user.id):
         raise errors.forbidden("Only the creator can revoke moderators")
-    target = next((m for m in group.moderators if str(m.id) == user_id), None)
-    if target:
+    target = next((m for m in group.members if str(m.id) == user_id), None)
+    if not target:
+        raise errors.not_found("Member not found in this group")
+    is_moderator = any(str(m.id) == user_id for m in group.moderators)
+    if is_moderator:
         group.update(pull__moderators=target)
         group.reload()
         activity_service.record(
@@ -383,7 +393,7 @@ def remove_moderator(
                 None,
                 f"/groups/{group.id}",
             )
-    return _to_response(group, viewer=current_user)
+    return _member_response(target, group, current_user)
 
 
 def remove_member(
@@ -529,6 +539,24 @@ def _get_group_readable(group_id: str, current_user: User) -> Group:
 def get_group(group_id: str, current_user: User) -> GroupResponse:
     group = _get_group_readable(group_id, current_user)
     return _to_response(group, viewer=current_user)
+
+
+def list_group_members(
+    group_id: str,
+    current_user: User,
+    search: str | None = None,
+    skip: int = 0,
+    limit: int = 50,
+) -> list[GroupMemberResponse]:
+    """Paginated, alphabetical — a group's `members` field only holds
+    ObjectIds, so a large group is a cheap single $in query here instead of
+    dereferencing (and shipping) every member up front, as get_group used to."""
+    group = _get_group_readable(group_id, current_user)
+    query = User.objects(id__in=[m.id for m in group.members])
+    if search:
+        query = query.filter(name__icontains=search)
+    users = query.order_by("name").skip(skip).limit(limit)
+    return [_member_response(u, group, current_user) for u in users]
 
 
 def list_all_groups(
@@ -702,7 +730,7 @@ def vouch_for_member(
     current_user: User,
     note: str | None = None,
     background_tasks: BackgroundTasks | None = None,
-) -> GroupResponse:
+) -> GroupMemberResponse:
     """Confirms `current_user` personally knows the member at `user_id`,
     within this group, with optional short context ("vizinho de prédio").
     Idempotent — re-vouching is a no-op (including when it carries a
@@ -744,13 +772,16 @@ def vouch_for_member(
                 body,
                 f"/groups/{group.id}",
             )
-    return _to_response(group, viewer=current_user)
+    return _member_response(target, group, current_user)
 
 
 def unvouch_for_member(
     group_id: str, user_id: str, current_user: User
-) -> GroupResponse:
+) -> GroupMemberResponse:
     group = _get_as_member(group_id, current_user)
+    target = next((m for m in group.members if str(m.id) == user_id), None)
+    if not target:
+        raise errors.not_found("Member not found in this group")
     remaining = [
         v
         for v in group.vouches
@@ -762,14 +793,12 @@ def unvouch_for_member(
     if len(remaining) != len(group.vouches):
         group.update(vouches=remaining)
         group.reload()
-        target = next((m for m in group.members if str(m.id) == user_id), None)
-        if target:
-            activity_service.record(
-                recipient=target,
-                event="group.vouch_withdrawn",
-                actor=current_user,
-                resource_type="group",
-                resource_id=str(group.id),
-                resource_title=group.name,
-            )
-    return _to_response(group, viewer=current_user)
+        activity_service.record(
+            recipient=target,
+            event="group.vouch_withdrawn",
+            actor=current_user,
+            resource_type="group",
+            resource_id=str(group.id),
+            resource_title=group.name,
+        )
+    return _member_response(target, group, current_user)

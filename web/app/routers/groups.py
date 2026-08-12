@@ -5,6 +5,7 @@ from app.models.user import User
 from app.rate_limit import limiter
 from app.schemas.group import (
     GroupCreate,
+    GroupMemberResponse,
     GroupResponse,
     GroupSummary,
     GroupUpdate,
@@ -66,9 +67,25 @@ def discover_groups(
 
 @router.get("/{group_id}", response_model=GroupResponse)
 def get_group(group_id: str, current_user: User = Depends(get_current_user)):
-    """A group's detail and member list — members only, admins can also
-    read groups they're not in."""
+    """A group's detail — members only, admins can also read groups
+    they're not in. Members themselves are fetched separately, paginated,
+    via GET /{group_id}/members."""
     return group_service.get_group(group_id, current_user)
+
+
+@router.get("/{group_id}/members", response_model=list[GroupMemberResponse])
+def list_group_members(
+    group_id: str,
+    search: str | None = Query(None, description="Filter by name (case-insensitive)"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+):
+    """A group's members, alphabetical and paginated — a group can have
+    hundreds or thousands of members, so this is never returned in full by
+    GET /{group_id}. Members only, admins can also read groups they're not
+    in."""
+    return group_service.list_group_members(group_id, current_user, search, skip, limit)
 
 
 @router.patch("/{group_id}", response_model=GroupResponse)
@@ -178,7 +195,7 @@ def delete_group_post(
     group_post_service.delete_post(group_id, post_id, current_user)
 
 
-@router.post("/{group_id}/members/{user_id}/vouch", response_model=GroupResponse)
+@router.post("/{group_id}/members/{user_id}/vouch", response_model=GroupMemberResponse)
 def vouch_for_member(
     group_id: str,
     user_id: str,
@@ -195,7 +212,9 @@ def vouch_for_member(
     )
 
 
-@router.delete("/{group_id}/members/{user_id}/vouch", response_model=GroupResponse)
+@router.delete(
+    "/{group_id}/members/{user_id}/vouch", response_model=GroupMemberResponse
+)
 def unvouch_for_member(
     group_id: str, user_id: str, current_user: User = Depends(get_current_user)
 ):
@@ -216,7 +235,9 @@ def transfer_ownership(
     )
 
 
-@router.post("/{group_id}/members/{user_id}/moderator", response_model=GroupResponse)
+@router.post(
+    "/{group_id}/members/{user_id}/moderator", response_model=GroupMemberResponse
+)
 def add_moderator(
     group_id: str,
     user_id: str,
@@ -229,7 +250,9 @@ def add_moderator(
     )
 
 
-@router.delete("/{group_id}/members/{user_id}/moderator", response_model=GroupResponse)
+@router.delete(
+    "/{group_id}/members/{user_id}/moderator", response_model=GroupMemberResponse
+)
 def remove_moderator(
     group_id: str,
     user_id: str,

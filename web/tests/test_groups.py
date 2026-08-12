@@ -19,6 +19,37 @@ def _create_group(client, token, **overrides):
     return resp.json()
 
 
+def test_get_group_reports_viewer_membership(client, register_user):
+    _, creator_token = register_user("creator.viewerflags@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.viewerflags@example.com")
+    _join(client, member_token, group["invite_code"])
+    client.post(
+        f"/groups/{group['id']}/members/{member_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    admin_id, admin_token = register_user("admin.viewerflags@example.com")
+    _make_admin(admin_id)
+
+    resp = client.get(
+        f"/groups/{group['id']}", headers={"Authorization": f"Bearer {creator_token}"}
+    )
+    assert resp.json()["is_viewer_member"] is True
+    assert resp.json()["is_viewer_moderator"] is False
+
+    resp = client.get(
+        f"/groups/{group['id']}", headers={"Authorization": f"Bearer {member_token}"}
+    )
+    assert resp.json()["is_viewer_member"] is True
+    assert resp.json()["is_viewer_moderator"] is True
+
+    resp = client.get(
+        f"/groups/{group['id']}", headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert resp.json()["is_viewer_member"] is False
+    assert resp.json()["is_viewer_moderator"] is False
+
+
 def test_update_group_as_creator(client, register_user):
     _, creator_token = register_user("creator.groupupdate@example.com")
     group = _create_group(client, creator_token, description="Descrição original")
@@ -99,6 +130,16 @@ def _me_id(client, token):
     ]
 
 
+def _members(client, token, group_id, **params):
+    resp = client.get(
+        f"/groups/{group_id}/members",
+        params=params,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
 def test_creator_can_appoint_and_revoke_moderator(client, register_user):
     _, creator_token = register_user("creator.modappoint@example.com")
     group = _create_group(client, creator_token)
@@ -110,16 +151,16 @@ def test_creator_can_appoint_and_revoke_moderator(client, register_user):
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert resp.status_code == 200, resp.text
-    member = next(m for m in resp.json()["members"] if m["id"] == member_id)
-    assert member["is_moderator"] is True
+    assert resp.json()["id"] == member_id
+    assert resp.json()["is_moderator"] is True
 
     resp = client.delete(
         f"/groups/{group['id']}/members/{member_id}/moderator",
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert resp.status_code == 200, resp.text
-    member = next(m for m in resp.json()["members"] if m["id"] == member_id)
-    assert member["is_moderator"] is False
+    assert resp.json()["id"] == member_id
+    assert resp.json()["is_moderator"] is False
 
 
 def test_non_creator_cannot_appoint_moderator(client, register_user):
@@ -162,7 +203,8 @@ def test_moderator_can_edit_group_and_remove_regular_member(client, register_use
         headers={"Authorization": f"Bearer {mod_token}"},
     )
     assert resp.status_code == 200, resp.text
-    assert all(m["id"] != target_id for m in resp.json()["members"])
+    assert resp.json()["member_count"] == 2
+    assert all(m["id"] != target_id for m in _members(client, mod_token, group["id"]))
 
 
 def test_moderator_cannot_remove_another_moderator_or_creator(client, register_user):
@@ -209,12 +251,63 @@ def test_leaving_group_clears_moderator_status(client, register_user):
     assert resp.status_code == 200, resp.text
 
     _join(client, mod_token, group["invite_code"])
-    resp = client.get(
-        f"/groups/{group['id']}",
-        headers={"Authorization": f"Bearer {mod_token}"},
+    member = next(
+        m for m in _members(client, mod_token, group["id"]) if m["id"] == mod_id
     )
-    member = next(m for m in resp.json()["members"] if m["id"] == mod_id)
     assert member["is_moderator"] is False
+
+
+# --- Paginated member list ---------------------------------------------------
+
+
+def test_members_endpoint_paginates_alphabetically(client, register_user):
+    _, creator_token = register_user(
+        "creator.memberspage@example.com", name="Zeca Criador"
+    )
+    group = _create_group(client, creator_token)
+    for name in ("Bruno Membro", "Ana Membro"):
+        _, token = register_user(
+            f"{name.lower().replace(' ', '.')}@example.com", name=name
+        )
+        _join(client, token, group["invite_code"])
+
+    page1 = _members(client, creator_token, group["id"], limit=2)
+    assert [m["name"] for m in page1] == ["Ana Membro", "Bruno Membro"]
+
+    page2 = _members(client, creator_token, group["id"], limit=2, skip=2)
+    assert [m["name"] for m in page2] == ["Zeca Criador"]
+
+
+def test_members_endpoint_filters_by_search(client, register_user):
+    _, creator_token = register_user("creator.memberssearch@example.com")
+    group = _create_group(client, creator_token)
+    _, token = register_user("bruno.memberssearch@example.com", name="Bruno Vizinho")
+    _join(client, token, group["invite_code"])
+
+    results = _members(client, creator_token, group["id"], search="vizinho")
+    assert [m["name"] for m in results] == ["Bruno Vizinho"]
+
+
+def test_members_endpoint_rejects_non_members(client, register_user):
+    _, creator_token = register_user("creator.membersreject@example.com")
+    group = _create_group(client, creator_token)
+    _, outsider_token = register_user("outsider.membersreject@example.com")
+
+    resp = client.get(
+        f"/groups/{group['id']}/members",
+        headers={"Authorization": f"Bearer {outsider_token}"},
+    )
+    assert resp.status_code == 404
+
+
+def test_members_endpoint_allows_admin_read(client, register_user):
+    _, creator_token = register_user("creator.membersadmin@example.com")
+    group = _create_group(client, creator_token)
+    admin_id, admin_token = register_user("admin.membersadmin@example.com")
+    _make_admin(admin_id)
+
+    results = _members(client, admin_token, group["id"])
+    assert len(results) == 1
 
 
 # --- Regenerate invite code -----------------------------------------------
@@ -450,7 +543,10 @@ def test_join_discoverable_group(client, register_user):
         headers={"Authorization": f"Bearer {visitor_token}"},
     )
     assert resp.status_code == 200, resp.text
-    assert any(m["name"] == "Test User" for m in resp.json()["members"])
+    assert resp.json()["member_count"] == 2
+    assert any(
+        m["name"] == "Test User" for m in _members(client, visitor_token, group["id"])
+    )
 
 
 def test_cannot_join_non_discoverable_group_directly(client, register_user):
@@ -480,7 +576,8 @@ def test_vouch_with_note_is_visible_on_member(client, register_user):
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert resp.status_code == 200, resp.text
-    member = next(m for m in resp.json()["members"] if m["id"] == member_id)
+    member = resp.json()
+    assert member["id"] == member_id
     assert len(member["vouchers"]) == 1
     assert member["vouchers"][0]["id"] == creator_id
     assert member["vouchers"][0]["note"] == "Vizinho de prédio"
@@ -497,7 +594,8 @@ def test_vouch_without_body_still_works(client, register_user):
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert resp.status_code == 200, resp.text
-    member = next(m for m in resp.json()["members"] if m["id"] == member_id)
+    member = resp.json()
+    assert member["id"] == member_id
     assert member["vouch_count"] == 1
     assert member["vouchers"][0]["note"] is None
 
@@ -519,7 +617,8 @@ def test_revouching_does_not_overwrite_existing_note(client, register_user):
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert resp.status_code == 200, resp.text
-    member = next(m for m in resp.json()["members"] if m["id"] == member_id)
+    member = resp.json()
+    assert member["id"] == member_id
     assert member["vouch_count"] == 1
     assert [v["note"] for v in member["vouchers"]] == ["Vizinho de prédio"]
 
@@ -734,7 +833,10 @@ def test_transferring_to_a_moderator_clears_their_moderator_status(
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert resp.status_code == 200, resp.text
-    new_creator_row = next(m for m in resp.json()["members"] if m["id"] == member_id)
+    assert resp.json()["created_by"] == member_id
+    new_creator_row = next(
+        m for m in _members(client, member_token, group["id"]) if m["id"] == member_id
+    )
     assert new_creator_row["is_moderator"] is False
 
 
