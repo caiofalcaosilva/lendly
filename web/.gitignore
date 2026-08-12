@@ -21,5 +21,9 @@ env/
 # documents and selfies must never be committed.
 verification_uploads/
 
+# Files written by image-upload tests run locally (outside Docker, where
+# uploads/ is a named volume instead of a bind mount).
+uploads/
+
 # Misc
 .DS_Store

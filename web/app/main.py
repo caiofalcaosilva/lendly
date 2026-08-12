@@ -120,6 +120,7 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 os.makedirs("uploads/items", exist_ok=True)
 os.makedirs("uploads/avatars", exist_ok=True)
+os.makedirs("uploads/groups", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # Not mounted as static — served via the authenticated endpoint in verification.py.
 os.makedirs("verification_uploads", exist_ok=True)

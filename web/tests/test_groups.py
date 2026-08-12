@@ -1,3 +1,15 @@
+import io
+
+from PIL import Image
+
+
+def _fake_photo():
+    buf = io.BytesIO()
+    Image.new("RGB", (10, 10), color="red").save(buf, "PNG")
+    buf.seek(0)
+    return ("photo.png", buf, "image/png")
+
+
 def _create_group(client, token, **overrides):
     payload = {"name": "Grupo Teste", **overrides}
     resp = client.post(
@@ -261,6 +273,61 @@ def test_regular_member_cannot_regenerate_invite_code(client, register_user):
 
     resp = client.post(
         f"/groups/{group['id']}/invite-code/regenerate",
+        headers={"Authorization": f"Bearer {member_token}"},
+    )
+    assert resp.status_code == 403
+
+
+# --- Group photo -----------------------------------------------------------
+
+
+def test_creator_can_upload_and_remove_group_photo(client, register_user):
+    _, creator_token = register_user("creator.groupphoto@example.com")
+    group = _create_group(client, creator_token)
+
+    resp = client.post(
+        f"/groups/{group['id']}/photo",
+        files={"file": _fake_photo()},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["photo_url"]
+
+    resp = client.delete(
+        f"/groups/{group['id']}/photo",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["photo_url"] is None
+
+
+def test_moderator_can_upload_group_photo(client, register_user):
+    _, creator_token = register_user("creator.groupphotomod@example.com")
+    group = _create_group(client, creator_token)
+    mod_id, mod_token = register_user("mod.groupphotomod@example.com")
+    _join(client, mod_token, group["invite_code"])
+    client.post(
+        f"/groups/{group['id']}/members/{mod_id}/moderator",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+
+    resp = client.post(
+        f"/groups/{group['id']}/photo",
+        files={"file": _fake_photo()},
+        headers={"Authorization": f"Bearer {mod_token}"},
+    )
+    assert resp.status_code == 201, resp.text
+
+
+def test_regular_member_cannot_upload_group_photo(client, register_user):
+    _, creator_token = register_user("creator.groupphotoreject@example.com")
+    group = _create_group(client, creator_token)
+    _, member_token = register_user("member.groupphotoreject@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    resp = client.post(
+        f"/groups/{group['id']}/photo",
+        files={"file": _fake_photo()},
         headers={"Authorization": f"Bearer {member_token}"},
     )
     assert resp.status_code == 403

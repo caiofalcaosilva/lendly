@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile
 
 from app.dependencies import get_current_user
 from app.models.user import User
@@ -47,6 +47,22 @@ def update_group(
 ):
     """Edits a group's name/description — creator or moderator."""
     return group_service.update_group(group_id, data, current_user)
+
+
+@router.post("/{group_id}/photo", response_model=GroupResponse, status_code=201)
+async def upload_group_photo(
+    group_id: str, file: UploadFile, current_user: User = Depends(get_current_user)
+):
+    """Uploads a group photo — resized, replaces any existing one. Creator
+    or moderator."""
+    return await group_service.upload_photo(group_id, file, current_user)
+
+
+@router.delete("/{group_id}/photo", response_model=GroupResponse)
+def remove_group_photo(group_id: str, current_user: User = Depends(get_current_user)):
+    """Removes the group photo — falls back to the default icon in the
+    UI. Creator or moderator."""
+    return group_service.remove_photo(group_id, current_user)
 
 
 @router.post("/{group_id}/invite-code/regenerate", response_model=GroupResponse)

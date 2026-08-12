@@ -25,6 +25,7 @@ class Vouch(EmbeddedDocument):
 class Group(Document):
     name = StringField(required=True, max_length=100)
     description = StringField(max_length=500)
+    photo_url = StringField(max_length=300)
     invite_code = StringField(required=True, unique=True)
     created_by = ReferenceField("User", required=True)
     members = ListField(ReferenceField("User"), default=list)

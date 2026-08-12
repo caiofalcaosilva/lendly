@@ -1,8 +1,11 @@
+import os
 import secrets
+import uuid
 from typing import Any
 
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, UploadFile
 
+from app.config import settings
 from app.models.group import Group, Vouch
 from app.models.item import Item
 from app.models.user import User
@@ -15,6 +18,9 @@ from app.schemas.group import (
 )
 from app.services import activity_service, notification_service
 from app.utils import errors
+from app.utils.images import load_and_resize
+
+GROUP_PHOTO_DIMENSION = 400
 
 
 def _member_response(
@@ -47,6 +53,7 @@ def _to_response(group: Group, viewer: User | None = None) -> GroupResponse:
         id=str(group.id),
         name=group.name,
         description=group.description,
+        photo_url=group.photo_url,
         invite_code=group.invite_code,
         member_count=len(group.members),
         members=[_member_response(m, group, viewer) for m in group.members],
@@ -57,7 +64,10 @@ def _to_response(group: Group, viewer: User | None = None) -> GroupResponse:
 
 def _to_summary(group: Group) -> GroupSummary:
     return GroupSummary(
-        id=str(group.id), name=group.name, member_count=len(group.members)
+        id=str(group.id),
+        name=group.name,
+        member_count=len(group.members),
+        photo_url=group.photo_url,
     )
 
 
@@ -125,6 +135,39 @@ def update_group(group_id: str, data: GroupUpdate, current_user: User) -> GroupR
     if updates:
         group.update(**updates)
         group.reload()
+    return _to_response(group, viewer=current_user)
+
+
+async def upload_photo(
+    group_id: str, file: UploadFile, current_user: User
+) -> GroupResponse:
+    group = _get_as_member(group_id, current_user)
+    if not _is_creator_or_moderator(group, current_user):
+        raise errors.forbidden(
+            "Only the creator or a moderator can change the group photo"
+        )
+    img = await load_and_resize(file)
+    img.thumbnail((GROUP_PHOTO_DIMENSION, GROUP_PHOTO_DIMENSION))
+
+    group_dir = os.path.join("uploads", "groups", str(group.id))
+    os.makedirs(group_dir, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.jpg"
+    img.save(os.path.join(group_dir, filename), "JPEG", quality=85)
+
+    url = f"{settings.API_PUBLIC_URL}/uploads/groups/{group.id}/{filename}"
+    group.update(photo_url=url)
+    group.reload()
+    return _to_response(group, viewer=current_user)
+
+
+def remove_photo(group_id: str, current_user: User) -> GroupResponse:
+    group = _get_as_member(group_id, current_user)
+    if not _is_creator_or_moderator(group, current_user):
+        raise errors.forbidden(
+            "Only the creator or a moderator can change the group photo"
+        )
+    group.update(unset__photo_url=1)
+    group.reload()
     return _to_response(group, viewer=current_user)
 
 

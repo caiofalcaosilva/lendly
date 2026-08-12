@@ -30,12 +30,14 @@ class GroupSummary(BaseModel):
     id: str
     name: str
     member_count: int
+    photo_url: str | None = None
 
 
 class GroupResponse(BaseModel):
     id: str
     name: str
     description: str | None = None
+    photo_url: str | None = None
     invite_code: str
     member_count: int
     members: list[GroupMemberResponse]
