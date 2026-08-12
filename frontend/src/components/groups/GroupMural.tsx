@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { X, MessageSquare } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { GroupPost } from '@/types'
@@ -45,6 +45,16 @@ export default function GroupMural({
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Groups.Mural')
   const toast = useToast()
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Grows the field to fit its content, starting at a single line, instead
+  // of reserving multiple rows of height up front.
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [body])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -106,15 +116,16 @@ export default function GroupMural({
   return (
     <div>
       {canPost && (
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 items-start">
           <div className="flex-1">
             <Textarea
+              ref={textareaRef}
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder={t('placeholder')}
-              rows={3}
+              rows={1}
               maxLength={1000}
-              className="resize-none"
+              className="resize-none overflow-hidden"
             />
           </div>
           <Button onClick={handlePost} loading={posting} disabled={!body.trim()} className="flex-shrink-0">
