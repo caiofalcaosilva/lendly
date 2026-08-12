@@ -654,94 +654,100 @@ export default function GroupDetailPage() {
           {memberSearch && !membersLoading && members.length === 0 && (
             <p className="text-xs text-ink-subtle mb-2">{t('noMembersFound')}</p>
           )}
-          <div className="flex flex-wrap gap-2 max-h-[50vh] overflow-y-auto">
+          <div className="divide-y divide-border max-h-[50vh] overflow-y-auto -mx-1">
             {members.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-1 bg-surface-2 rounded-full pl-1 pr-1 py-1"
+                className="flex items-center justify-between gap-3 px-1 py-2 hover:bg-surface-2 transition-colors"
               >
                 <Link
                   href={`/users/${m.id}`}
-                  className="flex items-center gap-1.5 text-xs text-ink-muted hover:text-primary transition-colors"
+                  className="flex items-center gap-2.5 min-w-0 group"
                 >
                   {m.avatar_url ? (
-                    <div className="relative w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                       <NextImage src={m.avatar_url} alt={m.name} fill unoptimized className="object-cover" />
                     </div>
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
-                      <span className="text-[9px] font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
+                    <div className="w-8 h-8 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
-                  {m.name}
-                </Link>
-                {isMember && user && m.id !== user.id && (
-                  <button
-                    onClick={() => handleToggleVouch(m)}
-                    title={
-                      m.vouchers.length > 0
-                        ? t('vouchersTooltip', {
-                            list: m.vouchers
-                              .map((v) => (v.note ? `${v.name} — ${v.note}` : v.name))
-                              .join('\n'),
-                          })
-                        : m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')
-                    }
-                    aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
-                    className={`flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[10px] transition-colors ${
-                      m.vouched_by_me
-                        ? 'text-primary'
-                        : 'text-ink-subtle hover:text-primary'
-                    }`}
-                  >
-                    <ShieldCheck className={`w-3 h-3 ${m.vouched_by_me ? 'fill-primary-subtle' : ''}`} />
-                    {m.vouch_count > 0 && m.vouch_count}
-                  </button>
-                )}
-                {isCreator && m.id !== group.created_by && (
-                  <button
-                    onClick={() => handleToggleModerator(m)}
-                    disabled={busy}
-                    title={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
-                    aria-label={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
-                    className={`flex items-center px-1 py-0.5 rounded-full transition-colors ${
-                      m.is_moderator ? 'text-accent' : 'text-ink-subtle hover:text-accent'
-                    }`}
-                  >
-                    <Crown className={`w-3 h-3 ${m.is_moderator ? 'fill-accent-subtle' : ''}`} />
-                  </button>
-                )}
-                {!isCreator && m.is_moderator && (
-                  <span title={t('moderatorBadge')} className="flex items-center px-1 text-accent">
-                    <Crown className="w-3 h-3 fill-accent-subtle" />
+                  <span className="text-sm text-ink truncate group-hover:text-primary transition-colors">
+                    {m.name}
                   </span>
-                )}
-                {canManageMembers &&
-                  m.id !== group.created_by &&
-                  !(m.is_moderator && !isCreator) && (
+                  {!isCreator && m.is_moderator && (
+                    <span title={t('moderatorBadge')} className="flex-shrink-0 text-accent">
+                      <Crown className="w-3.5 h-3.5 fill-accent-subtle" />
+                    </span>
+                  )}
+                </Link>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {isMember && user && m.id !== user.id && (
                     <button
-                      onClick={() =>
-                        setPendingAction({ kind: 'removeMemberGroup', memberId: m.id, memberName: m.name })
+                      onClick={() => handleToggleVouch(m)}
+                      title={
+                        m.vouchers.length > 0
+                          ? t('vouchersTooltip', {
+                              list: m.vouchers
+                                .map((v) => (v.note ? `${v.name} — ${v.note}` : v.name))
+                                .join('\n'),
+                            })
+                          : m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')
                       }
+                      aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
+                      className={`flex items-center gap-1 px-2 py-1.5 rounded-control text-xs font-medium transition-colors ${
+                        m.vouched_by_me
+                          ? 'bg-primary-subtle text-primary'
+                          : 'text-ink-subtle hover:text-primary hover:bg-surface-2'
+                      }`}
+                    >
+                      <ShieldCheck className={`w-4 h-4 ${m.vouched_by_me ? 'fill-primary-subtle' : ''}`} />
+                      {m.vouch_count > 0 && m.vouch_count}
+                    </button>
+                  )}
+                  {isCreator && m.id !== group.created_by && (
+                    <button
+                      onClick={() => handleToggleModerator(m)}
+                      disabled={busy}
+                      title={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
+                      aria-label={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
+                      className={`p-1.5 rounded-control transition-colors ${
+                        m.is_moderator
+                          ? 'bg-accent-subtle text-accent'
+                          : 'text-ink-subtle hover:text-accent hover:bg-surface-2'
+                      }`}
+                    >
+                      <Crown className={`w-4 h-4 ${m.is_moderator ? 'fill-accent-subtle' : ''}`} />
+                    </button>
+                  )}
+                  {canManageMembers &&
+                    m.id !== group.created_by &&
+                    !(m.is_moderator && !isCreator) && (
+                      <button
+                        onClick={() =>
+                          setPendingAction({ kind: 'removeMemberGroup', memberId: m.id, memberName: m.name })
+                        }
+                        disabled={busy}
+                        title={t('removeFromGroup')}
+                        aria-label={t('removeFromGroup')}
+                        className="p-1.5 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  {!isMember && user?.is_admin && m.id !== group.created_by && (
+                    <button
+                      onClick={() => setPendingAction({ kind: 'removeMember', memberId: m.id, memberName: m.name })}
                       disabled={busy}
                       title={t('removeFromGroup')}
                       aria-label={t('removeFromGroup')}
-                      className="p-0.5 rounded-full text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
+                      className="p-1.5 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-4 h-4" />
                     </button>
                   )}
-                {!isMember && user?.is_admin && m.id !== group.created_by && (
-                  <button
-                    onClick={() => setPendingAction({ kind: 'removeMember', memberId: m.id, memberName: m.name })}
-                    disabled={busy}
-                    title={t('removeFromGroup')}
-                    aria-label={t('removeFromGroup')}
-                    className="p-0.5 rounded-full text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
+                </div>
               </div>
             ))}
           </div>
