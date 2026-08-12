@@ -147,6 +147,7 @@
       "availabilityType": "Availability type",
       "freeLoan": "Free (loan)",
       "paidRental": "Paid (rental)",
+      "freeLendingOnlyNotice": "Lendly currently only accepts items for free lending.",
       "connectMercadoPagoNotice": "Connect your Mercado Pago account before listing a paid item.",
       "connectNow": "Connect now",
       "dailyRate": "Daily rate (R$)",

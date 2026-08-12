@@ -12,6 +12,7 @@ import { itemsService } from '@/services/items'
 import { groupsService } from '@/services/groups'
 import { categoriesService } from '@/services/categories'
 import { paymentsService } from '@/services/payments'
+import { configService } from '@/services/config'
 import { useAuth } from '@/contexts/AuthContext'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
@@ -59,6 +60,7 @@ export default function ItemForm({ item }: { item?: Item }) {
   const [addressModeInitialized, setAddressModeInitialized] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [mpConnected, setMpConnected] = useState(true)
+  const [freeLendingOnly, setFreeLendingOnly] = useState(false)
   const hasProfileAddress = !!user?.zip_code
 
   useEffect(() => {
@@ -67,6 +69,10 @@ export default function ItemForm({ item }: { item?: Item }) {
 
   useEffect(() => {
     paymentsService.getMercadoPagoStatus().then((s) => setMpConnected(s.connected))
+  }, [])
+
+  useEffect(() => {
+    configService.get().then((c) => setFreeLendingOnly(c.free_lending_only))
   }, [])
 
   // Admin accounts can't own items — bounce them away rather than let them
@@ -160,6 +166,12 @@ export default function ItemForm({ item }: { item?: Item }) {
   const availType = watch('availability_type')
   const category = watch('category')
   const subcategoryOptions = category ? categories.find((c) => c.key === category)?.subcategories ?? [] : []
+
+  // If paid rentals are off platform-wide, always present the form as free —
+  // covers editing an item that was set to paid before the switch flipped.
+  useEffect(() => {
+    if (freeLendingOnly) setValue('availability_type', 'free')
+  }, [freeLendingOnly, setValue])
 
   // Clear the subcategory whenever it no longer belongs to the selected
   // category (e.g. user picked a category, then changed their mind).
@@ -274,13 +286,16 @@ export default function ItemForm({ item }: { item?: Item }) {
       <div>
         <label className="block text-sm font-medium text-ink-muted mb-2">{t('availabilityType')}</label>
         <div className="flex gap-6">
-          {(['free', 'paid'] as const).map((val) => (
+          {(freeLendingOnly ? (['free'] as const) : (['free', 'paid'] as const)).map((val) => (
             <label key={val} className="flex items-center gap-2 cursor-pointer text-ink">
               <input type="radio" value={val} {...register('availability_type')} className="text-primary" />
               <span className="text-sm">{val === 'free' ? t('freeLoan') : t('paidRental')}</span>
             </label>
           ))}
         </div>
+        {freeLendingOnly && (
+          <p className="text-xs text-ink-subtle mt-1.5">{t('freeLendingOnlyNotice')}</p>
+        )}
       </div>
 
       {availType === 'paid' && !mpConnected && (

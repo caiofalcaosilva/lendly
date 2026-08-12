@@ -147,6 +147,7 @@
       "availabilityType": "Tipo de disponibilidade",
       "freeLoan": "Gratuito (empréstimo)",
       "paidRental": "Pago (aluguel)",
+      "freeLendingOnlyNotice": "No momento o Lendly só aceita itens em empréstimo gratuito.",
       "connectMercadoPagoNotice": "Conecte sua conta Mercado Pago antes de anunciar um item pago.",
       "connectNow": "Conectar agora",
       "dailyRate": "Valor diário (R$)",
