@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl'
 
 // QRCode only runs on client (canvas)
 const QRCodeSVG = dynamic(() => import('qrcode.react').then((m) => m.QRCodeSVG), { ssr: false })
-import { Group, Item } from '@/types'
+import { Group, GroupMember, Item } from '@/types'
 import { groupsService } from '@/services/groups'
 import { useAuth } from '@/contexts/AuthContext'
 import Button from '@/components/ui/Button'
@@ -33,6 +33,10 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState<Group | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
+  const [members, setMembers] = useState<GroupMember[]>([])
+  const [membersLoading, setMembersLoading] = useState(true)
+  const [membersLoadingMore, setMembersLoadingMore] = useState(false)
+  const [membersHasMore, setMembersHasMore] = useState(false)
   const [copied, setCopied] = useState(false)
   const [busy, setBusy] = useState(false)
   type PendingAction =
@@ -46,6 +50,7 @@ export default function GroupDetailPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [transferOpen, setTransferOpen] = useState(false)
   const [transferTargetId, setTransferTargetId] = useState('')
+  const [transferCandidates, setTransferCandidates] = useState<GroupMember[]>([])
   const [locationRefreshing, setLocationRefreshing] = useState(false)
   const [memberSearch, setMemberSearch] = useState('')
   const [editOpen, setEditOpen] = useState(false)
@@ -64,6 +69,8 @@ export default function GroupDetailPage() {
   const t = useTranslations('Groups.Id')
   const toast = useToast()
 
+  const MEMBERS_LIMIT = 30
+
   const load = useCallback(() => {
     Promise.all([groupsService.get(id), groupsService.items(id)])
       .then(([g, i]) => { setGroup(g); setItems(i) })
@@ -72,16 +79,58 @@ export default function GroupDetailPage() {
 
   useEffect(() => { load() }, [load])
 
-  const isCreator = user && group && user.id === group.created_by
-  const isMember = !!(user && group && group.members.some((m) => m.id === user.id))
-  const isModerator = !!(
-    user && group && group.members.some((m) => m.id === user.id && m.is_moderator)
-  )
-  const canManageMembers = isMember && (isCreator || isModerator)
+  const loadMembers = useCallback((search: string) => {
+    setMembersLoading(true)
+    groupsService
+      .members(id, { search: search.trim() || undefined, limit: MEMBERS_LIMIT })
+      .then((data) => {
+        setMembers(data)
+        setMembersHasMore(data.length === MEMBERS_LIMIT)
+      })
+      .catch(() => toast.error(t('error')))
+      .finally(() => setMembersLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
-  const visibleMembers = group
-    ? group.members.filter((m) => m.name.toLowerCase().includes(memberSearch.trim().toLowerCase()))
-    : []
+  useEffect(() => {
+    const timer = setTimeout(() => loadMembers(memberSearch), memberSearch ? 300 : 0)
+    return () => clearTimeout(timer)
+  }, [memberSearch, loadMembers])
+
+  const loadMoreMembers = async () => {
+    setMembersLoadingMore(true)
+    try {
+      const data = await groupsService.members(id, {
+        search: memberSearch.trim() || undefined,
+        skip: members.length,
+        limit: MEMBERS_LIMIT,
+      })
+      setMembers((prev) => [...prev, ...data])
+      setMembersHasMore(data.length === MEMBERS_LIMIT)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setMembersLoadingMore(false)
+    }
+  }
+
+  const patchMember = (updated: GroupMember) => {
+    setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+  }
+
+  useEffect(() => {
+    if (!transferOpen) return
+    groupsService
+      .members(id, { limit: 200 })
+      .then((data) => setTransferCandidates(data.filter((m) => m.id !== group?.created_by)))
+      .catch(() => toast.error(t('error')))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transferOpen, id])
+
+  const isCreator = user && group && user.id === group.created_by
+  const isMember = !!group?.is_viewer_member
+  const isModerator = !!group?.is_viewer_moderator
+  const canManageMembers = isMember && (isCreator || isModerator)
 
   const inviteUrl = typeof window !== 'undefined' && group
     ? `${window.location.origin}/groups/join/${group.invite_code}`
@@ -131,6 +180,7 @@ export default function GroupDetailPage() {
     try {
       const updated = await groupsService.adminRemoveMember(id, memberId)
       setGroup(updated)
+      setMembers((prev) => prev.filter((m) => m.id !== memberId))
     } catch {
       toast.error(t('error'))
     } finally {
@@ -143,6 +193,7 @@ export default function GroupDetailPage() {
     try {
       const updated = await groupsService.removeMember(id, memberId)
       setGroup(updated)
+      setMembers((prev) => prev.filter((m) => m.id !== memberId))
     } catch {
       toast.error(t('error'))
     } finally {
@@ -207,7 +258,7 @@ export default function GroupDetailPage() {
       const updated = member.is_moderator
         ? await groupsService.removeModerator(id, member.id)
         : await groupsService.addModerator(id, member.id)
-      setGroup(updated)
+      patchMember(updated)
     } catch {
       toast.error(t('error'))
     } finally {
@@ -217,8 +268,12 @@ export default function GroupDetailPage() {
 
   const handleToggleVouch = async (member: { id: string; name: string; vouched_by_me: boolean }) => {
     if (member.vouched_by_me) {
-      const updated = await groupsService.unvouch(id, member.id)
-      setGroup(updated)
+      try {
+        const updated = await groupsService.unvouch(id, member.id)
+        patchMember(updated)
+      } catch {
+        toast.error(t('error'))
+      }
     } else {
       setVouchTarget(member)
       setVouchNote('')
@@ -231,7 +286,7 @@ export default function GroupDetailPage() {
     setVouchSaving(true)
     try {
       const updated = await groupsService.vouch(id, vouchTarget.id, vouchNote.trim() || undefined)
-      setGroup(updated)
+      patchMember(updated)
       setVouchTarget(null)
     } catch {
       toast.error(t('error'))
@@ -456,11 +511,11 @@ export default function GroupDetailPage() {
               className="w-full max-w-xs mb-3 px-3 py-1.5 bg-surface text-ink border border-border rounded-control text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             />
           )}
-          {memberSearch && visibleMembers.length === 0 && (
+          {memberSearch && !membersLoading && members.length === 0 && (
             <p className="text-xs text-ink-subtle mb-2">{t('noMembersFound')}</p>
           )}
           <div className="flex flex-wrap gap-2">
-            {visibleMembers.map((m) => (
+            {members.map((m) => (
               <div
                 key={m.id}
                 className="flex items-center gap-1 bg-surface-2 rounded-full pl-1 pr-1 py-1"
@@ -550,6 +605,13 @@ export default function GroupDetailPage() {
               </div>
             ))}
           </div>
+          {membersHasMore && (
+            <div className="flex justify-center mt-3">
+              <Button variant="outline" size="sm" loading={membersLoadingMore} onClick={loadMoreMembers}>
+                {t('loadMoreMembers')}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -712,7 +774,7 @@ export default function GroupDetailPage() {
             onChange={(e) => setTransferTargetId(e.target.value)}
           >
             <option value="">{t('transferOwnershipSelect')}</option>
-            {group.members.filter((m) => m.id !== group.created_by).map((m) => (
+            {transferCandidates.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
           </Select>
@@ -722,7 +784,7 @@ export default function GroupDetailPage() {
               disabled={!transferTargetId}
               className="flex-1"
               onClick={() => {
-                const target = group.members.find((m) => m.id === transferTargetId)
+                const target = transferCandidates.find((m) => m.id === transferTargetId)
                 if (!target) return
                 setTransferOpen(false)
                 setPendingAction({ kind: 'transferOwnership', memberId: target.id, memberName: target.name })

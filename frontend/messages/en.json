@@ -1193,6 +1193,7 @@
       "memberCount": "{count, plural, one {# member} other {# members}}",
       "searchMembers": "Search by name...",
       "noMembersFound": "No members found.",
+      "loadMoreMembers": "Load more",
       "vouchedTooltip": "You've confirmed you know this person",
       "vouchTooltip": "Confirm you know this person",
       "vouchersTooltip": "Confirmed by:\n{list}",

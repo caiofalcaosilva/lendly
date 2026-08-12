@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { AdminGroupSummary, Group, GroupSummary, Item, NearbyGroup } from '@/types'
+import { AdminGroupSummary, Group, GroupMember, GroupSummary, Item, NearbyGroup } from '@/types'
 
 export const groupsService = {
   create: (data: { name: string; description?: string }) =>
@@ -8,6 +8,11 @@ export const groupsService = {
   mine: () => api.get<GroupSummary[]>('/groups/me').then((r) => r.data),
 
   get: (id: string) => api.get<Group>(`/groups/${id}`).then((r) => r.data),
+
+  // Paginated and alphabetical — a group can have hundreds or thousands of
+  // members, so these are never fetched in full by `get` above.
+  members: (id: string, params: { search?: string; skip?: number; limit?: number } = {}) =>
+    api.get<GroupMember[]>(`/groups/${id}/members`, { params }).then((r) => r.data),
 
   update: (id: string, data: { name?: string; description?: string; is_discoverable?: boolean }) =>
     api.patch<Group>(`/groups/${id}`, data).then((r) => r.data),
@@ -28,17 +33,19 @@ export const groupsService = {
   items: (id: string) => api.get<Item[]>(`/groups/${id}/items`).then((r) => r.data),
 
   vouch: (id: string, userId: string, note?: string) =>
-    api.post<Group>(`/groups/${id}/members/${userId}/vouch`, { note }).then((r) => r.data),
+    api
+      .post<GroupMember>(`/groups/${id}/members/${userId}/vouch`, { note })
+      .then((r) => r.data),
 
   unvouch: (id: string, userId: string) =>
-    api.delete<Group>(`/groups/${id}/members/${userId}/vouch`).then((r) => r.data),
+    api.delete<GroupMember>(`/groups/${id}/members/${userId}/vouch`).then((r) => r.data),
 
   // Co-admins — creator-only to grant/revoke.
   addModerator: (id: string, userId: string) =>
-    api.post<Group>(`/groups/${id}/members/${userId}/moderator`).then((r) => r.data),
+    api.post<GroupMember>(`/groups/${id}/members/${userId}/moderator`).then((r) => r.data),
 
   removeModerator: (id: string, userId: string) =>
-    api.delete<Group>(`/groups/${id}/members/${userId}/moderator`).then((r) => r.data),
+    api.delete<GroupMember>(`/groups/${id}/members/${userId}/moderator`).then((r) => r.data),
 
   regenerateInviteCode: (id: string) =>
     api.post<Group>(`/groups/${id}/invite-code/regenerate`).then((r) => r.data),

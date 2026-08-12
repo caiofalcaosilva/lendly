@@ -544,9 +544,10 @@ export interface Group {
   neighborhood?: string | null
   city?: string | null
   member_count: number
-  members: GroupMember[]
   created_by: string
   created_at: string
+  is_viewer_member: boolean
+  is_viewer_moderator: boolean
 }
 
 export interface GroupPost {
