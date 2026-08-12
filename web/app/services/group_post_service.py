@@ -1,8 +1,11 @@
+from fastapi import BackgroundTasks
+
 from app.models.group import Group
 from app.models.group_post import GroupPost
 from app.models.user import User
 from app.schemas.group_post import GroupPostAuthor, GroupPostCreate, GroupPostResponse
 from app.utils import errors
+from app.ws_manager import group_post_manager
 
 
 def _to_response(post: GroupPost) -> GroupPostResponse:
@@ -45,12 +48,22 @@ def _is_creator_or_moderator(group: Group, user: User) -> bool:
 
 
 def create_post(
-    group_id: str, data: GroupPostCreate, current_user: User
+    group_id: str,
+    data: GroupPostCreate,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
 ) -> GroupPostResponse:
     group = _get_as_member(group_id, current_user)
     post = GroupPost(group=group, author=current_user, body=data.body)
     post.save()
-    return _to_response(post)
+    response = _to_response(post)
+    if background_tasks:
+        background_tasks.add_task(
+            group_post_manager.broadcast,
+            group_id,
+            {"type": "created", "post": response.model_dump(mode="json")},
+        )
+    return response
 
 
 def list_posts(
@@ -66,7 +79,12 @@ def list_posts(
     return [_to_response(p) for p in posts]
 
 
-def delete_post(group_id: str, post_id: str, current_user: User) -> None:
+def delete_post(
+    group_id: str,
+    post_id: str,
+    current_user: User,
+    background_tasks: BackgroundTasks | None = None,
+) -> None:
     group = _get_as_member(group_id, current_user)
     post = GroupPost.objects(id=post_id, group=group).first()
     if not post:
@@ -78,3 +96,9 @@ def delete_post(group_id: str, post_id: str, current_user: User) -> None:
             "Only the author, creator, or a moderator can delete this post"
         )
     post.delete()
+    if background_tasks:
+        background_tasks.add_task(
+            group_post_manager.broadcast,
+            group_id,
+            {"type": "deleted", "post_id": post_id},
+        )

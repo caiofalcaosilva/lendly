@@ -19,6 +19,25 @@ def _create_group(client, token, **overrides):
     return resp.json()
 
 
+def _create_item(client, token, **overrides):
+    payload = {
+        "title": "Furadeira",
+        "description": "Furadeira elétrica",
+        "category": "toys",
+        "availability_type": "free",
+        "photos": [],
+        "group_ids": [],
+        "is_public": True,
+        "available_days": [],
+        **overrides,
+    }
+    resp = client.post(
+        "/items/", json=payload, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()
+
+
 def test_get_group_reports_viewer_membership(client, register_user):
     _, creator_token = register_user("creator.viewerflags@example.com")
     group = _create_group(client, creator_token)
@@ -310,6 +329,47 @@ def test_members_endpoint_allows_admin_read(client, register_user):
     assert len(results) == 1
 
 
+# --- Paginated group items ---------------------------------------------------
+
+
+def _group_items(client, token, group_id, **params):
+    resp = client.get(
+        f"/groups/{group_id}/items",
+        params=params,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def test_group_items_paginates_newest_first(client, register_user):
+    _, creator_token = register_user("creator.itemspage@example.com")
+    group = _create_group(client, creator_token)
+    for title in ("Item A", "Item B", "Item C"):
+        _create_item(
+            client, creator_token, title=title, group_ids=[group["id"]], is_public=False
+        )
+
+    page1 = _group_items(client, creator_token, group["id"], limit=2)
+    assert [i["title"] for i in page1] == ["Item C", "Item B"]
+
+    page2 = _group_items(client, creator_token, group["id"], limit=2, skip=2)
+    assert [i["title"] for i in page2] == ["Item A"]
+
+
+def test_group_items_rejects_non_members(client, register_user):
+    _, creator_token = register_user("creator.itemsreject@example.com")
+    group = _create_group(client, creator_token)
+    _create_item(client, creator_token, group_ids=[group["id"]], is_public=False)
+    _, outsider_token = register_user("outsider.itemsreject@example.com")
+
+    resp = client.get(
+        f"/groups/{group['id']}/items",
+        headers={"Authorization": f"Bearer {outsider_token}"},
+    )
+    assert resp.status_code == 404
+
+
 # --- Regenerate invite code -----------------------------------------------
 
 
@@ -488,6 +548,41 @@ def test_discover_returns_nearby_discoverable_groups_only(client, register_user)
     names = [g["name"] for g in resp.json()]
     assert names == ["Grupo Pertinho"]
     assert resp.json()[0]["distance_km"] < 5
+
+
+def test_discover_paginates_closest_first(client, register_user):
+    # Three creators at increasing offsets from the visitor's origin, each
+    # with one discoverable group - lets us assert both the ordering
+    # (closest first) and that skip/limit slice it correctly.
+    names_and_offsets = [("Grupo 1km", 0.01), ("Grupo 2km", 0.02), ("Grupo 3km", 0.03)]
+    for name, offset in names_and_offsets:
+        _, token = register_user(
+            f"creator.{name.replace(' ', '')}@example.com",
+            latitude=SP_LAT + offset,
+            longitude=SP_LNG,
+        )
+        group = _create_group(client, token, name=name)
+        client.patch(
+            f"/groups/{group['id']}",
+            json={"is_discoverable": True},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    _, visitor_token = register_user(
+        "visitor.discoverpage@example.com", latitude=SP_LAT, longitude=SP_LNG
+    )
+
+    page1 = client.get(
+        f"/groups/discover?lat={SP_LAT}&lng={SP_LNG}&limit=2",
+        headers={"Authorization": f"Bearer {visitor_token}"},
+    ).json()
+    assert [g["name"] for g in page1] == ["Grupo 1km", "Grupo 2km"]
+
+    page2 = client.get(
+        f"/groups/discover?lat={SP_LAT}&lng={SP_LNG}&limit=2&skip=2",
+        headers={"Authorization": f"Bearer {visitor_token}"},
+    ).json()
+    assert [g["name"] for g in page2] == ["Grupo 3km"]
 
 
 def test_discover_excludes_far_and_own_groups(client, register_user):

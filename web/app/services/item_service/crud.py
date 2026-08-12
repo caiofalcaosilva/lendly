@@ -504,12 +504,17 @@ def get_user_items(
     return [to_response(i, current_user) for i in qs.order_by("-created_at")]
 
 
-def list_group_items(group_id: str, current_user: User) -> list[ItemResponse]:
+def list_group_items(
+    group_id: str, current_user: User, skip: int = 0, limit: int = 24
+) -> list[ItemResponse]:
     group = Group.objects(id=group_id).first()
     is_member = group and any(str(m.id) == str(current_user.id) for m in group.members)
     if not group or not (is_member or current_user.is_admin):
         raise errors.not_found("Group not found")
-    items = Item.objects(groups=group, is_active=True, is_available=True).order_by(
-        "-created_at"
+    items = (
+        Item.objects(groups=group, is_active=True, is_available=True)
+        .order_by("-created_at")
+        .skip(skip)
+        .limit(limit)
     )
     return [to_response(i, current_user) for i in items]

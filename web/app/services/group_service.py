@@ -457,11 +457,16 @@ def list_nearby_groups(
     lat2: float | None,
     lng2: float | None,
     radius_km: float | None,
+    skip: int = 0,
+    limit: int = 20,
 ) -> list[NearbyGroup]:
     """Discoverable groups near the given origin(s) that current_user isn't
     already in — same "up to two origins, union, capped radius" approach as
     item_service.list_items's neighborhood feed, just applied to Group
-    instead of an actual geospatial query."""
+    instead of an actual geospatial query. Closest first; skip/limit applied
+    after sorting by distance, same reasoning as list_items's own geo branch
+    (the candidate set is only as large as the radius allows, but a dense
+    area can still mean many discoverable groups within it)."""
     origin_candidates = [(lat, lng), (lat2, lng2)]
     origins = [
         (o_lat, o_lng)
@@ -486,6 +491,7 @@ def list_nearby_groups(
         if distance <= effective_radius:
             nearby.append((distance, group))
     nearby.sort(key=lambda pair: pair[0])
+    page = nearby[skip : skip + limit]
     return [
         NearbyGroup(
             id=str(group.id),
@@ -497,7 +503,7 @@ def list_nearby_groups(
             member_count=len(group.members),
             distance_km=round(distance, 1),
         )
-        for distance, group in nearby
+        for distance, group in page
     ]
 
 

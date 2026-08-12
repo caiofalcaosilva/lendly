@@ -43,3 +43,5 @@ class ConnectionManager:
 manager = ConnectionManager()
 # Notification bell (/notifications/ws) — keyed by user_id.
 notification_manager = ConnectionManager()
+# Group mural (/groups/{id}/posts/ws) — keyed by group_id.
+group_post_manager = ConnectionManager()

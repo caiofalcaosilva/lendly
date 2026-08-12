@@ -1,6 +1,17 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Query,
+    Request,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from jose import JWTError
 
 from app.dependencies import get_current_user
+from app.models.group import Group
 from app.models.user import User
 from app.rate_limit import limiter
 from app.schemas.group import (
@@ -18,6 +29,8 @@ from app.schemas.group_post import GroupPostCreate, GroupPostResponse
 from app.schemas.item import ItemResponse
 from app.services import group_post_service, group_service, item_service
 from app.services.platform_settings_service import get_settings as get_platform_settings
+from app.utils.security import decode_token
+from app.ws_manager import group_post_manager
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
@@ -55,13 +68,15 @@ def discover_groups(
     ),
     lng2: float | None = Query(None),
     radius_km: float | None = Query(None, ge=0.1),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
 ):
     """Discoverable groups near the given origin(s) (home address and/or
     live browser location) that the caller isn't already in — "grupos perto
-    de você". Empty without at least one origin."""
+    de você". Closest first, paginated. Empty without at least one origin."""
     return group_service.list_nearby_groups(
-        current_user, lat, lng, lat2, lng2, radius_km
+        current_user, lat, lng, lat2, lng2, radius_km, skip, limit
     )
 
 
@@ -155,9 +170,16 @@ def delete_group(
 
 
 @router.get("/{group_id}/items", response_model=list[ItemResponse])
-def group_items(group_id: str, current_user: User = Depends(get_current_user)):
-    """Items shared with a group — members only."""
-    return item_service.list_group_items(group_id, current_user)
+def group_items(
+    group_id: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(24, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+):
+    """Items shared with a group, newest first — members only. Paginated,
+    same reasoning as GET /{group_id}/members: a long-lived group can
+    accumulate far more items than fit on one screen."""
+    return item_service.list_group_items(group_id, current_user, skip, limit)
 
 
 @router.get("/{group_id}/posts", response_model=list[GroupPostResponse])
@@ -180,19 +202,56 @@ def create_group_post(
     group_id: str,
     data: GroupPostCreate,
     request: Request,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
-    """Posts to the group's mural — any member."""
-    return group_post_service.create_post(group_id, data, current_user)
+    """Posts to the group's mural — any member. Broadcast live to other
+    members connected to the /posts/ws socket."""
+    return group_post_service.create_post(
+        group_id, data, current_user, background_tasks
+    )
 
 
 @router.delete("/{group_id}/posts/{post_id}", status_code=204)
 def delete_group_post(
-    group_id: str, post_id: str, current_user: User = Depends(get_current_user)
+    group_id: str,
+    post_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ):
     """Deletes a mural post — its author, the group's creator, or a
     moderator."""
-    group_post_service.delete_post(group_id, post_id, current_user)
+    group_post_service.delete_post(group_id, post_id, current_user, background_tasks)
+
+
+@router.websocket("/{group_id}/posts/ws")
+async def group_posts_ws(websocket: WebSocket, group_id: str, token: str):
+    """Live mural socket for a group. Auth via `?token=` query param
+    (browsers can't set headers on a WS handshake) — closes with 4401 if
+    the token doesn't belong to a member (admins included, same read
+    leniency as the REST endpoints)."""
+    is_allowed = False
+    try:
+        payload = decode_token(token)
+        user_id = payload.get("sub")
+        user = User.objects(id=user_id, is_active=True).first() if user_id else None
+        group = Group.objects(id=group_id).first() if user else None
+        if user and group:
+            is_member = any(str(m.id) == str(user.id) for m in group.members)
+            is_allowed = is_member or user.is_admin
+    except JWTError:
+        is_allowed = False
+
+    if not is_allowed:
+        await websocket.close(code=4401)
+        return
+
+    await group_post_manager.connect(group_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        group_post_manager.disconnect(group_id, websocket)
 
 
 @router.post("/{group_id}/members/{user_id}/vouch", response_model=GroupMemberResponse)
