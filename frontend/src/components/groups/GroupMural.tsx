@@ -106,20 +106,18 @@ export default function GroupMural({
   return (
     <div>
       {canPost && (
-        <div className="mb-4 space-y-2">
+        <div className="flex gap-2 mb-4">
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={t('placeholder')}
             rows={3}
             maxLength={1000}
-            className="resize-none"
+            className="flex-1 resize-none"
           />
-          <div className="flex justify-end">
-            <Button onClick={handlePost} loading={posting} disabled={!body.trim()}>
-              {t('post')}
-            </Button>
-          </div>
+          <Button onClick={handlePost} loading={posting} disabled={!body.trim()} className="flex-shrink-0">
+            {t('post')}
+          </Button>
         </div>
       )}
 
