@@ -421,7 +421,8 @@
         "item_available": "Waitlisted item became available",
         "review_reminder": "Reminder to review a finished loan",
         "group_vouch": "Someone confirmed they know you in a group",
-        "favorite_item_changed": "A favorited item's price or availability changed"
+        "favorite_item_changed": "A favorited item's price or availability changed",
+        "group_new_item": "A new item was shared in one of your groups"
       }
     },
     "AvatarUploader": {
@@ -1050,6 +1051,7 @@
       "review_reminder": "Reviews",
       "group_vouch": "Group vouches",
       "favorite_item_changed": "Favorites",
+      "group_new_item": "New items in groups",
       "new_login": "Security"
     },
     "emptyFilteredTitle": "Nothing here",
@@ -1111,7 +1113,11 @@
         "left": "{actor} left the group {resource}",
         "deleted": "{actor} deleted the group {resource}",
         "vouch_received": "{actor} confirmed they know you, in {resource}",
-        "vouch_withdrawn": "{actor} withdrew their vouch, in {resource}"
+        "vouch_withdrawn": "{actor} withdrew their vouch, in {resource}",
+        "moderator_added": "{actor} made you a moderator of {resource}",
+        "moderator_removed": "{actor} removed you as a moderator of {resource}",
+        "member_removed": "{actor} removed you from {resource}",
+        "item_shared": "{actor} shared a new item in {resource}"
       },
       "report": {
         "filed": "You reported {resource}"

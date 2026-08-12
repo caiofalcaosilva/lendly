@@ -421,7 +421,8 @@
         "item_available": "Item da lista de espera ficou disponível",
         "review_reminder": "Lembrete pra avaliar um empréstimo finalizado",
         "group_vouch": "Alguém confirmou que te conhece num grupo",
-        "favorite_item_changed": "Item favoritado mudou de preço ou disponibilidade"
+        "favorite_item_changed": "Item favoritado mudou de preço ou disponibilidade",
+        "group_new_item": "Item novo compartilhado num grupo seu"
       }
     },
     "AvatarUploader": {
@@ -1050,6 +1051,7 @@
       "review_reminder": "Avaliações",
       "group_vouch": "Avais de grupo",
       "favorite_item_changed": "Favoritos",
+      "group_new_item": "Itens novos em grupos",
       "new_login": "Segurança"
     },
     "emptyFilteredTitle": "Nada por aqui",
@@ -1111,7 +1113,11 @@
         "left": "{actor} saiu do grupo {resource}",
         "deleted": "{actor} excluiu o grupo {resource}",
         "vouch_received": "{actor} confirmou que conhece você, no grupo {resource}",
-        "vouch_withdrawn": "{actor} retirou a confirmação, no grupo {resource}"
+        "vouch_withdrawn": "{actor} retirou a confirmação, no grupo {resource}",
+        "moderator_added": "{actor} te tornou moderador(a) do grupo {resource}",
+        "moderator_removed": "{actor} removeu você como moderador(a) do grupo {resource}",
+        "member_removed": "{actor} removeu você do grupo {resource}",
+        "item_shared": "{actor} compartilhou um item novo no grupo {resource}"
       },
       "report": {
         "filed": "Você denunciou {resource}"

@@ -64,6 +64,7 @@ export interface InAppNotificationPreferences {
   // Bell-only categories — no email equivalent.
   group_vouch: boolean
   favorite_item_changed: boolean
+  group_new_item: boolean
 }
 
 export type NotificationType =
@@ -74,6 +75,7 @@ export type NotificationType =
   | 'review_reminder'
   | 'group_vouch'
   | 'favorite_item_changed'
+  | 'group_new_item'
   | 'new_login'
 
 // Named AppNotification, not Notification — the DOM lib already declares a
@@ -106,6 +108,8 @@ export const ACTIVITY_EVENTS = [
   'verification.submitted', 'verification.approved', 'verification.rejected',
   'group.created', 'group.joined', 'group.left', 'group.deleted',
   'group.vouch_received', 'group.vouch_withdrawn',
+  'group.moderator_added', 'group.moderator_removed', 'group.member_removed',
+  'group.item_shared',
   'report.filed',
   'account.new_login', 'account.password_changed', 'account.email_changed',
   'account.paused', 'account.resumed', 'account.2fa_enabled',

@@ -34,12 +34,13 @@ const TYPE_ICONS: Record<NotificationType, typeof Bell> = {
   review_reminder: Star,
   group_vouch: HeartHandshake,
   favorite_item_changed: Tag,
+  group_new_item: Package,
   new_login: ShieldAlert,
 }
 
 const TYPE_KEYS: NotificationType[] = [
   'request_status', 'new_message', 'verification_result', 'item_available',
-  'review_reminder', 'group_vouch', 'favorite_item_changed', 'new_login',
+  'review_reminder', 'group_vouch', 'favorite_item_changed', 'group_new_item', 'new_login',
 ]
 
 export default function NotificationsPage() {

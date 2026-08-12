@@ -44,6 +44,9 @@ function activityDetail(a: Activity, locale: 'pt' | 'en'): string | null {
   if (a.event.startsWith('payment.') && typeof a.metadata.gross_amount === 'number') {
     return formatCurrency(a.metadata.gross_amount, locale)
   }
+  if (a.event === 'group.item_shared' && a.metadata.item_title) {
+    return String(a.metadata.item_title)
+  }
   return null
 }
 
