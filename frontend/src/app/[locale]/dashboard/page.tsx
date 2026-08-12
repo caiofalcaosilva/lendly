@@ -14,6 +14,7 @@ import { requestsService } from '@/services/requests'
 import { reviewsService } from '@/services/reviews'
 import { usersService } from '@/services/users'
 import { categoriesService } from '@/services/categories'
+import { groupsService } from '@/services/groups'
 import { useAuth } from '@/contexts/AuthContext'
 import { getCategoryLabel, formatCurrency, formatDate } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -79,6 +80,7 @@ export default function DashboardPage() {
   const [toggling, setToggling] = useState<string | null>(null)
   const [featuring, setFeaturing] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
+  const [hasGroups, setHasGroups] = useState(false)
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Dashboard')
   const tStatus = useTranslations('Common.RequestStatus')
@@ -96,7 +98,7 @@ export default function DashboardPage() {
     setLoading(true)
     setLoadError(null)
     try {
-      const [myItems, recv, snt, hist, favs, favUsers, stats, spend] = await Promise.all([
+      const [myItems, recv, snt, hist, favs, favUsers, stats, spend, groups] = await Promise.all([
         itemsService.myItems(),
         requestsService.received(),
         requestsService.sent(),
@@ -105,6 +107,7 @@ export default function DashboardPage() {
         usersService.getFavoriteUsers(),
         usersService.getMyAnalytics(),
         usersService.getMySpending(),
+        groupsService.mine(),
       ])
       setItems(myItems)
       setReceived(recv)
@@ -114,6 +117,7 @@ export default function DashboardPage() {
       setFavoriteUsers(favUsers)
       setAnalytics(stats)
       setSpending(spend)
+      setHasGroups(groups.length > 0)
       if (user) {
         reviewsService.forUser(user.id).then(setReviews).catch(() => {})
         reviewsService.mine().then(setGivenReviews).catch(() => {})
@@ -193,6 +197,7 @@ export default function DashboardPage() {
           hasAddress={!!user?.zip_code}
           hasItems={items.length > 0}
           hasSentRequest={sent.length > 0}
+          hasGroups={hasGroups}
         />
       )}
 

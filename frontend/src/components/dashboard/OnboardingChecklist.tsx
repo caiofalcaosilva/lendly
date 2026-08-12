@@ -17,10 +17,12 @@ export default function OnboardingChecklist({
   hasAddress,
   hasItems,
   hasSentRequest,
+  hasGroups,
 }: {
   hasAddress: boolean
   hasItems: boolean
   hasSentRequest: boolean
+  hasGroups: boolean
 }) {
   const [dismissed, setDismissed] = useState(true) // starts hidden until localStorage is checked, avoids a flash
   const t = useTranslations('Dashboard.onboarding')
@@ -33,6 +35,7 @@ export default function OnboardingChecklist({
     { key: 'address', label: t('address'), href: '/profile', done: hasAddress },
     { key: 'item', label: t('item'), href: '/items/new', done: hasItems },
     { key: 'request', label: t('request'), href: '/items', done: hasSentRequest },
+    { key: 'group', label: t('group'), href: '/groups', done: hasGroups },
   ]
   const allDone = steps.every((s) => s.done)
 

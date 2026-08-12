@@ -895,7 +895,8 @@
       "dismiss": "Dismiss",
       "address": "Complete your address",
       "item": "List your first item",
-      "request": "Make your first request"
+      "request": "Make your first request",
+      "group": "Join or create a group"
     },
     "greeting": "Hi, {name} 👋",
     "ratingCount": "{rating} ({count, plural, one {# review} other {# reviews}})",
