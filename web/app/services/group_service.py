@@ -444,10 +444,14 @@ def remove_member(
     return _to_response(group, viewer=current_user)
 
 
-def get_my_groups(current_user: User) -> list[GroupSummary]:
-    return [
-        _to_summary(g) for g in Group.objects(members=current_user).order_by("name")
-    ]
+def get_my_groups(
+    current_user: User, search: str | None = None, skip: int = 0, limit: int = 50
+) -> list[GroupSummary]:
+    qs = Group.objects(members=current_user)
+    if search:
+        qs = qs.filter(name__icontains=search)
+    groups = qs.order_by("name").skip(skip).limit(limit)
+    return [_to_summary(g) for g in groups]
 
 
 def list_nearby_groups(

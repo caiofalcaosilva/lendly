@@ -110,6 +110,43 @@ def test_sharing_item_to_new_group_via_update_notifies_new_group_only(
     assert len([n for n in resp.json() if n["type"] == "group_new_item"]) == 1
 
 
+def test_item_group_summaries_visible_to_member_and_owner(client, register_user):
+    _, owner_token = register_user("owner.groupsummaries@example.com")
+    group = _create_group(client, owner_token, name="Grupo Visível")
+    _, member_token = register_user("member.groupsummaries@example.com")
+    _join(client, member_token, group["invite_code"])
+    _, outsider_token = register_user("outsider.groupsummaries@example.com")
+
+    item = _create_item(client, owner_token, group_ids=[group["id"]], is_public=True)
+
+    resp = client.get(
+        f"/items/{item['id']}", headers={"Authorization": f"Bearer {owner_token}"}
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["group_summaries"] == [
+        {"id": group["id"], "name": "Grupo Visível"}
+    ]
+
+    resp = client.get(
+        f"/items/{item['id']}", headers={"Authorization": f"Bearer {member_token}"}
+    )
+    assert resp.json()["group_summaries"] == [
+        {"id": group["id"], "name": "Grupo Visível"}
+    ]
+
+    # Public item, so an outsider can still view it - but shouldn't learn
+    # the name of a private group they're not in.
+    resp = client.get(
+        f"/items/{item['id']}", headers={"Authorization": f"Bearer {outsider_token}"}
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["group_summaries"] == []
+
+    resp = client.get(f"/items/{item['id']}")
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["group_summaries"] == []
+
+
 def test_disabling_group_new_item_prefs_suppresses_notification(client, register_user):
     _, owner_token = register_user("owner.groupitemprefs@example.com")
     group = _create_group(client, owner_token)

@@ -370,6 +370,37 @@ def test_group_items_rejects_non_members(client, register_user):
     assert resp.status_code == 404
 
 
+# --- "My groups" search and pagination ---------------------------------------
+
+
+def test_my_groups_filters_by_search(client, register_user):
+    _, token = register_user("creator.mygroupssearch@example.com")
+    _create_group(client, token, name="Condomínio Jardins")
+    _create_group(client, token, name="Rua das Flores")
+
+    resp = client.get(
+        "/groups/me?search=jardins", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 200, resp.text
+    assert [g["name"] for g in resp.json()] == ["Condomínio Jardins"]
+
+
+def test_my_groups_paginates_alphabetically(client, register_user):
+    _, token = register_user("creator.mygroupspage@example.com")
+    for name in ("Grupo C", "Grupo A", "Grupo B"):
+        _create_group(client, token, name=name)
+
+    page1 = client.get(
+        "/groups/me?limit=2", headers={"Authorization": f"Bearer {token}"}
+    ).json()
+    assert [g["name"] for g in page1] == ["Grupo A", "Grupo B"]
+
+    page2 = client.get(
+        "/groups/me?limit=2&skip=2", headers={"Authorization": f"Bearer {token}"}
+    ).json()
+    assert [g["name"] for g in page2] == ["Grupo C"]
+
+
 # --- Regenerate invite code -----------------------------------------------
 
 

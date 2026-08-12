@@ -83,6 +83,11 @@ class ItemOwnerResponse(BaseModel):
     trade_name: str | None = None
 
 
+class ItemGroupSummary(BaseModel):
+    id: str
+    name: str
+
+
 class ItemResponse(BaseModel):
     id: str
     owner: ItemOwnerResponse
@@ -106,6 +111,10 @@ class ItemResponse(BaseModel):
     is_waitlisted: bool = False
     is_public: bool = True
     groups: list[str] = []
+    # Same group ids as `groups` above, but with names attached — lets the
+    # item page show "shared with X" and link back, without the viewer
+    # needing to already be a member to resolve what those ids mean.
+    group_summaries: list[ItemGroupSummary] = []
     available_days: list[int] = []
     requires_identity_verification: bool = False
     created_at: datetime

@@ -100,7 +100,10 @@ def export_user_data(current_user: User) -> dict[str, Any]:
             ],
         },
         "groups": [
-            g.model_dump(mode="json") for g in group_service.get_my_groups(current_user)
+            g.model_dump(mode="json")
+            # get_my_groups paginates for the API (GET /groups/me); a data
+            # export needs everything, so bypass that default page size.
+            for g in group_service.get_my_groups(current_user, limit=100_000)
         ],
         "favorites": [{"id": str(i.id), "title": i.title} for i in favorites],
         "reports_filed": [_report_dict(r) for r in filed_reports],

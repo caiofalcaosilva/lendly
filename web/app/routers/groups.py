@@ -48,9 +48,14 @@ def create_group(
 
 
 @router.get("/me", response_model=list[GroupSummary])
-def my_groups(current_user: User = Depends(get_current_user)):
-    """Groups the logged-in user belongs to."""
-    return group_service.get_my_groups(current_user)
+def my_groups(
+    search: str | None = Query(None, description="Filter by name (case-insensitive)"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+):
+    """Groups the logged-in user belongs to, alphabetical and paginated."""
+    return group_service.get_my_groups(current_user, search, skip, limit)
 
 
 @router.post("/join", response_model=GroupResponse)

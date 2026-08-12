@@ -1,7 +1,26 @@
 from app.models.item import Item
 from app.models.user import User
-from app.schemas.item import ItemOwnerResponse, ItemResponse
+from app.schemas.item import ItemGroupSummary, ItemOwnerResponse, ItemResponse
 from app.utils import errors
+
+
+def _visible_group_summaries(
+    item: Item, current_user: User | None
+) -> list[ItemGroupSummary]:
+    """Only groups the viewer could already navigate to on their own — a
+    member of that specific group, the item's owner, or an admin. Groups
+    are invite-only, so an item page (reachable by anyone with the link,
+    public or not) must not be how someone learns a private group's name."""
+    if not current_user:
+        return []
+    is_owner = str(item.owner.id) == str(current_user.id)
+    return [
+        ItemGroupSummary(id=str(g.id), name=g.name)
+        for g in item.groups
+        if is_owner
+        or current_user.is_admin
+        or any(str(m.id) == str(current_user.id) for m in g.members)
+    ]
 
 
 def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
@@ -45,6 +64,7 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
         is_waitlisted=is_waitlisted,
         is_public=item.is_public,
         groups=[str(g.id) for g in item.groups],
+        group_summaries=_visible_group_summaries(item, current_user),
         available_days=item.available_days or [],
         requires_identity_verification=item.requires_identity_verification or False,
         created_at=item.created_at,
