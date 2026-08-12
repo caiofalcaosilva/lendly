@@ -33,6 +33,8 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState<Group | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
+  const [previewMembers, setPreviewMembers] = useState<GroupMember[]>([])
+  const [membersModalOpen, setMembersModalOpen] = useState(false)
   const [members, setMembers] = useState<GroupMember[]>([])
   const [membersLoading, setMembersLoading] = useState(true)
   const [membersLoadingMore, setMembersLoadingMore] = useState(false)
@@ -70,6 +72,7 @@ export default function GroupDetailPage() {
   const toast = useToast()
 
   const MEMBERS_LIMIT = 30
+  const PREVIEW_LIMIT = 8
 
   const load = useCallback(() => {
     Promise.all([groupsService.get(id), groupsService.items(id)])
@@ -78,6 +81,13 @@ export default function GroupDetailPage() {
   }, [id])
 
   useEffect(() => { load() }, [load])
+
+  const loadPreview = useCallback(() => {
+    groupsService.members(id, { limit: PREVIEW_LIMIT }).then(setPreviewMembers).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  useEffect(() => { loadPreview() }, [loadPreview])
 
   const loadMembers = useCallback((search: string) => {
     setMembersLoading(true)
@@ -93,9 +103,16 @@ export default function GroupDetailPage() {
   }, [id])
 
   useEffect(() => {
+    if (!membersModalOpen) return
     const timer = setTimeout(() => loadMembers(memberSearch), memberSearch ? 300 : 0)
     return () => clearTimeout(timer)
-  }, [memberSearch, loadMembers])
+  }, [memberSearch, loadMembers, membersModalOpen])
+
+  const closeMembersModal = () => {
+    setMembersModalOpen(false)
+    setMemberSearch('')
+    loadPreview()
+  }
 
   const loadMoreMembers = async () => {
     setMembersLoadingMore(true)
@@ -498,23 +515,146 @@ export default function GroupDetailPage() {
           </button>
         </div>
 
+        <button
+          type="button"
+          onClick={() => setMembersModalOpen(true)}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+        >
+          <div className="flex -space-x-2">
+            {previewMembers.map((m) => (
+              <div
+                key={m.id}
+                className="relative w-7 h-7 rounded-full overflow-hidden border-2 border-surface flex-shrink-0"
+              >
+                {m.avatar_url ? (
+                  <NextImage src={m.avatar_url} alt={m.name} fill unoptimized className="object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-primary-subtle flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <span className="text-xs font-medium text-primary">
+            {t('memberCount', { count: group.member_count })} · {t('viewAllMembers')}
+          </span>
+        </button>
+      </div>
+
+      <h2 className="text-lg font-semibold text-ink mb-4">{t('groupItems')}</h2>
+      {items.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title={t('emptyItemsTitle')}
+          description={t('emptyItemsDescription')}
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {items.map((item) => (
+            <ItemCard key={item.id} item={item} />
+          ))}
+        </div>
+      )}
+
+      <h2 className="text-lg font-semibold text-ink mb-4 mt-10">{t('mural')}</h2>
+      <GroupMural
+        groupId={id}
+        currentUserId={user?.id}
+        canPost={isMember}
+        canModerate={canManageMembers}
+      />
+
+      {isMember && (
+        <>
+          <h2 className="text-lg font-semibold text-ink mb-4 mt-10">{t('activityFeed')}</h2>
+          <GroupActivityFeed groupId={id} />
+        </>
+      )}
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title={t('editGroup')}>
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          {editError && (
+            <div className="p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
+              {editError}
+            </div>
+          )}
+          <Input
+            label={t('groupName')}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            required
+          />
+          <Textarea
+            label={t('description')}
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+            rows={3}
+          />
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer text-ink">
+              <input
+                type="checkbox"
+                checked={editDiscoverable}
+                onChange={(e) => setEditDiscoverable(e.target.checked)}
+                className="text-primary rounded"
+              />
+              <span className="text-sm">{t('discoverableLabel')}</span>
+            </label>
+            <p className="text-xs text-ink-subtle mt-1 ml-6">{t('discoverableHelp')}</p>
+            <button
+              type="button"
+              onClick={handleRefreshLocation}
+              disabled={locationRefreshing}
+              className="flex items-center gap-1 text-xs font-medium text-ink-subtle hover:text-primary transition-colors mt-2 ml-6 disabled:opacity-50"
+            >
+              {locationRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {t('refreshLocation')}
+            </button>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <Button type="submit" loading={editSaving} disabled={!editName.trim()} className="flex-1">
+              {t('saveChanges')}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={t('showQrCode')}>
+        <div className="space-y-4">
+          <p className="text-sm text-ink-muted">{t('qrCodeHelp')}</p>
+          <div className="flex justify-center py-2">
+            {inviteUrl && <QRCodeSVG value={inviteUrl} size={220} level="M" />}
+          </div>
+          <Button type="button" variant="outline" onClick={() => setQrOpen(false)} className="w-full">
+            {t('cancel')}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={membersModalOpen}
+        onClose={closeMembersModal}
+        title={t('membersModalTitle', { count: group.member_count })}
+        maxWidth="max-w-2xl"
+      >
         <div>
-          <p className="text-xs font-medium text-ink-muted mb-2">
-            {t('memberCount', { count: group.member_count })}
-          </p>
           {group.member_count > 8 && (
             <input
               type="text"
               value={memberSearch}
               onChange={(e) => setMemberSearch(e.target.value)}
               placeholder={t('searchMembers')}
-              className="w-full max-w-xs mb-3 px-3 py-1.5 bg-surface text-ink border border-border rounded-control text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full mb-3 px-3 py-1.5 bg-surface text-ink border border-border rounded-control text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             />
           )}
           {memberSearch && !membersLoading && members.length === 0 && (
             <p className="text-xs text-ink-subtle mb-2">{t('noMembersFound')}</p>
           )}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-h-[50vh] overflow-y-auto">
             {members.map((m) => (
               <div
                 key={m.id}
@@ -613,123 +753,6 @@ export default function GroupDetailPage() {
             </div>
           )}
         </div>
-      </div>
-
-      <h2 className="text-lg font-semibold text-ink mb-4">{t('groupItems')}</h2>
-      {items.length === 0 ? (
-        <EmptyState
-          icon={Package}
-          title={t('emptyItemsTitle')}
-          description={t('emptyItemsDescription')}
-        />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {items.map((item) => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
-
-      <h2 className="text-lg font-semibold text-ink mb-4 mt-10">{t('mural')}</h2>
-      <GroupMural
-        groupId={id}
-        currentUserId={user?.id}
-        canPost={isMember}
-        canModerate={canManageMembers}
-      />
-
-      {isMember && (
-        <>
-          <h2 className="text-lg font-semibold text-ink mb-4 mt-10">{t('activityFeed')}</h2>
-          <GroupActivityFeed groupId={id} />
-        </>
-      )}
-
-      <ConfirmDialog
-        open={pendingAction !== null}
-        onClose={() => setPendingAction(null)}
-        onConfirm={confirmPendingAction}
-        title={
-          pendingAction?.kind === 'leave' ? t('leave')
-            : pendingAction?.kind === 'removeMember' || pendingAction?.kind === 'removeMemberGroup' ? t('removeFromGroup')
-            : pendingAction?.kind === 'regenerateInvite' ? t('regenerateInvite')
-            : pendingAction?.kind === 'transferOwnership' ? t('transferOwnership')
-            : t('deleteGroup')
-        }
-        description={
-          pendingAction?.kind === 'leave' ? t('confirmLeave')
-            : pendingAction?.kind === 'delete' ? t('confirmDelete')
-            : pendingAction?.kind === 'adminDelete' ? t('confirmAdminDelete')
-            : pendingAction?.kind === 'removeMember' ? t('confirmRemoveMember', { name: pendingAction.memberName })
-            : pendingAction?.kind === 'removeMemberGroup' ? t('confirmRemoveMember', { name: pendingAction.memberName })
-            : pendingAction?.kind === 'regenerateInvite' ? t('confirmRegenerateInvite')
-            : pendingAction?.kind === 'transferOwnership' ? t('confirmTransferOwnership', { name: pendingAction.memberName })
-            : ''
-        }
-        loading={busy}
-      />
-
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title={t('editGroup')}>
-        <form onSubmit={handleEditSubmit} className="space-y-4">
-          {editError && (
-            <div className="p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
-              {editError}
-            </div>
-          )}
-          <Input
-            label={t('groupName')}
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            required
-          />
-          <Textarea
-            label={t('description')}
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            rows={3}
-          />
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer text-ink">
-              <input
-                type="checkbox"
-                checked={editDiscoverable}
-                onChange={(e) => setEditDiscoverable(e.target.checked)}
-                className="text-primary rounded"
-              />
-              <span className="text-sm">{t('discoverableLabel')}</span>
-            </label>
-            <p className="text-xs text-ink-subtle mt-1 ml-6">{t('discoverableHelp')}</p>
-            <button
-              type="button"
-              onClick={handleRefreshLocation}
-              disabled={locationRefreshing}
-              className="flex items-center gap-1 text-xs font-medium text-ink-subtle hover:text-primary transition-colors mt-2 ml-6 disabled:opacity-50"
-            >
-              {locationRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-              {t('refreshLocation')}
-            </button>
-          </div>
-          <div className="flex gap-3 pt-1">
-            <Button type="submit" loading={editSaving} disabled={!editName.trim()} className="flex-1">
-              {t('saveChanges')}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-              {t('cancel')}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal open={qrOpen} onClose={() => setQrOpen(false)} title={t('showQrCode')}>
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">{t('qrCodeHelp')}</p>
-          <div className="flex justify-center py-2">
-            {inviteUrl && <QRCodeSVG value={inviteUrl} size={220} level="M" />}
-          </div>
-          <Button type="button" variant="outline" onClick={() => setQrOpen(false)} className="w-full">
-            {t('cancel')}
-          </Button>
-        </div>
       </Modal>
 
       <Modal
@@ -798,6 +821,30 @@ export default function GroupDetailPage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        onConfirm={confirmPendingAction}
+        title={
+          pendingAction?.kind === 'leave' ? t('leave')
+            : pendingAction?.kind === 'removeMember' || pendingAction?.kind === 'removeMemberGroup' ? t('removeFromGroup')
+            : pendingAction?.kind === 'regenerateInvite' ? t('regenerateInvite')
+            : pendingAction?.kind === 'transferOwnership' ? t('transferOwnership')
+            : t('deleteGroup')
+        }
+        description={
+          pendingAction?.kind === 'leave' ? t('confirmLeave')
+            : pendingAction?.kind === 'delete' ? t('confirmDelete')
+            : pendingAction?.kind === 'adminDelete' ? t('confirmAdminDelete')
+            : pendingAction?.kind === 'removeMember' ? t('confirmRemoveMember', { name: pendingAction.memberName })
+            : pendingAction?.kind === 'removeMemberGroup' ? t('confirmRemoveMember', { name: pendingAction.memberName })
+            : pendingAction?.kind === 'regenerateInvite' ? t('confirmRegenerateInvite')
+            : pendingAction?.kind === 'transferOwnership' ? t('confirmTransferOwnership', { name: pendingAction.memberName })
+            : ''
+        }
+        loading={busy}
+      />
     </div>
   )
 }

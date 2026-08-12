@@ -1191,6 +1191,8 @@
       "copied": "Copiado!",
       "copyInvite": "Copiar convite",
       "memberCount": "{count, plural, one {# membro} other {# membros}}",
+      "viewAllMembers": "ver todos",
+      "membersModalTitle": "{count, plural, one {# membro} other {# membros}}",
       "searchMembers": "Buscar por nome...",
       "noMembersFound": "Nenhum membro encontrado.",
       "loadMoreMembers": "Carregar mais",
