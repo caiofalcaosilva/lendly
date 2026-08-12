@@ -19,6 +19,7 @@ from app.schemas.group import (
     GroupSummary,
     GroupUpdate,
     NearbyGroup,
+    Voucher,
 )
 from app.services import activity_service, notification_service
 from app.utils import errors
@@ -61,7 +62,15 @@ def _member_response(
         vouch_count=len(vouches_for_user),
         vouched_by_me=vouched_by_me,
         is_moderator=any(str(m.id) == str(user.id) for m in group.moderators),
-        vouch_notes=[v.note for v in vouches_for_user if v.note],
+        vouchers=[
+            Voucher(
+                id=str(v.voucher.id),
+                name=v.voucher.name,
+                avatar_url=v.voucher.avatar_url,
+                note=v.note,
+            )
+            for v in vouches_for_user
+        ],
     )
 
 

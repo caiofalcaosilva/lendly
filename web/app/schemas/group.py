@@ -26,6 +26,13 @@ class TransferOwnershipRequest(BaseModel):
     new_creator_id: str
 
 
+class Voucher(BaseModel):
+    id: str
+    name: str
+    avatar_url: str | None = None
+    note: str | None = None
+
+
 class GroupMemberResponse(BaseModel):
     id: str
     name: str
@@ -34,9 +41,7 @@ class GroupMemberResponse(BaseModel):
     vouch_count: int = 0
     vouched_by_me: bool = False
     is_moderator: bool = False
-    # Context from anyone who vouched for this member, e.g. "vizinho de
-    # prédio" — empty strings/no-note vouches are omitted, not "" entries.
-    vouch_notes: list[str] = []
+    vouchers: list[Voucher] = []
 
 
 class GroupSummary(BaseModel):
