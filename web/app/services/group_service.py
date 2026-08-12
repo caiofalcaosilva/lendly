@@ -58,6 +58,7 @@ def _member_response(
         vouch_count=len(vouches_for_user),
         vouched_by_me=vouched_by_me,
         is_moderator=any(str(m.id) == str(user.id) for m in group.moderators),
+        vouch_notes=[v.note for v in vouches_for_user if v.note],
     )
 
 
@@ -517,10 +518,14 @@ def vouch_for_member(
     group_id: str,
     user_id: str,
     current_user: User,
+    note: str | None = None,
     background_tasks: BackgroundTasks | None = None,
 ) -> GroupResponse:
     """Confirms `current_user` personally knows the member at `user_id`,
-    within this group. Idempotent — re-vouching is a no-op, not an error."""
+    within this group, with optional short context ("vizinho de prédio").
+    Idempotent — re-vouching is a no-op (including when it carries a
+    different note — the note is fixed at first-vouch time, not editable
+    by vouching again), not an error."""
     group = _get_as_member(group_id, current_user)
     if user_id == str(current_user.id):
         raise errors.bad_request("Cannot vouch for yourself")
@@ -533,7 +538,9 @@ def vouch_for_member(
         for v in group.vouches
     )
     if not already:
-        group.update(push__vouches=Vouch(voucher=current_user, vouched_for=target))
+        group.update(
+            push__vouches=Vouch(voucher=current_user, vouched_for=target, note=note)
+        )
         group.reload()
         activity_service.record(
             recipient=target,
@@ -544,12 +551,15 @@ def vouch_for_member(
             resource_title=group.name,
         )
         if background_tasks:
+            body = f"No grupo {group.name}"
+            if note:
+                body += f' — "{note}"'
             background_tasks.add_task(
                 notification_service.create_notification,
                 target,
                 "group_vouch",
                 f"{current_user.name} confirmou que conhece você",
-                f"No grupo {group.name}",
+                body,
                 f"/groups/{group.id}",
             )
     return _to_response(group, viewer=current_user)

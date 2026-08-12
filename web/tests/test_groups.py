@@ -463,3 +463,60 @@ def test_cannot_join_non_discoverable_group_directly(client, register_user):
         headers={"Authorization": f"Bearer {visitor_token}"},
     )
     assert resp.status_code == 404
+
+
+# --- Vouch note --------------------------------------------------------------
+
+
+def test_vouch_with_note_is_visible_on_member(client, register_user):
+    _, creator_token = register_user("creator.vouchnote@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.vouchnote@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    resp = client.post(
+        f"/groups/{group['id']}/members/{member_id}/vouch",
+        json={"note": "Vizinho de prédio"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    member = next(m for m in resp.json()["members"] if m["id"] == member_id)
+    assert member["vouch_notes"] == ["Vizinho de prédio"]
+
+
+def test_vouch_without_body_still_works(client, register_user):
+    _, creator_token = register_user("creator.vouchnobody@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.vouchnobody@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    resp = client.post(
+        f"/groups/{group['id']}/members/{member_id}/vouch",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    member = next(m for m in resp.json()["members"] if m["id"] == member_id)
+    assert member["vouch_count"] == 1
+    assert member["vouch_notes"] == []
+
+
+def test_revouching_does_not_overwrite_existing_note(client, register_user):
+    _, creator_token = register_user("creator.vouchreidempotent@example.com")
+    group = _create_group(client, creator_token)
+    member_id, member_token = register_user("member.vouchreidempotent@example.com")
+    _join(client, member_token, group["invite_code"])
+
+    client.post(
+        f"/groups/{group['id']}/members/{member_id}/vouch",
+        json={"note": "Vizinho de prédio"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    resp = client.post(
+        f"/groups/{group['id']}/members/{member_id}/vouch",
+        json={"note": "Colega de trabalho"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    member = next(m for m in resp.json()["members"] if m["id"] == member_id)
+    assert member["vouch_count"] == 1
+    assert member["vouch_notes"] == ["Vizinho de prédio"]

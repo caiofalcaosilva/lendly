@@ -9,6 +9,7 @@ from app.schemas.group import (
     GroupUpdate,
     JoinGroupRequest,
     NearbyGroup,
+    VouchCreate,
 )
 from app.schemas.group_post import GroupPostCreate, GroupPostResponse
 from app.schemas.item import ItemResponse
@@ -159,13 +160,15 @@ def vouch_for_member(
     group_id: str,
     user_id: str,
     background_tasks: BackgroundTasks,
+    data: VouchCreate | None = None,
     current_user: User = Depends(get_current_user),
 ):
     """Confirms the logged-in user personally knows this fellow group
     member — a light trust signal scoped to people who already share a
-    private, invite-only group."""
+    private, invite-only group. Body is optional; `note` within it is
+    optional short context, e.g. "vizinho de prédio"."""
     return group_service.vouch_for_member(
-        group_id, user_id, current_user, background_tasks
+        group_id, user_id, current_user, data.note if data else None, background_tasks
     )
 
 

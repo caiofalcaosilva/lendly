@@ -21,6 +21,10 @@ class Vouch(EmbeddedDocument):
 
     voucher = ReferenceField("User", required=True)
     vouched_for = ReferenceField("User", required=True)
+    # Small optional context ("vizinho de prédio", "colega de trabalho") —
+    # set once at vouch time, not editable by re-vouching (see
+    # group_service.vouch_for_member).
+    note = StringField(max_length=200)
     created_at = DateTimeField(default=utcnow)
 
 

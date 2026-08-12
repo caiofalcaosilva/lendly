@@ -18,6 +18,10 @@ class JoinGroupRequest(BaseModel):
     invite_code: str
 
 
+class VouchCreate(BaseModel):
+    note: str | None = Field(None, max_length=200)
+
+
 class GroupMemberResponse(BaseModel):
     id: str
     name: str
@@ -25,6 +29,9 @@ class GroupMemberResponse(BaseModel):
     vouch_count: int = 0
     vouched_by_me: bool = False
     is_moderator: bool = False
+    # Context from anyone who vouched for this member, e.g. "vizinho de
+    # prédio" — empty strings/no-note vouches are omitted, not "" entries.
+    vouch_notes: list[str] = []
 
 
 class GroupSummary(BaseModel):
