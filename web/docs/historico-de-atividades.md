@@ -96,8 +96,11 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 ## API
 
 `GET /activities/` — paginação por cursor (`before_id` + `order_by("-id")`, mesmo padrão de
-`GET /notifications/`), filtros opcionais `event` e `resource_type`. Sempre restrito a
-`recipient=current_user` — nunca aceita `user_id` de outro usuário.
+`GET /notifications/`), filtros opcionais `event`, `resource_type` e `resource_id`. Sempre
+restrito a `recipient=current_user` — nunca aceita `user_id` de outro usuário. `resource_id` (ex:
+usado pela aba "Atividades" na tela de um grupo) é **suas** atividades dentro daquele recurso, não
+um mural compartilhado entre todos os membros — um evento com fan-out pra N destinatários (ex:
+`group.item_shared`) continua sendo N linhas distintas, uma por destinatário.
 
 ## Adicionando um evento novo
 

@@ -19,6 +19,9 @@ def list_activities(
     limit: int = Query(20, ge=1, le=100),
     event: str | None = Query(None, description="Filter to a single event type"),
     resource_type: str | None = Query(None, description="Filter to a resource type"),
+    resource_id: str | None = Query(
+        None, description="Filter to a single resource, e.g. one group"
+    ),
     current_user: User = Depends(get_current_user),
 ):
     """Paginated activity history for the logged-in user, newest first —
@@ -28,5 +31,5 @@ def list_activities(
     if event is not None and event not in ACTIVITY_EVENTS:
         raise errors.bad_request(f"Invalid event '{event}'")
     return activity_service.list_activities(
-        current_user, before_id, limit, event, resource_type
+        current_user, before_id, limit, event, resource_type, resource_id
     )

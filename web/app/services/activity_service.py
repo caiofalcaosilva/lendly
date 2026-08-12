@@ -73,16 +73,25 @@ def list_activities(
     limit: int,
     event: str | None = None,
     resource_type: str | None = None,
+    resource_id: str | None = None,
 ) -> list[ActivityResponse]:
     """Cursor-based on `id`, not `created_at` — same reasoning as
     notification_service.list_notifications: ObjectId only has
     second-level precision, so sorting and cursoring on the same field
-    keeps a row from landing on two pages (or none) at the boundary."""
+    keeps a row from landing on two pages (or none) at the boundary.
+
+    Always scoped to `recipient=current_user` — resource_id narrows that
+    to "things that happened to me, in this group", not a shared
+    cross-member log (Activity is one row per recipient by design; a
+    single "group.item_shared" fan-out to 10 members is 10 separate rows,
+    so there's no single row a cross-member query could return once)."""
     qs = Activity.objects(recipient=current_user)
     if event:
         qs = qs.filter(event=event)
     if resource_type:
         qs = qs.filter(resource_type=resource_type)
+    if resource_id:
+        qs = qs.filter(resource_id=resource_id)
     if before_id:
         qs = qs.filter(id__lt=before_id)
     activities = qs.order_by("-id").limit(limit).select_related(max_depth=1)

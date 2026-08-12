@@ -221,6 +221,24 @@ def test_list_activities_filters_by_event_and_resource_type(client, register_use
     assert by_resource[0].resource.type == "loan_request"
 
 
+def test_list_activities_filters_by_resource_id(client, register_user):
+    user_id, _ = register_user("filter.activityresourceid@example.com")
+    user = _get_user(user_id)
+
+    activity_service.record(
+        recipient=user, event="item.created", resource_type="item", resource_id="i1"
+    )
+    activity_service.record(
+        recipient=user, event="item.updated", resource_type="item", resource_id="i2"
+    )
+
+    by_resource_id = activity_service.list_activities(
+        user, before_id=None, limit=20, resource_id="i1"
+    )
+    assert len(by_resource_id) == 1
+    assert by_resource_id[0].resource.id == "i1"
+
+
 def test_creating_request_records_activity_for_both_sides(client, register_user):
     _, owner_token = register_user("owner.reqcreate@example.com")
     item = _create_item(client, owner_token)
