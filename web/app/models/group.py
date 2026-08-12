@@ -28,6 +28,10 @@ class Group(Document):
     invite_code = StringField(required=True, unique=True)
     created_by = ReferenceField("User", required=True)
     members = ListField(ReferenceField("User"), default=list)
+    # Trusted deputies the creator appoints — can edit the group and remove
+    # regular members, but only the creator can appoint/revoke a moderator
+    # or remove one, so two moderators can't strip each other out.
+    moderators = ListField(ReferenceField("User"), default=list)
     vouches = ListField(EmbeddedDocumentField(Vouch), default=list)
     created_at = DateTimeField(default=utcnow)
 

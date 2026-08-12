@@ -40,6 +40,8 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `group.deleted` | `group_service.py::delete_group` (autoexclusão pelo criador) | Todos os membros |
 | `group.vouch_received` | `group_service.py::vouch_for_member` | Membro vouched |
 | `group.vouch_withdrawn` | `group_service.py::unvouch_for_member` | Membro que perdeu o vouch |
+| `group.moderator_added` / `moderator_removed` | `group_service.py::add_moderator` / `remove_moderator` (criador only) | O membro promovido/rebaixado |
+| `group.member_removed` | `group_service.py::remove_member` (criador ou moderador) | Membro removido |
 | `report.filed` | `report_service.py::create_report` | O próprio reporter |
 | `account.new_login` | `auth_service/session.py::login_user` / `complete_2fa` (só dispositivo não confiável) | O próprio usuário |
 | `account.password_changed` | `auth_service/account.py::change_password` | O próprio usuário |

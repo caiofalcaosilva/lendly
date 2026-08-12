@@ -2,7 +2,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends
 
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.group import GroupCreate, GroupResponse, GroupSummary, JoinGroupRequest
+from app.schemas.group import (
+    GroupCreate,
+    GroupResponse,
+    GroupSummary,
+    GroupUpdate,
+    JoinGroupRequest,
+)
 from app.schemas.item import ItemResponse
 from app.services import group_service, item_service
 
@@ -33,6 +39,14 @@ def get_group(group_id: str, current_user: User = Depends(get_current_user)):
     """A group's detail and member list — members only, admins can also
     read groups they're not in."""
     return group_service.get_group(group_id, current_user)
+
+
+@router.patch("/{group_id}", response_model=GroupResponse)
+def update_group(
+    group_id: str, data: GroupUpdate, current_user: User = Depends(get_current_user)
+):
+    """Edits a group's name/description — creator or moderator."""
+    return group_service.update_group(group_id, data, current_user)
 
 
 @router.post("/{group_id}/leave")
@@ -75,3 +89,29 @@ def unvouch_for_member(
 ):
     """Withdraws a vouch given earlier."""
     return group_service.unvouch_for_member(group_id, user_id, current_user)
+
+
+@router.post("/{group_id}/members/{user_id}/moderator", response_model=GroupResponse)
+def add_moderator(
+    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+):
+    """Appoints a fellow member as moderator — creator only."""
+    return group_service.add_moderator(group_id, user_id, current_user)
+
+
+@router.delete("/{group_id}/members/{user_id}/moderator", response_model=GroupResponse)
+def remove_moderator(
+    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+):
+    """Revokes a member's moderator status — creator only."""
+    return group_service.remove_moderator(group_id, user_id, current_user)
+
+
+@router.delete("/{group_id}/members/{user_id}", response_model=GroupResponse)
+def remove_member(
+    group_id: str, user_id: str, current_user: User = Depends(get_current_user)
+):
+    """Kicks a regular member out of the group — creator or moderator.
+    Unlike DELETE /admin/groups/{group_id}/members/{user_id}, this is
+    group-level, not platform moderation."""
+    return group_service.remove_member(group_id, user_id, current_user)

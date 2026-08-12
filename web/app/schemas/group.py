@@ -8,6 +8,11 @@ class GroupCreate(BaseModel):
     description: str | None = Field(None, max_length=500)
 
 
+class GroupUpdate(BaseModel):
+    name: str | None = Field(None, min_length=2, max_length=100)
+    description: str | None = Field(None, max_length=500)
+
+
 class JoinGroupRequest(BaseModel):
     invite_code: str
 
@@ -18,6 +23,7 @@ class GroupMemberResponse(BaseModel):
     average_rating: float
     vouch_count: int = 0
     vouched_by_me: bool = False
+    is_moderator: bool = False
 
 
 class GroupSummary(BaseModel):

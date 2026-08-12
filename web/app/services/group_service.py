@@ -11,6 +11,7 @@ from app.schemas.group import (
     GroupMemberResponse,
     GroupResponse,
     GroupSummary,
+    GroupUpdate,
 )
 from app.services import activity_service, notification_service
 from app.utils import errors
@@ -31,6 +32,13 @@ def _member_response(
         average_rating=user.average_rating,
         vouch_count=len(vouches_for_user),
         vouched_by_me=vouched_by_me,
+        is_moderator=any(str(m.id) == str(user.id) for m in group.moderators),
+    )
+
+
+def _is_creator_or_moderator(group: Group, user: User) -> bool:
+    return str(group.created_by.id) == str(user.id) or any(
+        str(m.id) == str(user.id) for m in group.moderators
     )
 
 
@@ -109,6 +117,98 @@ def create_group(data: GroupCreate, current_user: User) -> GroupResponse:
     return _to_response(group, viewer=current_user)
 
 
+def update_group(group_id: str, data: GroupUpdate, current_user: User) -> GroupResponse:
+    group = _get_as_member(group_id, current_user)
+    if not _is_creator_or_moderator(group, current_user):
+        raise errors.forbidden("Only the creator or a moderator can edit the group")
+    updates = data.model_dump(exclude_none=True)
+    if updates:
+        group.update(**updates)
+        group.reload()
+    return _to_response(group, viewer=current_user)
+
+
+def add_moderator(group_id: str, user_id: str, current_user: User) -> GroupResponse:
+    """Appoints a fellow member as moderator — creator only, so moderators
+    can't appoint or remove each other."""
+    group = _get_as_member(group_id, current_user)
+    if str(group.created_by.id) != str(current_user.id):
+        raise errors.forbidden("Only the creator can appoint moderators")
+    if user_id == str(group.created_by.id):
+        raise errors.bad_request("The creator is already the group's top authority")
+    target = next((m for m in group.members if str(m.id) == user_id), None)
+    if not target:
+        raise errors.not_found("Member not found in this group")
+    already = any(str(m.id) == user_id for m in group.moderators)
+    if not already:
+        group.update(push__moderators=target)
+        group.reload()
+        activity_service.record(
+            recipient=target,
+            event="group.moderator_added",
+            actor=current_user,
+            resource_type="group",
+            resource_id=str(group.id),
+            resource_title=group.name,
+        )
+    return _to_response(group, viewer=current_user)
+
+
+def remove_moderator(group_id: str, user_id: str, current_user: User) -> GroupResponse:
+    """Revokes a moderator's status — creator only. Doesn't remove them
+    from the group, just the extra power."""
+    group = _get_as_member(group_id, current_user)
+    if str(group.created_by.id) != str(current_user.id):
+        raise errors.forbidden("Only the creator can revoke moderators")
+    target = next((m for m in group.moderators if str(m.id) == user_id), None)
+    if target:
+        group.update(pull__moderators=target)
+        group.reload()
+        activity_service.record(
+            recipient=target,
+            event="group.moderator_removed",
+            actor=current_user,
+            resource_type="group",
+            resource_id=str(group.id),
+            resource_title=group.name,
+        )
+    return _to_response(group, viewer=current_user)
+
+
+def remove_member(group_id: str, user_id: str, current_user: User) -> GroupResponse:
+    """Group-level moderation — the creator or a moderator kicks a regular
+    member out. Unlike admin_remove_member below, this is scoped to
+    people who already run the group, not platform staff. A moderator
+    can't remove another moderator or the creator; only the creator can
+    (demote them with remove_moderator first, or remove them directly)."""
+    group = _get_as_member(group_id, current_user)
+    if not _is_creator_or_moderator(group, current_user):
+        raise errors.forbidden("Only the creator or a moderator can remove a member")
+    if user_id == str(group.created_by.id):
+        raise errors.bad_request(
+            "Não é possível remover o criador — exclua o grupo em vez disso",
+        )
+    member = next((m for m in group.members if str(m.id) == user_id), None)
+    if not member:
+        raise errors.not_found("Member not found in this group")
+    is_target_moderator = any(str(m.id) == user_id for m in group.moderators)
+    if is_target_moderator and str(group.created_by.id) != str(current_user.id):
+        raise errors.forbidden("Only the creator can remove a moderator")
+    _strip_group_from_items(group, member)
+    _strip_vouches(group, member)
+    group.update(pull__members=member, pull__moderators=member)
+    group.reload()
+    activity_service.record(
+        recipient=member,
+        event="group.member_removed",
+        actor=current_user,
+        resource_type="group",
+        resource_id=str(group.id),
+        resource_title=group.name,
+    )
+    return _to_response(group, viewer=current_user)
+
+
 def get_my_groups(current_user: User) -> list[GroupSummary]:
     return [
         _to_summary(g) for g in Group.objects(members=current_user).order_by("name")
@@ -168,7 +268,7 @@ def leave_group(group_id: str, current_user: User) -> dict:
         )
     _strip_group_from_items(group, current_user)
     _strip_vouches(group, current_user)
-    group.update(pull__members=current_user)
+    group.update(pull__members=current_user, pull__moderators=current_user)
     activity_service.record(
         recipient=current_user,
         event="group.left",
@@ -238,7 +338,7 @@ def admin_remove_member(group_id: str, user_id: str, admin: User) -> GroupRespon
         )
     _strip_group_from_items(group, member)
     _strip_vouches(group, member)
-    group.update(pull__members=member)
+    group.update(pull__members=member, pull__moderators=member)
     group.reload()
     activity_service.record(
         recipient=member,
