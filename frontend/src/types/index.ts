@@ -506,12 +506,14 @@ export interface GroupSummary {
   id: string
   name: string
   member_count: number
+  photo_url?: string | null
 }
 
 export interface Group {
   id: string
   name: string
   description?: string
+  photo_url?: string | null
   invite_code: string
   member_count: number
   members: GroupMember[]

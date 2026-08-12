@@ -37,6 +37,14 @@ export const groupsService = {
   regenerateInviteCode: (id: string) =>
     api.post<Group>(`/groups/${id}/invite-code/regenerate`).then((r) => r.data),
 
+  uploadPhoto: (id: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post<Group>(`/groups/${id}/photo`, formData).then((r) => r.data)
+  },
+
+  removePhoto: (id: string) => api.delete<Group>(`/groups/${id}/photo`).then((r) => r.data),
+
   // Group-level moderation (creator or a moderator) — distinct from
   // adminRemoveMember below, which is platform staff acting on any group.
   removeMember: (id: string, userId: string) =>

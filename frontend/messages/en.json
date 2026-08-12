@@ -1189,7 +1189,9 @@
       "revokeModerator": "Remove as moderator",
       "moderatorBadge": "Group moderator",
       "regenerateInvite": "Generate new invite link",
-      "confirmRegenerateInvite": "The current invite link will stop working and a new one will be generated. Continue?"
+      "confirmRegenerateInvite": "The current invite link will stop working and a new one will be generated. Continue?",
+      "changePhoto": "Change group photo",
+      "removePhoto": "Remove group photo"
     },
     "Join": {
       "Code": {

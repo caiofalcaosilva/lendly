@@ -1,8 +1,9 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
+import NextImage from 'next/image'
 import { Link, useRouter } from '@/i18n/navigation'
-import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw } from 'lucide-react'
+import { Users, Copy, Check, LogOut, Trash2, Package, X, ShieldCheck, Pencil, Crown, RefreshCw, Camera, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Group, Item } from '@/types'
 import { groupsService } from '@/services/groups'
@@ -39,6 +40,8 @@ export default function GroupDetailPage() {
   const [editDescription, setEditDescription] = useState('')
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
   const t = useTranslations('Groups.Id')
   const toast = useToast()
 
@@ -196,6 +199,33 @@ export default function GroupDetailPage() {
     }
   }
 
+  const handlePhotoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setPhotoBusy(true)
+    try {
+      const updated = await groupsService.uploadPhoto(id, file)
+      setGroup(updated)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setPhotoBusy(false)
+    }
+  }
+
+  const handlePhotoRemove = async () => {
+    setPhotoBusy(true)
+    try {
+      const updated = await groupsService.removePhoto(id)
+      setGroup(updated)
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setPhotoBusy(false)
+    }
+  }
+
   if (loading) return (
     <div className="flex justify-center items-center min-h-[50vh]">
       <Spinner className="w-8 h-8 text-primary" />
@@ -213,8 +243,49 @@ export default function GroupDetailPage() {
       <div className="bg-surface rounded-panel border border-border p-6 mb-8">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
-              <Users className="w-6 h-6 text-primary" />
+            <div className="relative flex-shrink-0">
+              {group.photo_url ? (
+                <div className="relative w-12 h-12 rounded-full overflow-hidden">
+                  <NextImage src={group.photo_url} alt={group.name} fill unoptimized className="object-cover" />
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-primary-subtle flex items-center justify-center">
+                  <Users className="w-6 h-6 text-primary" />
+                </div>
+              )}
+              {canManageMembers && (
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={photoBusy}
+                  className="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full bg-primary text-primary-on shadow-elevated hover:bg-primary-hover disabled:opacity-50"
+                  title={t('changePhoto')}
+                  aria-label={t('changePhoto')}
+                >
+                  {photoBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+                </button>
+              )}
+              {canManageMembers && group.photo_url && (
+                <button
+                  type="button"
+                  onClick={handlePhotoRemove}
+                  disabled={photoBusy}
+                  className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-ink text-bg hover:opacity-80 disabled:opacity-50"
+                  title={t('removePhoto')}
+                  aria-label={t('removePhoto')}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              )}
+              {canManageMembers && (
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoFile}
+                  className="hidden"
+                />
+              )}
             </div>
             <div>
               <div className="flex items-center gap-1.5">

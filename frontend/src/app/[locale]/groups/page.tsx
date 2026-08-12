@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import NextImage from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { useRouter } from '@/i18n/navigation'
 import { Users, Plus } from 'lucide-react'
@@ -68,9 +69,15 @@ export default function GroupsPage() {
               className="flex items-center justify-between bg-surface rounded-panel border border-border p-4 hover:border-primary/50 transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0 mr-3">
-                <div className="w-10 h-10 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
+                {group.photo_url ? (
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                    <NextImage src={group.photo_url} alt={group.name} fill unoptimized className="object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-primary" />
+                  </div>
+                )}
                 <span className="font-medium text-ink truncate">{group.name}</span>
               </div>
               <span className="text-xs text-ink-subtle flex-shrink-0">
