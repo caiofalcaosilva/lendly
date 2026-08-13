@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Lendly — Empréstimo e aluguel entre vizinhos",
-    "description": "Plataforma comunitária para compartilhar objetos com seus vizinhos."
+    "description": "Lendly conecta vizinhos e negócios locais pra emprestar e alugar objetos com segurança — menos consumo, mais comunidade."
   },
   "Common": {
     "i18nCheck": "Internacionalização funcionando.",
@@ -66,6 +66,7 @@
     },
     "Footer": {
       "tagline": "Compartilhe com seus vizinhos. Reduza o consumo. Fortaleça a comunidade.",
+      "about": "Sobre",
       "explore": "Explorar",
       "dashboard": "Painel",
       "createAccount": "Criar conta",
@@ -941,6 +942,36 @@
       "reportTargetLabel": "usuário",
       "reportSent": "Denúncia enviada. Obrigado por ajudar a manter a comunidade segura."
     }
+  },
+  "About": {
+    "badge": "Por que a Lendly existe",
+    "heroTitle": "Pra que pedir emprestado ao vizinho volte a ser mais natural do que comprar",
+    "heroSubtitle": "Lendly conecta vizinhos e negócios locais pra compartilhar, emprestar e alugar objetos com segurança — bairro primeiro, sempre.",
+    "pillarsTitle": "O que guia a Lendly",
+    "pillarsSubtitle": "Os critérios que decidem uma escolha de produto quando duas opções parecem igualmente válidas.",
+    "pillars": {
+      "neighborhood": {
+        "title": "Vizinhança, não mercado anônimo",
+        "desc": "Cada troca acontece entre pessoas — e negócios — do seu bairro, não com desconhecidos em qualquer canto do país. É sempre alguém que você pode voltar a encontrar."
+      },
+      "trust": {
+        "title": "Confiança em camadas",
+        "desc": "Verificação, avaliação, telefone liberado só depois do combinado — a segurança cresce junto com o compromisso, sem virar burocracia logo de cara."
+      },
+      "reuse": {
+        "title": "Menos posse, mais uso",
+        "desc": "Emprestar de graça é o padrão. Alugar é uma opção que se soma a isso, nunca o substitui. Cada empréstimo é uma compra que não precisou acontecer."
+      },
+      "caution": {
+        "title": "Crescer com cautela",
+        "desc": "Nenhuma novidade chega pronta pra todo mundo de uma vez — testamos, ajustamos, só depois expandimos."
+      }
+    },
+    "ctaTitle": "Faz parte da vizinhança",
+    "ctaSubtitle": "Empreste, peça emprestado, ou anuncie o que sua loja aluga — tudo no mesmo lugar.",
+    "ctaCreateAccount": "Criar conta grátis",
+    "ctaExplore": "Ver itens perto de você",
+    "ctaDashboard": "Ir pro painel"
   },
   "Home": {
     "badge": "Comunidade sustentável",

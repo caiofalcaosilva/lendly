@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Lendly — Borrow and rent between neighbors",
-    "description": "A community platform to share items with your neighbors."
+    "description": "Lendly connects neighbors and local businesses to lend and rent things safely — less consumption, more community."
   },
   "Common": {
     "i18nCheck": "Internationalization working.",
@@ -66,6 +66,7 @@
     },
     "Footer": {
       "tagline": "Share with your neighbors. Reduce consumption. Strengthen your community.",
+      "about": "About",
       "explore": "Browse",
       "dashboard": "Dashboard",
       "createAccount": "Sign up",
@@ -941,6 +942,36 @@
       "reportTargetLabel": "user",
       "reportSent": "Report sent. Thanks for helping keep the community safe."
     }
+  },
+  "About": {
+    "badge": "Why Lendly exists",
+    "heroTitle": "So borrowing from your neighbor feels more natural than buying",
+    "heroSubtitle": "Lendly connects neighbors and local businesses to share, lend, and rent things safely — neighborhood first, always.",
+    "pillarsTitle": "What guides Lendly",
+    "pillarsSubtitle": "The tie-breakers behind a product decision when two options look equally valid.",
+    "pillars": {
+      "neighborhood": {
+        "title": "Neighborhood, not an anonymous marketplace",
+        "desc": "Every exchange happens between people — and businesses — in your neighborhood, not strangers anywhere in the country. It's always someone you might run into again."
+      },
+      "trust": {
+        "title": "Trust built in layers",
+        "desc": "Verification, reviews, phone numbers shared only once something's agreed — security grows with commitment, instead of being upfront red tape."
+      },
+      "reuse": {
+        "title": "Less owning, more using",
+        "desc": "Free lending is the default. Renting is an option layered on top of it, never a replacement. Every loan is a purchase that didn't have to happen."
+      },
+      "caution": {
+        "title": "Grow with caution",
+        "desc": "Nothing new ships to everyone at once — we test, adjust, and only then expand."
+      }
+    },
+    "ctaTitle": "Be part of the neighborhood",
+    "ctaSubtitle": "Lend, borrow, or list what your business rents out — all in one place.",
+    "ctaCreateAccount": "Create a free account",
+    "ctaExplore": "See items near you",
+    "ctaDashboard": "Go to dashboard"
   },
   "Home": {
     "badge": "Sustainable community",

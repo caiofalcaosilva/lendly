@@ -16,6 +16,7 @@ export default function Footer() {
         </Link>
         <p className="text-sm text-ink-muted text-center">{t('tagline')}</p>
         <div className="flex gap-4 text-sm text-ink-muted">
+          <Link href="/sobre" className="hover:text-ink transition-colors">{t('about')}</Link>
           <Link href="/items" className="hover:text-ink transition-colors">{t('explore')}</Link>
           {isAuthenticated ? (
             <Link href="/dashboard" className="hover:text-ink transition-colors">{t('dashboard')}</Link>
