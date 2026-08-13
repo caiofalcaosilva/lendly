@@ -1,5 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import Response
 
 from app.dependencies import get_current_admin, get_current_user
 from app.models.user import User
@@ -9,6 +9,7 @@ from app.schemas.verification import (
     VerificationStatusResponse,
 )
 from app.services import storage, verification_service
+from app.utils import errors
 
 router = APIRouter(prefix="/verification", tags=["verification"])
 
@@ -54,14 +55,16 @@ def get_verification_photo(
     submission_id: str, kind: str, admin: User = Depends(get_current_admin)
 ):
     """Admin — the selfie or document photo for a submission (kind is
-    'selfie' or 'document'). Never exposed as a public static URL — a
-    redirect to a short-lived presigned URL when stored in R2, or the file
-    straight off local disk otherwise."""
+    'selfie' or 'document'). Never exposed as a public static URL — read
+    server-side (R2 or local disk) and streamed back through our own API,
+    never a redirect straight to R2 (see storage.open_private_image for
+    why: a redirect would need CORS configured on the bucket)."""
     reference = verification_service.get_photo_path(submission_id, kind)
-    presigned_url = storage.private_image_url(reference)
-    if presigned_url:
-        return RedirectResponse(presigned_url)
-    return FileResponse(reference, media_type="image/jpeg")
+    try:
+        data = storage.open_private_image(reference)
+    except Exception as e:
+        raise errors.not_found("Photo not found") from e
+    return Response(content=data, media_type="image/jpeg")
 
 
 @router.patch("/{submission_id}/approve", response_model=VerificationResponse)

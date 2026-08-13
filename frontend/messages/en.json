@@ -827,6 +827,7 @@
       "submittedOn": "Submitted on {date}",
       "reviewedBy": "Reviewed by {name} on {date}",
       "viewPhotos": "View photos",
+      "photoLoadError": "Couldn't load this submission's photos.",
       "rejectionReasonPlaceholder": "Rejection reason (optional)",
       "confirmRejection": "Confirm rejection",
       "cancel": "Cancel",

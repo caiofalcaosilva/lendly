@@ -16,21 +16,30 @@ type Tab = 'pending' | 'resolved'
 
 function PhotoPreview({ submissionId }: { submissionId: string }) {
   const [urls, setUrls] = useState<{ selfie: string; document: string } | null>(null)
+  const [error, setError] = useState(false)
   const [expanded, setExpanded] = useState<'selfie' | 'document' | null>(null)
   const t = useTranslations('Admin.Verification')
 
   useEffect(() => {
     let selfieUrl = ''
     let documentUrl = ''
+    let cancelled = false
+    setError(false)
     Promise.all([
       verificationService.photoUrl(submissionId, 'selfie'),
       verificationService.photoUrl(submissionId, 'document'),
-    ]).then(([selfie, document]) => {
-      selfieUrl = selfie
-      documentUrl = document
-      setUrls({ selfie, document })
-    })
+    ])
+      .then(([selfie, document]) => {
+        if (cancelled) return
+        selfieUrl = selfie
+        documentUrl = document
+        setUrls({ selfie, document })
+      })
+      .catch(() => {
+        if (!cancelled) setError(true)
+      })
     return () => {
+      cancelled = true
       if (selfieUrl) URL.revokeObjectURL(selfieUrl)
       if (documentUrl) URL.revokeObjectURL(documentUrl)
     }
@@ -48,6 +57,10 @@ function PhotoPreview({ submissionId }: { submissionId: string }) {
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [expanded])
+
+  if (error) {
+    return <p className="text-sm text-danger py-2">{t('photoLoadError')}</p>
+  }
 
   if (!urls) return <div className="flex justify-center py-6"><Spinner className="w-5 h-5 text-primary" /></div>
 

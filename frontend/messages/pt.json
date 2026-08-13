@@ -827,6 +827,7 @@
       "submittedOn": "Enviado em {date}",
       "reviewedBy": "Revisado por {name} em {date}",
       "viewPhotos": "Ver fotos",
+      "photoLoadError": "Não foi possível carregar as fotos dessa submissão.",
       "rejectionReasonPlaceholder": "Motivo da rejeição (opcional)",
       "confirmRejection": "Confirmar rejeição",
       "cancel": "Cancelar",

@@ -79,15 +79,20 @@ def save_private_image(image: Image.Image, key: str) -> str:
     return path
 
 
-def private_image_url(reference: str) -> str | None:
-    """A short-lived presigned URL for a private image saved via
-    save_private_image, if it's in R2 — None when it's a local path instead,
-    meaning the caller should serve the file directly (see
-    routers/verification.py)."""
-    if not _r2_configured():
-        return None
-    return _r2_client().generate_presigned_url(
-        "get_object",
-        Params={"Bucket": settings.R2_BUCKET_NAME, "Key": reference},
-        ExpiresIn=300,
-    )
+def open_private_image(reference: str) -> bytes:
+    """Reads back a private image saved via save_private_image, wherever it
+    lives — R2 or local disk.
+
+    Fetched server-to-server and streamed back through our own API (see
+    routers/verification.py) rather than redirecting the browser to a
+    presigned R2 URL: that would make the browser issue a cross-origin
+    fetch straight at r2.cloudflarestorage.com to read the response body
+    (the frontend needs the bytes, not just to display an `<img>`), which
+    R2 blocks by default without CORS configured on the bucket. Public
+    item/profile photos never hit this — they're plain `<img src>` on the
+    public R2 URL, which doesn't invoke CORS at all."""
+    if _r2_configured():
+        obj = _r2_client().get_object(Bucket=settings.R2_BUCKET_NAME, Key=reference)
+        return obj["Body"].read()
+    with open(reference, "rb") as f:
+        return f.read()

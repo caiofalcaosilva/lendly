@@ -36,8 +36,11 @@ def test_save_private_image_writes_to_local_disk(tmp_path, monkeypatch):
     assert os.path.exists(tmp_path / "verification_uploads" / "u1" / "selfie_test.jpg")
 
 
-def test_private_image_url_is_none_without_r2():
-    assert storage.private_image_url("u1/selfie_test.jpg") is None
+def test_open_private_image_reads_from_local_disk(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    reference = storage.save_private_image(_image(), "u1/selfie_test.jpg")
+    data = storage.open_private_image(reference)
+    assert data.startswith(b"\xff\xd8")  # JPEG magic bytes
 
 
 # --- R2 (mocked boto3 client) -------------------------------------------------
@@ -67,16 +70,16 @@ def test_save_private_image_uploads_to_r2_and_returns_key(monkeypatch):
     mock_client.put_object.assert_called_once()
 
 
-def test_private_image_url_returns_presigned_url_from_r2(monkeypatch):
+def test_open_private_image_reads_from_r2(monkeypatch):
     _configure_r2(monkeypatch)
     mock_client = MagicMock()
-    mock_client.generate_presigned_url.return_value = "https://signed.example.com/x"
+    mock_body = MagicMock()
+    mock_body.read.return_value = b"\xff\xd8fake-jpeg-bytes"
+    mock_client.get_object.return_value = {"Body": mock_body}
     with patch("app.services.storage._r2_client", return_value=mock_client):
-        url = storage.private_image_url("u1/document_test.jpg")
+        data = storage.open_private_image("u1/document_test.jpg")
 
-    assert url == "https://signed.example.com/x"
-    mock_client.generate_presigned_url.assert_called_once_with(
-        "get_object",
-        Params={"Bucket": "lendly-test", "Key": "u1/document_test.jpg"},
-        ExpiresIn=300,
+    assert data == b"\xff\xd8fake-jpeg-bytes"
+    mock_client.get_object.assert_called_once_with(
+        Bucket="lendly-test", Key="u1/document_test.jpg"
     )
