@@ -1,12 +1,10 @@
 import math
-import os
 import secrets
 import uuid
 from typing import Any
 
 from fastapi import BackgroundTasks, UploadFile
 
-from app.config import settings
 from app.models.group import Group, Vouch
 from app.models.group_post import GroupPost
 from app.models.item import Item
@@ -21,7 +19,7 @@ from app.schemas.group import (
     NearbyGroup,
     Voucher,
 )
-from app.services import activity_service, notification_service
+from app.services import activity_service, notification_service, storage
 from app.utils import errors
 from app.utils.images import load_and_resize
 
@@ -215,12 +213,8 @@ async def upload_photo(
     img = await load_and_resize(file)
     img.thumbnail((GROUP_PHOTO_DIMENSION, GROUP_PHOTO_DIMENSION))
 
-    group_dir = os.path.join("uploads", "groups", str(group.id))
-    os.makedirs(group_dir, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}.jpg"
-    img.save(os.path.join(group_dir, filename), "JPEG", quality=85)
-
-    url = f"{settings.API_PUBLIC_URL}/uploads/groups/{group.id}/{filename}"
+    key = f"groups/{group.id}/{uuid.uuid4().hex}.jpg"
+    url = storage.save_public_image(img, key)
     group.update(photo_url=url)
     group.reload()
     return _to_response(group, viewer=current_user)

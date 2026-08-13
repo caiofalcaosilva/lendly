@@ -1,5 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from app.dependencies import get_current_admin, get_current_user
 from app.models.user import User
@@ -8,7 +8,7 @@ from app.schemas.verification import (
     VerificationResponse,
     VerificationStatusResponse,
 )
-from app.services import verification_service
+from app.services import storage, verification_service
 
 router = APIRouter(prefix="/verification", tags=["verification"])
 
@@ -54,9 +54,14 @@ def get_verification_photo(
     submission_id: str, kind: str, admin: User = Depends(get_current_admin)
 ):
     """Admin — the selfie or document photo for a submission (kind is
-    'selfie' or 'document'). Never exposed as a public static URL."""
-    path = verification_service.get_photo_path(submission_id, kind)
-    return FileResponse(path, media_type="image/jpeg")
+    'selfie' or 'document'). Never exposed as a public static URL — a
+    redirect to a short-lived presigned URL when stored in R2, or the file
+    straight off local disk otherwise."""
+    reference = verification_service.get_photo_path(submission_id, kind)
+    presigned_url = storage.private_image_url(reference)
+    if presigned_url:
+        return RedirectResponse(presigned_url)
+    return FileResponse(reference, media_type="image/jpeg")
 
 
 @router.patch("/{submission_id}/approve", response_model=VerificationResponse)

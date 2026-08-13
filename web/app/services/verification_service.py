@@ -1,4 +1,3 @@
-import os
 import uuid
 
 from fastapi import BackgroundTasks, UploadFile
@@ -6,15 +5,12 @@ from fastapi import BackgroundTasks, UploadFile
 from app.models.user import User
 from app.models.verification import VerificationSubmission
 from app.schemas.verification import VerificationResponse
-from app.services import activity_service, email_service, notification_service
+from app.services import activity_service, email_service, notification_service, storage
 from app.utils import errors
 from app.utils.images import load_and_resize
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
 from app.utils.validators import is_valid_cpf
-
-# Not under the public "uploads/" mount — served only via an admin endpoint.
-UPLOAD_ROOT = "verification_uploads"
 
 
 def _to_response(sub: VerificationSubmission) -> VerificationResponse:
@@ -33,13 +29,8 @@ def _to_response(sub: VerificationSubmission) -> VerificationResponse:
 
 async def _save_photo(file: UploadFile, user_id: str, kind: str) -> str:
     img = await load_and_resize(file)
-
-    user_dir = os.path.join(UPLOAD_ROOT, user_id)
-    os.makedirs(user_dir, exist_ok=True)
-    filename = f"{kind}_{uuid.uuid4().hex}.jpg"
-    path = os.path.join(user_dir, filename)
-    img.save(path, "JPEG", quality=85)
-    return path
+    key = f"{user_id}/{kind}_{uuid.uuid4().hex}.jpg"
+    return storage.save_private_image(img, key)
 
 
 async def submit_verification(

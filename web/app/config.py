@@ -43,6 +43,22 @@ class Settings(BaseSettings):
     # paid at the API, regardless of what the frontend shows.
     FREE_LENDING_ONLY: bool = False
 
+    # Cloudflare R2 (S3-compatible object storage) for uploaded photos and
+    # verification documents — see app/services/storage.py. Blank by
+    # default, same "inert until filled in" pattern as Mercado Pago above:
+    # uploads stay on local disk (uploads/, verification_uploads/), which is
+    # fine for local dev but doesn't survive a redeploy on most hosts, so
+    # fill these in before deploying anywhere with an ephemeral filesystem.
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET_NAME: str = ""
+    # Public base URL for the bucket (its r2.dev URL, or a custom domain
+    # mapped to it) — used to build URLs for publicly-served uploads
+    # (avatars/items/groups). Not needed for verification documents, which
+    # are private and served via a presigned URL instead.
+    R2_PUBLIC_URL: str = ""
+
     model_config = {"env_file": ".env"}
 
 
