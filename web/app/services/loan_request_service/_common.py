@@ -1,4 +1,5 @@
 from app.models.loan_request import LoanRequest
+from app.models.payment import Payment
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestResponse
 from app.services import activity_service
@@ -39,6 +40,10 @@ def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResp
         notes=req.notes,
         requested_extension_date=req.requested_extension_date,
         extension_status=req.extension_status or "none",
+        has_pending_extension_payment=Payment.objects(
+            loan_request=req, kind="extension", status="pending"
+        ).first()
+        is not None,
         fulfillment_method=req.fulfillment_method or "pickup",
         delivery_confirmation_code=(
             req.delivery_confirmation_code if is_requester_viewer else None

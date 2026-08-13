@@ -3,14 +3,23 @@ from mongoengine import DateTimeField, Document, FloatField, ReferenceField, Str
 from app.utils.time import utcnow
 
 PAYMENT_STATUSES = ["pending", "held", "released", "refunded", "failed"]
+PAYMENT_KINDS = ["rental", "extension"]
 
 
 class Payment(Document):
-    """One per paid LoanRequest — see docs/pagamento-online.md for the
-    state machine. gross_amount/platform_fee_amount are snapshotted at
-    charge time, never recomputed from Item.daily_rate later."""
+    """See docs/pagamento-online.md for the state machine. gross_amount/
+    platform_fee_amount are snapshotted at charge time, never recomputed
+    from Item.daily_rate later.
 
-    loan_request = ReferenceField("LoanRequest", required=True, unique=True)
+    `kind="rental"` is the original charge for the loan itself — exactly
+    one per paid LoanRequest. `kind="extension"` is a separate charge for
+    extra days on an approved prorrogação — a LoanRequest can accumulate
+    several of these over its lifetime (nothing stops asking for another
+    extension after a previous one was approved), so `loan_request` is
+    NOT unique here."""
+
+    loan_request = ReferenceField("LoanRequest", required=True)
+    kind = StringField(default="rental", choices=PAYMENT_KINDS)
     payer = ReferenceField("User", required=True)
     payee = ReferenceField("User", required=True)
     gross_amount = FloatField(required=True, min_value=0)
@@ -27,4 +36,7 @@ class Payment(Document):
     released_at = DateTimeField()
     refunded_at = DateTimeField()
 
-    meta = {"collection": "payments", "indexes": ["mp_payment_id"]}
+    meta = {
+        "collection": "payments",
+        "indexes": ["mp_payment_id", {"fields": ["loan_request", "kind"]}],
+    }

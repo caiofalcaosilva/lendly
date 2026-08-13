@@ -159,6 +159,15 @@ def get_payment(request_id: str, current_user: User = Depends(get_current_user))
     return payment_service.get_payment_for_request(request_id, current_user)
 
 
+@router.get("/{request_id}/extension-payment", response_model=PaymentResponse)
+def get_extension_payment(
+    request_id: str, current_user: User = Depends(get_current_user)
+):
+    """The most recent extension charge for this request, if any — created
+    automatically when the owner approves a prorrogação on a paid item."""
+    return payment_service.get_extension_payment_for_request(request_id, current_user)
+
+
 @router.post(
     "/{request_id}/extend", response_model=LoanRequestResponse, status_code=201
 )

@@ -61,6 +61,9 @@ class LoanRequestResponse(BaseModel):
     notes: str | None = None
     requested_extension_date: datetime | None = None
     extension_status: str = "none"
+    # True while a paid extension charge exists and hasn't been confirmed
+    # yet — tells the requester's UI when to show the extension checkout.
+    has_pending_extension_payment: bool = False
     fulfillment_method: str = "pickup"
     # Only ever populated for the requester — see _common.to_response.
     delivery_confirmation_code: str | None = None

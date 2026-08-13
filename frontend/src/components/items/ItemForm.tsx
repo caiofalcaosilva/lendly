@@ -133,6 +133,8 @@ export default function ItemForm({ item }: { item?: Item }) {
       subcategory: z.string().optional().or(z.literal('')),
       availability_type: z.enum(['free', 'paid']),
       daily_rate: z.number({ invalid_type_error: t('errors.enterValue') }).min(0.01).optional().nullable(),
+      weekly_rate: z.number().min(0.01).optional().nullable(),
+      monthly_rate: z.number().min(0.01).optional().nullable(),
       usage_rules: z.string().max(500).optional(),
       zip_code: z.string().max(9).optional().or(z.literal('')),
       neighborhood: z.string().max(100).optional(),
@@ -165,6 +167,8 @@ export default function ItemForm({ item }: { item?: Item }) {
           subcategory: item.subcategory ?? '',
           availability_type: item.availability_type,
           daily_rate: item.daily_rate,
+          weekly_rate: item.weekly_rate,
+          monthly_rate: item.monthly_rate,
           usage_rules: item.usage_rules,
           zip_code: (item as any).zip_code ?? '',
           neighborhood: item.neighborhood,
@@ -325,16 +329,43 @@ export default function ItemForm({ item }: { item?: Item }) {
       )}
 
       {availType === 'paid' && (
-        <Input
-          label={t('dailyRate')}
-          type="number"
-          step="0.01"
-          min="0.01"
-          {...register('daily_rate', { valueAsNumber: true })}
-          error={errors.daily_rate?.message}
-          placeholder="0,00"
-          required
-        />
+        <div>
+          <Input
+            label={t('dailyRate')}
+            type="number"
+            step="0.01"
+            min="0.01"
+            {...register('daily_rate', { valueAsNumber: true })}
+            error={errors.daily_rate?.message}
+            placeholder="0,00"
+            required
+          />
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <Input
+              label={t('weeklyRate')}
+              type="number"
+              step="0.01"
+              min="0.01"
+              {...register('weekly_rate', {
+                setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+              })}
+              error={errors.weekly_rate?.message}
+              placeholder="0,00"
+            />
+            <Input
+              label={t('monthlyRate')}
+              type="number"
+              step="0.01"
+              min="0.01"
+              {...register('monthly_rate', {
+                setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+              })}
+              error={errors.monthly_rate?.message}
+              placeholder="0,00"
+            />
+          </div>
+          <p className="text-xs text-ink-subtle mt-1.5">{t('tieredRateHint')}</p>
+        </div>
       )}
 
       <div>

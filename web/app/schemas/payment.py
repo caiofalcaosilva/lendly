@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class PaymentResponse(BaseModel):
     id: str
     loan_request_id: str
+    kind: str = "rental"
     status: str
     gross_amount: float
     platform_fee_amount: float

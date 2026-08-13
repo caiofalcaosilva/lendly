@@ -485,6 +485,8 @@ export interface Item {
   photos: string[]
   availability_type: AvailabilityType
   daily_rate?: number
+  weekly_rate?: number | null
+  monthly_rate?: number | null
   usage_rules?: string
   zip_code?: string
   neighborhood?: string
@@ -599,6 +601,7 @@ export interface LoanRequest {
   notes?: string
   requested_extension_date?: string
   extension_status: 'none' | 'pending' | 'approved' | 'rejected'
+  has_pending_extension_payment: boolean
   fulfillment_method: 'pickup' | 'delivery'
   // Only ever populated when the viewer is the requester.
   delivery_confirmation_code?: string | null
@@ -617,6 +620,7 @@ export interface LoanRequest {
 export interface Payment {
   id: string
   loan_request_id: string
+  kind: 'rental' | 'extension'
   status: 'pending' | 'held' | 'released' | 'refunded' | 'failed'
   gross_amount: number
   platform_fee_amount: number

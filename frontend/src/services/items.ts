@@ -25,6 +25,8 @@ export interface ItemPayload {
   photos?: string[]
   availability_type: string
   daily_rate?: number | null
+  weekly_rate?: number | null
+  monthly_rate?: number | null
   usage_rules?: string
   zip_code?: string
   neighborhood?: string
@@ -36,6 +38,7 @@ export interface ItemPayload {
   is_public?: boolean
   available_days?: number[]
   requires_identity_verification?: boolean
+  fulfillment_options?: ('pickup' | 'delivery')[]
 }
 
 export const itemsService = {

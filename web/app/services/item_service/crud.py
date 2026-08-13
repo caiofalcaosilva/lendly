@@ -145,6 +145,8 @@ def create_item(
         photos=data.photos or [],
         availability_type=data.availability_type.value,
         daily_rate=data.daily_rate,
+        weekly_rate=data.weekly_rate,
+        monthly_rate=data.monthly_rate,
         usage_rules=data.usage_rules,
         zip_code=data.zip_code
         or (current_user.zip_code if using_owner_address else None),

@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button'
 import ReviewModal from '@/components/reviews/ReviewModal'
 import ExtensionModal from '@/components/requests/ExtensionModal'
 import PixCheckout from '@/components/requests/PixCheckout'
+import ExtensionPixCheckout from '@/components/requests/ExtensionPixCheckout'
 import DeliveryCodeConfirm from '@/components/requests/DeliveryCodeConfirm'
 
 const PAYMENT_STATUS_KEYS: Partial<Record<PaymentStatus, string>> = {
@@ -136,6 +137,12 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
         </div>
       )}
 
+      {role === 'requester' && req.has_pending_extension_payment && (
+        <div className="mb-4">
+          <ExtensionPixCheckout requestId={req.id} onConfirmed={onUpdate} />
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         {role === 'owner' && req.status === 'pending' && (
           <>
@@ -245,6 +252,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
       {showExtension && (
         <ExtensionModal
           requestId={req.id}
+          itemId={req.item_id}
           currentExpectedReturnDate={req.expected_return_date}
           onClose={() => setShowExtension(false)}
           onSuccess={() => { setShowExtension(false); onUpdate() }}

@@ -21,6 +21,11 @@ class Item(Document):
     photos = ListField(StringField())
     availability_type = StringField(required=True, choices=["free", "paid"])
     daily_rate = FloatField(min_value=0)
+    # Optional discounted tiers — see payment_service._calculate_price for how
+    # these combine with daily_rate. Unset means "behave exactly like before
+    # tiered pricing existed": daily_rate * days, no tiers involved.
+    weekly_rate = FloatField(min_value=0)
+    monthly_rate = FloatField(min_value=0)
     usage_rules = StringField(max_length=500)
     zip_code = StringField(max_length=10)
     neighborhood = StringField(max_length=100)

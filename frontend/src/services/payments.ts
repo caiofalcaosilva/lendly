@@ -4,6 +4,9 @@ import { MercadoPagoConnectStatus, Payment } from '@/types'
 export const paymentsService = {
   getForRequest: (requestId: string) => api.get<Payment>(`/requests/${requestId}/payment`).then((r) => r.data),
 
+  getExtensionPaymentForRequest: (requestId: string) =>
+    api.get<Payment>(`/requests/${requestId}/extension-payment`).then((r) => r.data),
+
   getMercadoPagoConnectUrl: () =>
     api.get<{ authorization_url: string }>('/users/me/mercadopago/connect').then((r) => r.data),
 

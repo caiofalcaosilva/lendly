@@ -8,7 +8,7 @@ from fastapi import BackgroundTasks
 
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestExtend, LoanRequestResponse
-from app.services import notification_service
+from app.services import notification_service, payment_service
 from app.services.loan_request_service._common import (
     assert_status,
     get_as_owner,
@@ -56,6 +56,9 @@ def approve_extension(
     if req.extension_status != "pending":
         raise errors.conflict("No pending extension request")
 
+    # Captured before the update below overwrites expected_return_date.
+    additional_days = (req.requested_extension_date - req.expected_return_date).days
+
     req.update(
         expected_return_date=req.requested_extension_date,
         requested_extension_date=None,
@@ -64,6 +67,10 @@ def approve_extension(
     )
     req.reload()
     record_activity(req, "rental.extension_approved", actor=current_user)
+
+    if req.item.availability_type == "paid":
+        payment_service.create_payment_for_extension(req, additional_days)
+
     background_tasks.add_task(
         notification_service.create_notification,
         req.requester,

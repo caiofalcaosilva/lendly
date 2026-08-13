@@ -11,7 +11,18 @@ Todo `LoanRequest` tem dois campos de status independentes:
 
 Eles avançam juntos, mas por gatilhos diferentes: `status` muda quando dono ou solicitante agem na API; `payment_status` muda quando o Mercado Pago confirma algo (via webhook) ou quando o próprio backend libera/estorna no momento certo do fluxo.
 
-Existe também um terceiro registro, o documento `Payment` — criado só para itens pagos, um por `LoanRequest` (`loan_request` é `unique=True`). Ele é o "livro-razão": guarda `gross_amount`/`platform_fee_amount` **congelados no momento da cobrança** (nunca recalculados a partir de `Item.daily_rate` depois — se o dono editar o preço no meio do caminho, não retroage), o QR code do Pix, e os timestamps de cada transição (`held_at`, `released_at`, `refunded_at`).
+Existe também um terceiro registro, o documento `Payment` — criado só para itens pagos. Ele é o "livro-razão": guarda `gross_amount`/`platform_fee_amount` **congelados no momento da cobrança** (nunca recalculados a partir de `Item.daily_rate`/`weekly_rate`/`monthly_rate` depois — se o dono editar o preço no meio do caminho, não retroage — o cálculo em si, com as tarifas por período, está em `payment_service._calculate_price`), o QR code do Pix, e os timestamps de cada transição (`held_at`, `released_at`, `refunded_at`).
+
+## `Payment.kind` — aluguel vs. prorrogação
+
+`Payment.loan_request` **não é `unique=True`** — um `LoanRequest` pode ter mais de um `Payment` ao longo do tempo, diferenciados por `kind`:
+
+- **`kind="rental"`** — a cobrança do aluguel em si, exatamente uma por `LoanRequest` pago. É essa que segue o diagrama de `payment_status` acima e bloqueia `confirm_pickup` até `held`.
+- **`kind="extension"`** — uma cobrança separada, criada por `approve_extension` (`loan_request_service/extensions.py`) quando o dono aprova uma prorrogação num item pago, pelo valor dos dias extras (`payment_service.create_payment_for_extension`). Nada impede pedir mais de uma prorrogação ao longo do empréstimo, então um pedido pode acumular vários `Payment(kind="extension")`.
+
+A prorrogação **não usa o mesmo `payment_status` do `LoanRequest`** — esse campo é e continua sendo só do aluguel original. Uma extensão confirmada não teria como sobrescrevê-lo sem corromper o estado de um pedido que já pode estar `released` há tempos (a extensão só é pedida com o empréstimo já `in_progress`, ou seja, depois que a retirada — e a liberação do pagamento do aluguel — já aconteceu).
+
+Também não existe retenção pra extensão: como o "mais dias" já foi concedido no momento da aprovação (não há nenhum evento futuro tipo "confirmar retirada" pra prorrogação — `_complete_return` nem chama o serviço de pagamento hoje), `handle_webhook` libera automaticamente (`_release_payment_doc`) assim que confirma o Pix da extensão, sem esperar ação humana nenhuma.
 
 ## Diagrama — `LoanRequest.status`
 
@@ -60,3 +71,5 @@ Se a chamada ao Mercado Pago em `accept_request` falhar (gateway fora do ar, cre
 ## Limitação conhecida
 
 Não existe esse mesmo retry para um pagamento que ficou parado em `processing` — ou seja, a cobrança foi criada com sucesso, mas o webhook de confirmação nunca chegou (Mercado Pago fora do ar na hora de notificar, webhook mal configurado, etc.). Hoje o único jeito de destravar é consultar `mercadopago_gateway.get_payment_status` manualmente. Não é um problema no dia a dia (o webhook é bem confiável), mas é o primeiro lugar a olhar se um pedido pago ficar preso em `accepted`/`processing` por muito tempo.
+
+Prorrogação tem a mesma limitação, sem nenhum retry: se a chamada ao Mercado Pago dentro de `approve_extension` falhar, a extensão já foi aprovada (a data de devolução já mudou) mas nenhuma cobrança existe — hoje isso fica pra resolução manual, não há um mecanismo de nova tentativa como o de `get_payment_for_request`.

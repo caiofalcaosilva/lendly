@@ -8,6 +8,7 @@ import { useRouter } from '@/i18n/navigation'
 import { requestsService } from '@/services/requests'
 import { Item } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { calculateRentalPrice } from '@/lib/pricing'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -71,10 +72,22 @@ export default function RequestModal({ item, onClose }: Props) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const today = new Date().toISOString().split('T')[0]
+
+  const pickupDate = watch('pickup_date')
+  const returnDate = watch('expected_return_date')
+  const estimatedTotal = (() => {
+    if (item.availability_type !== 'paid' || !pickupDate || !returnDate) return null
+    const days = Math.round(
+      (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / 86_400_000,
+    )
+    if (days <= 0) return null
+    return calculateRentalPrice(item, days)
+  })()
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -148,6 +161,13 @@ export default function RequestModal({ item, onClose }: Props) {
           error={errors.expected_return_date?.message}
           required
         />
+
+        {estimatedTotal != null && (
+          <div className="flex items-center justify-between p-3 bg-primary-subtle rounded-control">
+            <span className="text-sm text-ink-muted">{t('estimatedTotal')}</span>
+            <span className="text-lg font-bold text-primary">{formatCurrency(estimatedTotal, locale)}</span>
+          </div>
+        )}
 
         <Textarea
           label={t('notes')}

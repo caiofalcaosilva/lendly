@@ -100,3 +100,124 @@ def test_release_payment_updates_status(client):
     assert req.payment_status == "released"
     payment = Payment.objects(loan_request=req).first()
     assert payment.status == "released"
+
+
+# ── Tiered pricing (_calculate_price) ────────────────────────────────────────
+
+
+def _item(**overrides):
+    return Item(
+        owner=User(name="x", email=f"x{id(overrides)}@example.com", password_hash="x"),
+        title="Kit",
+        category="toys",
+        availability_type="paid",
+        daily_rate=50.0,
+        **overrides,
+    )
+
+
+def test_price_falls_back_to_daily_rate_without_tiers():
+    assert payment_service._calculate_price(_item(), 10) == 500.0
+
+
+def test_price_uses_weekly_tier_with_daily_remainder():
+    item = _item(weekly_rate=300.0)
+    # 10 days = 1 week (300) + 3 days (3 * 50 = 150)
+    assert payment_service._calculate_price(item, 10) == 450.0
+
+
+def test_price_uses_monthly_tier_with_weekly_and_daily_remainder():
+    item = _item(weekly_rate=300.0, monthly_rate=1000.0)
+    # 40 days = 1 month (1000) + 1 week (300) + 3 days (150)
+    assert payment_service._calculate_price(item, 40) == 1450.0
+
+
+def test_price_monthly_tier_without_weekly_falls_through_to_daily():
+    item = _item(monthly_rate=1000.0)
+    # 40 days = 1 month (1000) + 10 days (500), no weekly tier configured
+    assert payment_service._calculate_price(item, 40) == 1500.0
+
+
+def test_price_exact_multiple_uses_tier_cleanly():
+    item = _item(weekly_rate=300.0)
+    assert payment_service._calculate_price(item, 7) == 300.0
+    assert payment_service._calculate_price(item, 14) == 600.0
+
+
+# ── Extension payments ───────────────────────────────────────────────────────
+
+
+def _make_in_progress_paid_request():
+    """A paid loan already past pickup — the rental Payment exists and is
+    'released', same as any real in_progress paid request, since release
+    happens at pickup confirmation, not at extension time."""
+    req = _make_paid_loan_request()
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ):
+        payment_service.create_payment_for_request(req)
+    with patch.object(payment_service.mercadopago_gateway, "release_payment"):
+        payment_service.release_payment(req)
+    req.update(status="in_progress")
+    req.reload()
+    return req
+
+
+def test_create_payment_for_extension_does_not_touch_rental_payment_status(client):
+    req = _make_in_progress_paid_request()
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value={**_MOCK_CHARGE_RESULT, "mp_payment_id": "ext-1"},
+    ) as mocked:
+        payment = payment_service.create_payment_for_extension(req, 3)
+
+    mocked.assert_called_once()
+    assert payment.kind == "extension"
+    assert payment.gross_amount == 150.0  # 3 days * daily_rate 50
+    req.reload()
+    assert req.payment_status == "released"  # unchanged by the extension charge
+
+    rental = Payment.objects(loan_request=req, kind="rental").first()
+    extension = Payment.objects(loan_request=req, kind="extension").first()
+    assert rental is not None and extension is not None
+    assert rental.id != extension.id
+
+
+def test_extension_webhook_confirmation_releases_automatically(client):
+    req = _make_in_progress_paid_request()
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value={**_MOCK_CHARGE_RESULT, "mp_payment_id": "ext-2"},
+    ):
+        payment_service.create_payment_for_extension(req, 3)
+
+    with (
+        patch.object(
+            payment_service.mercadopago_gateway,
+            "verify_webhook_signature",
+            return_value=True,
+        ),
+        patch.object(
+            payment_service.mercadopago_gateway,
+            "get_payment_status",
+            return_value="approved",
+        ),
+        patch.object(
+            payment_service.mercadopago_gateway, "release_payment"
+        ) as mocked_release,
+    ):
+        payment_service.handle_webhook(
+            {"data": {"id": "ext-2"}}, x_signature="sig", x_request_id="req-id"
+        )
+
+    mocked_release.assert_called_once()
+    extension = Payment.objects(loan_request=req, kind="extension").first()
+    assert extension.status == "released"
+    req.reload()
+    # Still whatever the rental payment already had it as — the extension's
+    # confirmation must not touch this field.
+    assert req.payment_status == "released"
