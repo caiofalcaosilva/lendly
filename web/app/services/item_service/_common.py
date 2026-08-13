@@ -67,6 +67,7 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
         group_summaries=_visible_group_summaries(item, current_user),
         available_days=item.available_days or [],
         requires_identity_verification=item.requires_identity_verification or False,
+        fulfillment_options=item.fulfillment_options or ["pickup"],
         created_at=item.created_at,
     )
 

@@ -162,6 +162,7 @@ def create_item(
         is_public=data.is_public,
         available_days=data.available_days or [],
         requires_identity_verification=data.requires_identity_verification,
+        fulfillment_options=[o.value for o in data.fulfillment_options],
     )
     item.save()
     activity_service.record(
@@ -297,6 +298,13 @@ def update_item(
     for enum_field in ("category", "availability_type"):
         if enum_field in updates and hasattr(updates[enum_field], "value"):
             updates[enum_field] = updates[enum_field].value
+    # fulfillment_options is a *list* of enums — the scalar-flatten loop
+    # above doesn't touch it.
+    if "fulfillment_options" in updates:
+        updates["fulfillment_options"] = [
+            o.value if hasattr(o, "value") else o
+            for o in updates["fulfillment_options"]
+        ]
 
     if "category" in updates or "subcategory" in updates:
         effective_category = updates.get("category", item.category)

@@ -226,3 +226,239 @@ def test_force_pickup_allowed_after_grace_period(client, register_user):
     body = force.json()
     assert body["status"] == "in_progress"
     assert body["pickup_forced"] is True
+
+
+# ── Fulfillment options + delivery confirmation code ────────────────────────
+
+
+def _get(client, token, request_id):
+    return client.get(
+        f"/requests/{request_id}", headers={"Authorization": f"Bearer {token}"}
+    )
+
+
+def test_fulfillment_method_resolved_automatically_for_single_option_item(
+    client, register_user
+):
+    """Item only accepts pickup (the default) — no method needs to be
+    chosen, and none was asked for."""
+    _, owner_token = register_user("dono.fulfillmentunico@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("solicitante.fulfillmentunico@example.com")
+
+    resp = _create_request(client, requester_token, item["id"])
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["fulfillment_method"] == "pickup"
+
+
+def test_fulfillment_method_required_when_item_has_both_options(client, register_user):
+    _, owner_token = register_user("dono.fulfillmentduplo@example.com")
+    item = _create_item(client, owner_token, fulfillment_options=["pickup", "delivery"])
+    _, requester_token = register_user("solicitante.fulfillmentduplo@example.com")
+
+    without_choice = _create_request(client, requester_token, item["id"])
+    assert without_choice.status_code == 400
+
+    with_choice = _create_request(
+        client, requester_token, item["id"], fulfillment_method="delivery"
+    )
+    assert with_choice.status_code == 201, with_choice.text
+    assert with_choice.json()["fulfillment_method"] == "delivery"
+
+
+def test_delivery_code_generated_on_accept_and_hidden_from_owner(client, register_user):
+    _, owner_token = register_user("dono.codigo@example.com")
+    item = _create_item(client, owner_token, fulfillment_options=["delivery"])
+    _, requester_token = register_user("solicitante.codigo@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+
+    accept = client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert accept.status_code == 200
+    assert accept.json()["fulfillment_method"] == "delivery"
+
+    as_requester = _get(client, requester_token, request_id).json()
+    assert as_requester["delivery_confirmation_code"] is not None
+    assert len(as_requester["delivery_confirmation_code"]) == 6
+    assert as_requester["delivery_confirmation_code_max_attempts"] == 5
+
+    as_owner = _get(client, owner_token, request_id).json()
+    assert as_owner["delivery_confirmation_code"] is None
+
+
+def test_confirm_pickup_by_code_completes_both_sides(client, register_user):
+    _, owner_token = register_user("dono.codigocerto@example.com")
+    item = _create_item(client, owner_token, fulfillment_options=["delivery"])
+    _, requester_token = register_user("solicitante.codigocerto@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    code = _get(client, requester_token, request_id).json()[
+        "delivery_confirmation_code"
+    ]
+
+    resp = client.patch(
+        f"/requests/{request_id}/start/code",
+        json={"code": code},
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["status"] == "in_progress"
+    assert body["pickup_confirmed_by_owner_at"] is not None
+    assert body["pickup_confirmed_by_requester_at"] is not None
+
+
+def test_confirm_pickup_by_code_wrong_code_increments_attempts(client, register_user):
+    _, owner_token = register_user("dono.codigoerrado@example.com")
+    item = _create_item(client, owner_token, fulfillment_options=["delivery"])
+    _, requester_token = register_user("solicitante.codigoerrado@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    resp = client.patch(
+        f"/requests/{request_id}/start/code",
+        json={"code": "000000"},
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert resp.status_code == 400
+
+    as_requester = _get(client, requester_token, request_id).json()
+    assert as_requester["delivery_confirmation_code_attempts"] == 1
+
+
+def test_confirm_pickup_by_code_exceeds_attempt_cap(client, register_user):
+    _, owner_token = register_user("dono.codigoestourado@example.com")
+    item = _create_item(client, owner_token, fulfillment_options=["delivery"])
+    _, requester_token = register_user("solicitante.codigoestourado@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    code = _get(client, requester_token, request_id).json()[
+        "delivery_confirmation_code"
+    ]
+
+    for _ in range(5):
+        resp = client.patch(
+            f"/requests/{request_id}/start/code",
+            json={"code": "000000"},
+            headers={"Authorization": f"Bearer {owner_token}"},
+        )
+        assert resp.status_code == 400
+
+    # Cap hit — even the correct code is now rejected until regenerated.
+    blocked = client.patch(
+        f"/requests/{request_id}/start/code",
+        json={"code": code},
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert blocked.status_code == 409
+
+
+def test_regenerate_delivery_code_resets_attempts(client, register_user):
+    _, owner_token = register_user("dono.codigoregenera@example.com")
+    item = _create_item(client, owner_token, fulfillment_options=["delivery"])
+    _, requester_token = register_user("solicitante.codigoregenera@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    old_code = _get(client, requester_token, request_id).json()[
+        "delivery_confirmation_code"
+    ]
+
+    for _ in range(5):
+        client.patch(
+            f"/requests/{request_id}/start/code",
+            json={"code": "000000"},
+            headers={"Authorization": f"Bearer {owner_token}"},
+        )
+
+    regen = client.patch(
+        f"/requests/{request_id}/start/code/regenerate",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert regen.status_code == 200
+    assert regen.json()["delivery_confirmation_code_attempts"] == 0
+
+    new_code = _get(client, requester_token, request_id).json()[
+        "delivery_confirmation_code"
+    ]
+    assert new_code != old_code
+
+    resp = client.patch(
+        f"/requests/{request_id}/start/code",
+        json={"code": new_code},
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "in_progress"
+
+
+def test_non_owner_cannot_confirm_pickup_by_code(client, register_user):
+    _, owner_token = register_user("dono.codigonaodono@example.com")
+    item = _create_item(client, owner_token, fulfillment_options=["delivery"])
+    _, requester_token = register_user("solicitante.codigonaodono@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    resp = client.patch(
+        f"/requests/{request_id}/start/code",
+        json={"code": "123456"},
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    assert resp.status_code == 403
+
+
+def test_pickup_fulfilled_request_unaffected_by_code_flow(client, register_user):
+    """Items that only accept pickup keep the original dual-tap flow, and
+    the code endpoint refuses to touch them at all."""
+    _, owner_token = register_user("dono.somenteretirada@example.com")
+    item = _create_item(client, owner_token)
+    _, requester_token = register_user("solicitante.somenteretirada@example.com")
+
+    request_id = _create_request(client, requester_token, item["id"]).json()["id"]
+    client.patch(
+        f"/requests/{request_id}/accept",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    code_attempt = client.patch(
+        f"/requests/{request_id}/start/code",
+        json={"code": "123456"},
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert code_attempt.status_code == 400
+
+    owner_start = client.patch(
+        f"/requests/{request_id}/start",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert owner_start.status_code == 200
+    assert owner_start.json()["status"] == "accepted"
+
+    requester_start = client.patch(
+        f"/requests/{request_id}/start",
+        headers={"Authorization": f"Bearer {requester_token}"},
+    )
+    assert requester_start.status_code == 200
+    assert requester_start.json()["status"] == "in_progress"

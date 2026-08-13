@@ -20,16 +20,25 @@ const WEEKDAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 's
 // every other comparison in this file in the backend's terms.
 const toBackendWeekday = (dateStr: string) => (new Date(dateStr).getUTCDay() + 6) % 7
 
-function buildSchema(availableDays: number[], t: ReturnType<typeof useTranslations>) {
+function buildSchema(
+  availableDays: number[],
+  fulfillmentChoiceRequired: boolean,
+  t: ReturnType<typeof useTranslations>,
+) {
   return z
     .object({
       pickup_date: z.string().min(1, t('errors.pickupDateRequired')),
       expected_return_date: z.string().min(1, t('errors.returnDateRequired')),
+      fulfillment_method: z.enum(['pickup', 'delivery']).optional(),
       notes: z.string().max(500).optional(),
     })
     .refine((d) => d.pickup_date < d.expected_return_date, {
       message: t('errors.returnAfterPickup'),
       path: ['expected_return_date'],
+    })
+    .refine((d) => !fulfillmentChoiceRequired || !!d.fulfillment_method, {
+      message: t('errors.fulfillmentMethodRequired'),
+      path: ['fulfillment_method'],
     })
     .refine((d) => availableDays.length === 0 || availableDays.includes(toBackendWeekday(d.pickup_date)), {
       message: t('errors.pickupDayUnavailable'),
@@ -54,7 +63,9 @@ export default function RequestModal({ item, onClose }: Props) {
   const t = useTranslations('Common.RequestModal')
 
   const availableDays = item.available_days ?? []
-  const schema = buildSchema(availableDays, t)
+  const fulfillmentOptions = item.fulfillment_options ?? ['pickup']
+  const fulfillmentChoiceRequired = fulfillmentOptions.length > 1
+  const schema = buildSchema(availableDays, fulfillmentChoiceRequired, t)
   type FormData = z.infer<typeof schema>
 
   const {
@@ -73,6 +84,7 @@ export default function RequestModal({ item, onClose }: Props) {
         item_id: item.id,
         pickup_date: new Date(data.pickup_date).toISOString(),
         expected_return_date: new Date(data.expected_return_date).toISOString(),
+        fulfillment_method: fulfillmentChoiceRequired ? data.fulfillment_method : fulfillmentOptions[0],
         notes: data.notes,
       })
       onClose()
@@ -99,6 +111,22 @@ export default function RequestModal({ item, onClose }: Props) {
       {error && <div className="mb-4 p-3 bg-danger-subtle text-danger rounded-control text-sm">{error}</div>}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {fulfillmentChoiceRequired && (
+          <div>
+            <label className="block text-sm font-medium text-ink-muted mb-2">{t('fulfillmentMethod')}</label>
+            <div className="flex gap-6">
+              {(['pickup', 'delivery'] as const).map((val) => (
+                <label key={val} className="flex items-center gap-2 cursor-pointer text-ink">
+                  <input type="radio" value={val} {...register('fulfillment_method')} className="text-primary" />
+                  <span className="text-sm">{val === 'pickup' ? t('fulfillmentPickup') : t('fulfillmentDelivery')}</span>
+                </label>
+              ))}
+            </div>
+            {errors.fulfillment_method && (
+              <p className="text-xs text-danger mt-1">{errors.fulfillment_method.message}</p>
+            )}
+          </div>
+        )}
         {availableDays.length > 0 && (
           <p className="text-xs text-warning bg-warning-subtle border border-warning/30 rounded-control px-3 py-2">
             {t('availableDaysNotice', { days: availableDays.map((d) => t(`weekdays.${WEEKDAY_KEYS[d]}`)).join(', ') })}

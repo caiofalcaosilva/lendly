@@ -46,7 +46,7 @@ def request_extension(
     )
     req.reload()
     record_activity(req, "rental.extension_requested", actor=current_user)
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def approve_extension(
@@ -72,7 +72,7 @@ def approve_extension(
         req.item.title,
         f"/requests/{req.id}",
     )
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def reject_extension(
@@ -93,4 +93,4 @@ def reject_extension(
         req.item.title,
         f"/requests/{req.id}",
     )
-    return to_response(req)
+    return to_response(req, viewer=current_user)

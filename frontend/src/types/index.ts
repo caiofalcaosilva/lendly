@@ -501,6 +501,7 @@ export interface Item {
   group_summaries: { id: string; name: string }[]
   available_days: number[]
   requires_identity_verification: boolean
+  fulfillment_options: ('pickup' | 'delivery')[]
   created_at: string
 }
 
@@ -598,6 +599,11 @@ export interface LoanRequest {
   notes?: string
   requested_extension_date?: string
   extension_status: 'none' | 'pending' | 'approved' | 'rejected'
+  fulfillment_method: 'pickup' | 'delivery'
+  // Only ever populated when the viewer is the requester.
+  delivery_confirmation_code?: string | null
+  delivery_confirmation_code_attempts: number
+  delivery_confirmation_code_max_attempts: number
   pickup_confirmed_by_owner_at?: string | null
   pickup_confirmed_by_requester_at?: string | null
   pickup_forced: boolean

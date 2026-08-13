@@ -34,6 +34,8 @@ function formatAddressSummary(a: { neighborhood?: string; city?: string; state?:
 }
 
 const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+const FULFILLMENT_OPTIONS = ['pickup', 'delivery'] as const
+type FulfillmentOption = (typeof FULFILLMENT_OPTIONS)[number]
 
 function sameAddress(a: { zip_code?: string; neighborhood?: string; city?: string; state?: string }, b: { zip_code?: string; neighborhood?: string; city?: string; state?: string }) {
   return (a.zip_code || '') === (b.zip_code || '')
@@ -55,6 +57,9 @@ export default function ItemForm({ item }: { item?: Item }) {
   const [isPublic, setIsPublic] = useState(item?.is_public ?? true)
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(item?.groups ?? [])
   const [selectedDays, setSelectedDays] = useState<number[]>(item?.available_days ?? [])
+  const [fulfillmentOptions, setFulfillmentOptions] = useState<FulfillmentOption[]>(
+    item?.fulfillment_options ?? ['pickup'],
+  )
   const [requiresVerification, setRequiresVerification] = useState(item?.requires_identity_verification ?? false)
   const [addressMode, setAddressMode] = useState<AddressMode>('custom')
   const [addressModeInitialized, setAddressModeInitialized] = useState(false)
@@ -101,6 +106,12 @@ export default function ItemForm({ item }: { item?: Item }) {
   const toggleDay = (day: number) => {
     setSelectedDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+    )
+  }
+
+  const toggleFulfillment = (option: FulfillmentOption) => {
+    setFulfillmentOptions((prev) =>
+      prev.includes(option) ? prev.filter((o) => o !== option) : [...prev, option],
     )
   }
 
@@ -188,6 +199,10 @@ export default function ItemForm({ item }: { item?: Item }) {
       setError(t('errors.visibilityRequired'))
       return
     }
+    if (fulfillmentOptions.length === 0) {
+      setError(t('errors.fulfillmentRequired'))
+      return
+    }
     if (data.availability_type === 'paid' && !mpConnected) {
       setError(t('errors.connectMercadoPago'))
       return
@@ -214,6 +229,7 @@ export default function ItemForm({ item }: { item?: Item }) {
       group_ids: selectedGroupIds,
       available_days: selectedDays,
       requires_identity_verification: requiresVerification,
+      fulfillment_options: fulfillmentOptions,
       ...addressOverride,
     }
     try {
@@ -341,6 +357,31 @@ export default function ItemForm({ item }: { item?: Item }) {
               }`}
             >
               {t(`weekdays.${key}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-ink-muted mb-2">
+          {t('fulfillmentOptions')}
+          <span className="text-xs font-normal text-ink-subtle ml-2">
+            {t('fulfillmentOptionsHint')}
+          </span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {FULFILLMENT_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => toggleFulfillment(option)}
+              className={`px-3 py-1.5 rounded-control text-sm border transition-colors ${
+                fulfillmentOptions.includes(option)
+                  ? 'bg-primary border-primary text-primary-on'
+                  : 'bg-surface border-border text-ink-muted'
+              }`}
+            >
+              {option === 'pickup' ? t('fulfillmentPickup') : t('fulfillmentDelivery')}
             </button>
           ))}
         </div>

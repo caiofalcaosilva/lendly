@@ -10,9 +10,17 @@ WEEKDAY_LABELS = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "
 # coordinate pickup around — not while the request is still just pending.
 _PHONE_VISIBLE_STATUSES = {"accepted", "in_progress", "finished"}
 
+# Wrong-code attempts allowed before the owner has to ask for a fresh code —
+# a short numeric code is brute-forceable otherwise.
+DELIVERY_CODE_MAX_ATTEMPTS = 5
 
-def to_response(req: LoanRequest) -> LoanRequestResponse:
+
+def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResponse:
     show_phones = req.status in _PHONE_VISIBLE_STATUSES
+    # The code is only ever shown to the requester — the owner is told it
+    # verbally/in person and types it in blind. Defaulting viewer to None
+    # hides the code (fails closed) if a caller forgets to pass one.
+    is_requester_viewer = viewer is not None and str(viewer.id) == str(req.requester.id)
     return LoanRequestResponse(
         id=str(req.id),
         item_id=str(req.item.id),
@@ -31,6 +39,13 @@ def to_response(req: LoanRequest) -> LoanRequestResponse:
         notes=req.notes,
         requested_extension_date=req.requested_extension_date,
         extension_status=req.extension_status or "none",
+        fulfillment_method=req.fulfillment_method or "pickup",
+        delivery_confirmation_code=(
+            req.delivery_confirmation_code if is_requester_viewer else None
+        ),
+        delivery_confirmation_code_attempts=req.delivery_confirmation_code_attempts
+        or 0,
+        delivery_confirmation_code_max_attempts=DELIVERY_CODE_MAX_ATTEMPTS,
         pickup_confirmed_by_owner_at=req.pickup_confirmed_by_owner_at,
         pickup_confirmed_by_requester_at=req.pickup_confirmed_by_requester_at,
         pickup_forced=req.pickup_forced or False,

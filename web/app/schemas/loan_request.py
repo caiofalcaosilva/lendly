@@ -13,11 +13,20 @@ class RequestStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class FulfillmentMethod(str, Enum):
+    PICKUP = "pickup"
+    DELIVERY = "delivery"
+
+
 class LoanRequestCreate(BaseModel):
     item_id: str
     pickup_date: datetime
     expected_return_date: datetime
     notes: str | None = Field(None, max_length=500)
+    # Only required when the item allows more than one fulfillment option —
+    # resolved against the item's fulfillment_options server-side, see
+    # loan_request_service.lifecycle.create_request.
+    fulfillment_method: FulfillmentMethod | None = None
 
     @model_validator(mode="after")
     def check_dates(self) -> "LoanRequestCreate":
@@ -28,6 +37,10 @@ class LoanRequestCreate(BaseModel):
 
 class LoanRequestExtend(BaseModel):
     new_expected_return_date: datetime
+
+
+class LoanRequestConfirmCode(BaseModel):
+    code: str = Field(..., min_length=1, max_length=6)
 
 
 class LoanRequestResponse(BaseModel):
@@ -48,6 +61,11 @@ class LoanRequestResponse(BaseModel):
     notes: str | None = None
     requested_extension_date: datetime | None = None
     extension_status: str = "none"
+    fulfillment_method: str = "pickup"
+    # Only ever populated for the requester — see _common.to_response.
+    delivery_confirmation_code: str | None = None
+    delivery_confirmation_code_attempts: int = 0
+    delivery_confirmation_code_max_attempts: int = 0
     pickup_confirmed_by_owner_at: datetime | None = None
     pickup_confirmed_by_requester_at: datetime | None = None
     pickup_forced: bool = False

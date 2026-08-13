@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button'
 import ReviewModal from '@/components/reviews/ReviewModal'
 import ExtensionModal from '@/components/requests/ExtensionModal'
 import PixCheckout from '@/components/requests/PixCheckout'
+import DeliveryCodeConfirm from '@/components/requests/DeliveryCodeConfirm'
 
 const PAYMENT_STATUS_KEYS: Partial<Record<PaymentStatus, string>> = {
   processing: 'processing',
@@ -153,6 +154,17 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
               <span className="text-xs text-warning self-center">
                 {t('waitingForPayment')}
               </span>
+            )
+          ) : req.fulfillment_method === 'delivery' ? (
+            role === 'owner' ? (
+              <DeliveryCodeConfirm request={req} onConfirmed={onUpdate} />
+            ) : (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-ink-muted">{t('deliveryCodeRequesterHint')}</span>
+                <span className="text-2xl font-bold tracking-[0.3em] text-primary">
+                  {req.delivery_confirmation_code}
+                </span>
+              </div>
             )
           ) : myPickupConfirmedAt ? (
             <div className="flex flex-wrap items-center gap-2">

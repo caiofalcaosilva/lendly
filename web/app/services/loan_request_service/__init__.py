@@ -16,12 +16,14 @@ from app.services.loan_request_service.lifecycle import (
     accept_request,
     cancel_request,
     confirm_pickup,
+    confirm_pickup_by_code,
     confirm_return,
     create_request,
     force_pickup,
     force_return,
     get_request,
     refuse_request,
+    regenerate_delivery_code,
 )
 from app.services.loan_request_service.queries import (
     get_history,
@@ -36,6 +38,7 @@ __all__ = [
     "approve_extension",
     "cancel_request",
     "confirm_pickup",
+    "confirm_pickup_by_code",
     "confirm_return",
     "create_request",
     "force_pickup",
@@ -45,6 +48,7 @@ __all__ = [
     "get_request",
     "get_sent_requests",
     "refuse_request",
+    "regenerate_delivery_code",
     "reject_extension",
     "request_extension",
 ]

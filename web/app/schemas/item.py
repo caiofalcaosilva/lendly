@@ -9,6 +9,11 @@ class AvailabilityType(str, Enum):
     PAID = "paid"
 
 
+class FulfillmentOption(str, Enum):
+    PICKUP = "pickup"
+    DELIVERY = "delivery"
+
+
 def _validate_available_days(value: list[int]) -> list[int]:
     if any(d < 0 or d > 6 for d in value):
         raise ValueError(
@@ -17,6 +22,14 @@ def _validate_available_days(value: list[int]) -> list[int]:
     if len(set(value)) != len(value):
         raise ValueError("available_days must not contain duplicates")
     return sorted(value)
+
+
+def _validate_fulfillment_options(
+    value: list[FulfillmentOption],
+) -> list[FulfillmentOption]:
+    if len(set(value)) != len(value):
+        raise ValueError("fulfillment_options must not contain duplicates")
+    return value
 
 
 class ItemCreate(BaseModel):
@@ -41,8 +54,14 @@ class ItemCreate(BaseModel):
         default=[], description="0=segunda...6=domingo; vazio = todo dia"
     )
     requires_identity_verification: bool = False
+    fulfillment_options: list[FulfillmentOption] = Field(
+        default=[FulfillmentOption.PICKUP], min_length=1
+    )
 
     _check_available_days = field_validator("available_days")(_validate_available_days)
+    _check_fulfillment_options = field_validator("fulfillment_options")(
+        _validate_fulfillment_options
+    )
 
 
 class ItemUpdate(BaseModel):
@@ -65,9 +84,13 @@ class ItemUpdate(BaseModel):
     is_public: bool | None = None
     available_days: list[int] | None = None
     requires_identity_verification: bool | None = None
+    fulfillment_options: list[FulfillmentOption] | None = Field(None, min_length=1)
 
     _check_available_days = field_validator("available_days")(
         lambda v: v if v is None else _validate_available_days(v)
+    )
+    _check_fulfillment_options = field_validator("fulfillment_options")(
+        lambda v: v if v is None else _validate_fulfillment_options(v)
     )
 
 
@@ -117,4 +140,5 @@ class ItemResponse(BaseModel):
     group_summaries: list[ItemGroupSummary] = []
     available_days: list[int] = []
     requires_identity_verification: bool = False
+    fulfillment_options: list[str] = ["pickup"]
     created_at: datetime

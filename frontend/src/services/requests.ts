@@ -2,7 +2,7 @@ import api from '@/lib/api'
 import { LoanRequest } from '@/types'
 
 export const requestsService = {
-  create: (data: { item_id: string; pickup_date: string; expected_return_date: string; notes?: string }) =>
+  create: (data: { item_id: string; pickup_date: string; expected_return_date: string; fulfillment_method?: 'pickup' | 'delivery'; notes?: string }) =>
     api.post<LoanRequest>('/requests', data).then((r) => r.data),
 
   get: (id: string) => api.get<LoanRequest>(`/requests/${id}`).then((r) => r.data),
@@ -11,6 +11,10 @@ export const requestsService = {
   refuse: (id: string) => api.patch<LoanRequest>(`/requests/${id}/refuse`).then((r) => r.data),
   start: (id: string) => api.patch<LoanRequest>(`/requests/${id}/start`).then((r) => r.data),
   startForce: (id: string) => api.patch<LoanRequest>(`/requests/${id}/start/force`).then((r) => r.data),
+  confirmPickupByCode: (id: string, code: string) =>
+    api.patch<LoanRequest>(`/requests/${id}/start/code`, { code }).then((r) => r.data),
+  regenerateDeliveryCode: (id: string) =>
+    api.patch<LoanRequest>(`/requests/${id}/start/code/regenerate`).then((r) => r.data),
   finish: (id: string) => api.patch<LoanRequest>(`/requests/${id}/finish`).then((r) => r.data),
   finishForce: (id: string) => api.patch<LoanRequest>(`/requests/${id}/finish/force`).then((r) => r.data),
   cancel: (id: string) => api.patch<LoanRequest>(`/requests/${id}/cancel`).then((r) => r.data),

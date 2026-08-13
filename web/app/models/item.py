@@ -31,6 +31,13 @@ class Item(Document):
     is_available = BooleanField(default=True)
     # Weekdays open for pickup/return: 0=segunda ... 6=domingo, empty=every day.
     available_days = ListField(IntField(min_value=0, max_value=6), default=list)
+    # Which handoff method(s) the owner accepts for this item. Items created
+    # before this field existed load with the default below (MongoEngine
+    # fills in field defaults for keys missing from the stored document) —
+    # no backfill needed.
+    fulfillment_options = ListField(
+        StringField(choices=["pickup", "delivery"]), default=lambda: ["pickup"]
+    )
     requires_identity_verification = BooleanField(default=False)
     is_active = BooleanField(default=True)
     # True only for items this specific pause cycle deactivated — lets resume

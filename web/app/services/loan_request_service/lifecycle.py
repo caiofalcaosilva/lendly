@@ -1,3 +1,4 @@
+import secrets
 from datetime import timedelta
 
 from fastapi import BackgroundTasks
@@ -8,6 +9,7 @@ from app.models.user import User
 from app.schemas.loan_request import LoanRequestCreate, LoanRequestResponse
 from app.services import email_service, notification_service, payment_service
 from app.services.loan_request_service._common import (
+    DELIVERY_CODE_MAX_ATTEMPTS,
     WEEKDAY_LABELS,
     assert_status,
     get_as_owner,
@@ -29,6 +31,13 @@ _STATUS_NOTIFICATION_TITLES = {
     "refused": "Seu pedido foi recusado",
     "finished": "Empréstimo finalizado",
 }
+
+
+def _generate_delivery_code() -> str:
+    """A 6-digit numeric code — short enough to read aloud/type at the door.
+    Not required to be globally unique: it's only ever validated against
+    the one LoanRequest it belongs to."""
+    return f"{secrets.randbelow(1_000_000):06d}"
 
 
 def _notify_status_change(req: LoanRequest, background_tasks: BackgroundTasks) -> None:
@@ -106,6 +115,17 @@ def create_request(
     if conflict:
         raise errors.conflict("Item already has an active loan in progress")
 
+    options = item.fulfillment_options or ["pickup"]
+    if len(options) == 1:
+        # Only one option — nothing to ask the requester, just use it.
+        fulfillment_method = options[0]
+    elif data.fulfillment_method and data.fulfillment_method.value in options:
+        fulfillment_method = data.fulfillment_method.value
+    elif data.fulfillment_method:
+        raise errors.bad_request("Este item não aceita esse método de retirada/entrega")
+    else:
+        raise errors.bad_request("Escolha o método de retirada/entrega para este item")
+
     req = LoanRequest(
         item=item,
         requester=current_user,
@@ -113,6 +133,7 @@ def create_request(
         pickup_date=data.pickup_date,
         expected_return_date=data.expected_return_date,
         notes=data.notes,
+        fulfillment_method=fulfillment_method,
     )
     req.save()
     record_activity(req, "rental.requested", actor=current_user)
@@ -136,12 +157,12 @@ def create_request(
             f"/requests/{req.id}",
         )
 
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def get_request(request_id: str, current_user: User) -> LoanRequestResponse:
     req = get_as_participant(request_id, current_user)
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def accept_request(
@@ -149,7 +170,12 @@ def accept_request(
 ) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
     assert_status(req, "pending")
-    req.update(status="accepted", responded_at=utcnow(), updated_at=utcnow())
+    updates = {"status": "accepted", "responded_at": utcnow(), "updated_at": utcnow()}
+    if req.fulfillment_method == "delivery":
+        updates["delivery_confirmation_code"] = _generate_delivery_code()
+        updates["delivery_confirmation_code_attempts"] = 0
+        updates["delivery_confirmation_code_generated_at"] = utcnow()
+    req.update(**updates)
     req.reload()
     recalculate_response_time(current_user)
 
@@ -159,7 +185,7 @@ def accept_request(
 
     record_activity(req, "rental.accepted", actor=current_user)
     _notify_status_change(req, background_tasks)
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def refuse_request(
@@ -173,7 +199,7 @@ def refuse_request(
     recalculate_response_time(current_user)
     record_activity(req, "rental.refused", actor=current_user)
     _notify_status_change(req, background_tasks)
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def _complete_pickup(req: LoanRequest) -> None:
@@ -215,7 +241,7 @@ def confirm_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
     if req.pickup_confirmed_by_owner_at and req.pickup_confirmed_by_requester_at:
         _complete_pickup(req)
 
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def force_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
@@ -240,7 +266,89 @@ def force_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
     req.reload()
     record_activity(req, "rental.pickup_forced", actor=current_user)
     _complete_pickup(req)
-    return to_response(req)
+    return to_response(req, viewer=current_user)
+
+
+def confirm_pickup_by_code(
+    request_id: str, current_user: User, code: str, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
+    """Delivery-only substitute for confirm_pickup: the requester is shown
+    this code once the request is accepted, hands it to the owner at the
+    door, and the owner typing it in here sets BOTH pickup_confirmed_by_*_at
+    fields at once — there is no separate requester-side confirmation step
+    for delivery-fulfilled requests."""
+    req = get_as_owner(request_id, current_user)
+    assert_status(req, "accepted")
+
+    if req.fulfillment_method != "delivery":
+        raise errors.bad_request("Este pedido usa retirada presencial")
+
+    if req.item.availability_type == "paid" and req.payment_status != "held":
+        raise errors.conflict(
+            "Aguardando confirmação do pagamento — a entrega só pode ser "
+            "confirmada depois que o Pix for aprovado"
+        )
+
+    if req.delivery_confirmation_code_attempts >= DELIVERY_CODE_MAX_ATTEMPTS:
+        raise errors.conflict("Número de tentativas excedido — gere um novo código")
+
+    if code.strip() != req.delivery_confirmation_code:
+        req.update(
+            delivery_confirmation_code_attempts=req.delivery_confirmation_code_attempts
+            + 1,
+            updated_at=utcnow(),
+        )
+        raise errors.bad_request("Código incorreto")
+
+    now = utcnow()
+    req.update(
+        pickup_confirmed_by_owner_at=now,
+        pickup_confirmed_by_requester_at=now,
+        updated_at=now,
+    )
+    req.reload()
+    record_activity(req, "rental.pickup_confirmed", actor=current_user)
+    _complete_pickup(req)
+
+    background_tasks.add_task(
+        notification_service.create_notification,
+        req.requester,
+        "request_status",
+        "Entrega confirmada",
+        req.item.title,
+        f"/requests/{req.id}",
+    )
+    return to_response(req, viewer=current_user)
+
+
+def regenerate_delivery_code(
+    request_id: str, current_user: User, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
+    """Owner-only: issues a fresh delivery code and resets the attempt
+    counter — the way out once the wrong-code cap is hit."""
+    req = get_as_owner(request_id, current_user)
+    assert_status(req, "accepted")
+
+    if req.fulfillment_method != "delivery":
+        raise errors.bad_request("Este pedido não usa entrega com código")
+
+    req.update(
+        delivery_confirmation_code=_generate_delivery_code(),
+        delivery_confirmation_code_attempts=0,
+        delivery_confirmation_code_generated_at=utcnow(),
+        updated_at=utcnow(),
+    )
+    req.reload()
+    record_activity(req, "rental.delivery_code_regenerated", actor=current_user)
+    background_tasks.add_task(
+        notification_service.create_notification,
+        req.requester,
+        "request_status",
+        "Novo código de confirmação gerado",
+        req.item.title,
+        f"/requests/{req.id}",
+    )
+    return to_response(req, viewer=current_user)
 
 
 def _complete_return(req: LoanRequest, background_tasks: BackgroundTasks) -> None:
@@ -279,7 +387,7 @@ def confirm_return(
     if req.return_confirmed_by_owner_at and req.return_confirmed_by_requester_at:
         _complete_return(req, background_tasks)
 
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def force_return(
@@ -304,7 +412,7 @@ def force_return(
     req.reload()
     record_activity(req, "rental.return_forced", actor=current_user)
     _complete_return(req, background_tasks)
-    return to_response(req)
+    return to_response(req, viewer=current_user)
 
 
 def cancel_request(
@@ -337,4 +445,4 @@ def cancel_request(
         f"/requests/{req.id}",
     )
 
-    return to_response(req)
+    return to_response(req, viewer=current_user)

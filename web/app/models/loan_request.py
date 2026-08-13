@@ -2,6 +2,7 @@ from mongoengine import (
     BooleanField,
     DateTimeField,
     Document,
+    IntField,
     ReferenceField,
     StringField,
 )
@@ -30,6 +31,11 @@ class LoanRequest(Document):
     pickup_date = DateTimeField(required=True)
     expected_return_date = DateTimeField(required=True)
     actual_return_date = DateTimeField()
+    # How this specific request is fulfilled — chosen at creation time from
+    # the item's allowed fulfillment_options. Existing requests predate this
+    # field and default to "pickup", so their dual-confirmation flow below
+    # is untouched.
+    fulfillment_method = StringField(choices=["pickup", "delivery"], default="pickup")
     notes = StringField(max_length=500)
     cancelled_by = ReferenceField("User")
     requested_extension_date = DateTimeField()
@@ -47,6 +53,13 @@ class LoanRequest(Document):
     pickup_confirmed_by_owner_at = DateTimeField()
     pickup_confirmed_by_requester_at = DateTimeField()
     pickup_forced = BooleanField(default=False)
+    # Delivery-fulfilled requests skip the dual-confirmation dance above:
+    # the requester is shown this code once accepted, hands it to the owner
+    # at the door, and the owner typing it in sets both *_confirmed_by_*_at
+    # fields at once (see loan_request_service.lifecycle.confirm_pickup_by_code).
+    delivery_confirmation_code = StringField(max_length=6)
+    delivery_confirmation_code_attempts = IntField(default=0)
+    delivery_confirmation_code_generated_at = DateTimeField()
     return_confirmed_by_owner_at = DateTimeField()
     return_confirmed_by_requester_at = DateTimeField()
     return_forced = BooleanField(default=False)

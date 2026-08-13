@@ -13,6 +13,7 @@ from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.rate_limit import limiter
 from app.schemas.loan_request import (
+    LoanRequestConfirmCode,
     LoanRequestCreate,
     LoanRequestExtend,
     LoanRequestResponse,
@@ -84,6 +85,34 @@ def force_start(request_id: str, current_user: User = Depends(get_current_user))
     requester's confirmation, once the grace period since the owner's own
     confirmation has elapsed. Flags the request as pickup_forced."""
     return loan_request_service.force_pickup(request_id, current_user)
+
+
+@router.patch("/{request_id}/start/code", response_model=LoanRequestResponse)
+def confirm_start_code(
+    request_id: str,
+    data: LoanRequestConfirmCode,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Owner-only, delivery-fulfilled requests only: the code the requester
+    was shown, typed in by the owner, completes pickup for both sides at
+    once — full substitute for /start on delivery requests."""
+    return loan_request_service.confirm_pickup_by_code(
+        request_id, current_user, data.code, background_tasks
+    )
+
+
+@router.patch("/{request_id}/start/code/regenerate", response_model=LoanRequestResponse)
+def regenerate_start_code(
+    request_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """Owner-only: issues a fresh delivery code and resets the attempt
+    counter, used after the wrong-code cap is hit."""
+    return loan_request_service.regenerate_delivery_code(
+        request_id, current_user, background_tasks
+    )
 
 
 @router.patch("/{request_id}/finish", response_model=LoanRequestResponse)
