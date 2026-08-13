@@ -100,7 +100,8 @@
       "addFavorite": "Adicionar aos favoritos",
       "viewOnMap": "Ver no mapa",
       "noLocation": "Local não informado",
-      "favoriteError": "Não foi possível favoritar agora."
+      "favoriteError": "Não foi possível favoritar agora.",
+      "unitsAvailable": "{count} unidades"
     },
     "ItemFilters": {
       "searchPlaceholder": "Buscar por nome ou descrição...",
@@ -149,6 +150,8 @@
       "freeLoan": "Gratuito (empréstimo)",
       "paidRental": "Pago (aluguel)",
       "freeLendingOnlyNotice": "No momento o Lendly só aceita itens em empréstimo gratuito.",
+      "quantityTotal": "Quantas unidades você tem",
+      "quantityTotalHint": "Ex: 4 se você tem 4 cadeiras iguais — cada pedido pode reservar mais de uma.",
       "connectMercadoPagoNotice": "Conecte sua conta Mercado Pago antes de anunciar um item pago.",
       "connectNow": "Conectar agora",
       "dailyRate": "Valor diário (R$)",
@@ -283,7 +286,8 @@
         "returnAfterPickup": "A devolução deve ser após a retirada",
         "pickupDayUnavailable": "Esse item não está disponível pra retirada nesse dia",
         "returnDayUnavailable": "Esse item não está disponível pra devolução nesse dia",
-        "fulfillmentMethodRequired": "Escolha retirada ou entrega"
+        "fulfillmentMethodRequired": "Escolha retirada ou entrega",
+        "quantityUnavailable": "Não há tantas unidades disponíveis nessas datas"
       },
       "errorGeneric": "Erro ao enviar solicitação",
       "title": "Solicitar item",
@@ -297,6 +301,9 @@
       "fulfillmentDelivery": "Entrega",
       "pickupDate": "Data de retirada",
       "expectedReturnDate": "Data prevista de devolução",
+      "quantity": "Quantidade",
+      "unitsAvailable": "{count, plural, one {# unidade disponível} other {# unidades disponíveis}} nessas datas",
+      "unitsAvailableTotal": "{count, plural, one {# unidade no total} other {# unidades no total}}",
       "notes": "Observações (opcional)",
       "notesPlaceholder": "Descreva para que você vai usar, como vai retirar, etc.",
       "submit": "Enviar solicitação",
@@ -575,6 +582,7 @@
       "perDay": "/dia",
       "description": "Descrição",
       "availableOn": "Disponível: {days}",
+      "quantityTotal": "{count, plural, one {# unidade no total} other {# unidades no total}}",
       "weekdays": { "mon": "Seg", "tue": "Ter", "wed": "Qua", "thu": "Qui", "fri": "Sex", "sat": "Sáb", "sun": "Dom" },
       "sharedWithGroups": "Compartilhado com:",
       "usageRules": "Regras de uso",

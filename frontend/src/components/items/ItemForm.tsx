@@ -132,6 +132,7 @@ export default function ItemForm({ item }: { item?: Item }) {
       category: z.string().min(1, t('errors.selectCategory')),
       subcategory: z.string().optional().or(z.literal('')),
       availability_type: z.enum(['free', 'paid']),
+      quantity_total: z.number({ invalid_type_error: t('errors.enterValue') }).int().min(1),
       daily_rate: z.number({ invalid_type_error: t('errors.enterValue') }).min(0.01).optional().nullable(),
       weekly_rate: z.number().min(0.01).optional().nullable(),
       monthly_rate: z.number().min(0.01).optional().nullable(),
@@ -168,6 +169,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           category: item.category,
           subcategory: item.subcategory ?? '',
           availability_type: item.availability_type,
+          quantity_total: item.quantity_total ?? 1,
           daily_rate: item.daily_rate,
           weekly_rate: item.weekly_rate,
           monthly_rate: item.monthly_rate,
@@ -179,7 +181,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           city: item.city,
           state: (item as any).state ?? '',
         }
-      : { availability_type: 'free' },
+      : { availability_type: 'free', quantity_total: 1 },
   })
 
   const availType = watch('availability_type')
@@ -321,6 +323,17 @@ export default function ItemForm({ item }: { item?: Item }) {
           <p className="text-xs text-ink-subtle mt-1.5">{t('freeLendingOnlyNotice')}</p>
         )}
       </div>
+
+      <Input
+        label={t('quantityTotal')}
+        type="number"
+        min="1"
+        step="1"
+        {...register('quantity_total', { valueAsNumber: true })}
+        error={errors.quantity_total?.message}
+        helper={t('quantityTotalHint')}
+        required
+      />
 
       {availType === 'paid' && !mpConnected && (
         <div className="flex items-start gap-2 bg-warning-subtle border border-warning/30 rounded-control p-3 text-sm text-warning">

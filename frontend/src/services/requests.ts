@@ -2,7 +2,7 @@ import api from '@/lib/api'
 import { LoanRequest } from '@/types'
 
 export const requestsService = {
-  create: (data: { item_id: string; pickup_date: string; expected_return_date: string; fulfillment_method?: 'pickup' | 'delivery'; notes?: string }) =>
+  create: (data: { item_id: string; pickup_date: string; expected_return_date: string; fulfillment_method?: 'pickup' | 'delivery'; notes?: string; quantity?: number }) =>
     api.post<LoanRequest>('/requests', data).then((r) => r.data),
 
   get: (id: string) => api.get<LoanRequest>(`/requests/${id}`).then((r) => r.data),

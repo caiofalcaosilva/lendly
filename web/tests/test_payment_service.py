@@ -19,7 +19,7 @@ _MOCK_CHARGE_RESULT = {
 }
 
 
-def _make_paid_loan_request():
+def _make_paid_loan_request(quantity=1):
     owner = User(
         name="Dono",
         email="dono.pagamento@example.com",
@@ -36,6 +36,7 @@ def _make_paid_loan_request():
         category="toys",
         availability_type="paid",
         daily_rate=50.0,
+        quantity_total=max(quantity, 1),
     ).save()
     return LoanRequest(
         item=item,
@@ -43,6 +44,7 @@ def _make_paid_loan_request():
         owner=owner,
         pickup_date=datetime(2026, 9, 1),
         expected_return_date=datetime(2026, 9, 3),
+        quantity=quantity,
     ).save()
 
 
@@ -305,3 +307,37 @@ def test_cancellation_before_pickup_refunds_delivery_fee_too(client):
     payment = Payment.objects(loan_request=req, kind="rental").first()
     assert payment.status == "refunded"
     assert payment.gross_amount == 120.0  # the refunded amount includes delivery
+
+
+# ── Quantity ──────────────────────────────────────────────────────────────
+
+
+def test_gross_amount_multiplied_by_quantity(client):
+    req = _make_paid_loan_request(quantity=3)
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ):
+        payment = payment_service.create_payment_for_request(req)
+
+    # daily_rate 50 * 2 days * 3 units = 300
+    assert payment.gross_amount == 300.0
+    assert payment.platform_fee_amount == 15.0  # 5% of 300
+
+
+def test_delivery_fee_not_multiplied_by_quantity(client):
+    """One delivery trip covers every unit in the request — the fee is per
+    request, not per unit."""
+    req = _make_delivery_request(delivery_fee=20.0)
+    req.update(quantity=3)
+    req.reload()
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ):
+        payment = payment_service.create_payment_for_request(req)
+
+    # (daily_rate 50 * 2 days * 3 units) + delivery_fee 20 = 320
+    assert payment.gross_amount == 320.0

@@ -47,7 +47,14 @@ def test_create_request_success(client, register_user):
     assert body["item_id"] == item["id"]
 
 
-def test_conflict_when_item_already_has_active_request(client, register_user):
+def test_conflict_when_item_already_has_active_request_for_overlapping_dates(
+    client, register_user
+):
+    """A single-unit item still blocks a second request whose dates overlap
+    an existing accepted/in_progress one — see test_quantity.py for the
+    date-range-aware behavior this now relies on (a non-overlapping second
+    request for the same item is allowed, unlike the old bare "any active
+    request blocks everything" check)."""
     _, owner_token = register_user("dono.conflito@example.com")
     item = _create_item(client, owner_token)
     _, requester1 = register_user("solicitante1@example.com")
@@ -67,8 +74,8 @@ def test_conflict_when_item_already_has_active_request(client, register_user):
         client,
         requester2,
         item["id"],
-        pickup_date="2026-09-05T10:00:00",
-        expected_return_date="2026-09-06T10:00:00",
+        pickup_date="2026-09-02T10:00:00",
+        expected_return_date="2026-09-04T10:00:00",
     )
     assert second.status_code == 409
 

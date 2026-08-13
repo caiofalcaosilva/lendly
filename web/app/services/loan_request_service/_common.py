@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.payment import Payment
 from app.models.user import User
@@ -14,6 +17,29 @@ _PHONE_VISIBLE_STATUSES = {"accepted", "in_progress", "finished"}
 # Wrong-code attempts allowed before the owner has to ask for a fresh code —
 # a short numeric code is brute-forceable otherwise.
 DELIVERY_CODE_MAX_ATTEMPTS = 5
+
+
+def reserved_quantity(
+    item: Item,
+    pickup_date: datetime,
+    expected_return_date: datetime,
+    exclude_request_id: str | None = None,
+) -> int:
+    """How many units of `item` are already committed to accepted/in_progress
+    requests whose date range overlaps [pickup_date, expected_return_date).
+    Used both to block a new request that would oversell the item's
+    quantity_total (create_request) and to re-check an extension's stretched
+    date range against other future requests (approve_extension), which is
+    why the request doing the asking can exclude itself."""
+    qs = LoanRequest.objects(
+        item=item,
+        status__in=["accepted", "in_progress"],
+        pickup_date__lt=expected_return_date,
+        expected_return_date__gt=pickup_date,
+    )
+    if exclude_request_id:
+        qs = qs.filter(id__ne=exclude_request_id)
+    return sum(r.quantity or 1 for r in qs)
 
 
 def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResponse:
@@ -37,6 +63,7 @@ def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResp
         pickup_date=req.pickup_date,
         expected_return_date=req.expected_return_date,
         actual_return_date=req.actual_return_date,
+        quantity=req.quantity or 1,
         notes=req.notes,
         requested_extension_date=req.requested_extension_date,
         extension_status=req.extension_status or "none",

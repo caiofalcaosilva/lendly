@@ -101,7 +101,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
           )}
 
           {/* Price / free badge */}
-          <div className="absolute top-2.5 left-2.5">
+          <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1">
             {item.availability_type === 'free' ? (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary text-primary-on shadow-elevated">
                 {t('free')}
@@ -109,6 +109,11 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
             ) : (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 dark:bg-black/70 text-ink shadow-elevated">
                 {formatCurrency(item.daily_rate ?? 0, locale)}<span className="font-normal text-ink-muted">{t('perDay')}</span>
+              </span>
+            )}
+            {item.quantity_total > 1 && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 dark:bg-black/70 text-ink shadow-elevated">
+                {t('unitsAvailable', { count: item.quantity_total })}
               </span>
             )}
           </div>

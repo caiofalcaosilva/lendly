@@ -31,6 +31,12 @@ class LoanRequest(Document):
     pickup_date = DateTimeField(required=True)
     expected_return_date = DateTimeField(required=True)
     actual_return_date = DateTimeField()
+    # How many units of the item this specific request reserves — see
+    # loan_request_service._common.reserved_quantity for how this combines
+    # with Item.quantity_total to block over-committing a date range.
+    # Existing requests predate this field and default to 1, matching how
+    # they already behaved (one item = one unit).
+    quantity = IntField(min_value=1, default=1)
     # How this specific request is fulfilled — chosen at creation time from
     # the item's allowed fulfillment_options. Existing requests predate this
     # field and default to "pickup", so their dual-confirmation flow below
@@ -77,6 +83,10 @@ class LoanRequest(Document):
             {"fields": ["owner", "status"]},
             {"fields": ["cancelled_by", "status"]},
             {"fields": ["item", "status"]},
+            # Backs the date-range overlap query in reserved_quantity —
+            # item+status alone (the index above) can't serve a range scan
+            # on pickup_date efficiently.
+            {"fields": ["item", "status", "pickup_date"]},
             {"fields": ["status", "review_reminder_sent_at"]},
         ],
     }

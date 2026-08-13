@@ -15,6 +15,7 @@ from app.services.loan_request_service._common import (
     get_as_owner,
     get_as_participant,
     record_activity,
+    reserved_quantity,
     to_response,
 )
 from app.services.loan_request_service.reliability import (
@@ -108,12 +109,21 @@ def create_request(
                 f"Este item só está disponível para retirada/devolução em: {days}"
             )
 
-    # Block if another accepted/in_progress request already exists for this item
-    conflict = LoanRequest.objects(
-        item=item, status__in=["accepted", "in_progress"]
-    ).first()
-    if conflict:
-        raise errors.conflict("Item already has an active loan in progress")
+    quantity = data.quantity or 1
+    quantity_total = item.quantity_total or 1
+    if quantity > quantity_total:
+        raise errors.bad_request("Esse item não tem tantas unidades assim")
+
+    # Block only if the requested date range would push the total reserved
+    # (across every accepted/in_progress request that overlaps it) past
+    # quantity_total — a date-range-aware replacement for the old bare
+    # "does any active request exist at all" check, which blocked even
+    # completely non-overlapping future dates on a single-unit item.
+    already_reserved = reserved_quantity(
+        item, data.pickup_date, data.expected_return_date
+    )
+    if already_reserved + quantity > quantity_total:
+        raise errors.conflict("Não há unidades suficientes disponíveis nessas datas")
 
     options = item.fulfillment_options or ["pickup"]
     if len(options) == 1:
@@ -132,6 +142,7 @@ def create_request(
         owner=item.owner,
         pickup_date=data.pickup_date,
         expected_return_date=data.expected_return_date,
+        quantity=quantity,
         notes=data.notes,
         fulfillment_method=fulfillment_method,
     )

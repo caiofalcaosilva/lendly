@@ -1,8 +1,15 @@
+from datetime import datetime
+
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile
 
 from app.dependencies import get_current_user, get_current_user_optional
 from app.models.user import User
-from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
+from app.schemas.item import (
+    ItemAvailabilityResponse,
+    ItemCreate,
+    ItemResponse,
+    ItemUpdate,
+)
 from app.services import item_service
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -57,6 +64,18 @@ def get_item(
 ):
     """A single item's public detail page."""
     return item_service.get_item(item_id, current_user)
+
+
+@router.get("/{item_id}/availability", response_model=ItemAvailabilityResponse)
+def check_availability(
+    item_id: str,
+    pickup_date: datetime = Query(...),
+    expected_return_date: datetime = Query(...),
+):
+    """How many units are free for a candidate date range — lets the
+    request form bound its quantity picker live, using the same math
+    create_request enforces server-side."""
+    return item_service.check_availability(item_id, pickup_date, expected_return_date)
 
 
 @router.post("/", response_model=ItemResponse, status_code=201)

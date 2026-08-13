@@ -34,6 +34,12 @@ class Item(Document):
     latitude = FloatField()
     longitude = FloatField()
     is_available = BooleanField(default=True)
+    # How many identical units this item represents (e.g. a "kit" the owner
+    # has hundreds of). Independent of is_available — that's still the
+    # owner's manual pause switch, this is a separate stock dimension. Items
+    # created before this field existed load with quantity_total=1, exactly
+    # matching how they already behaved as a single-unit item.
+    quantity_total = IntField(min_value=1, default=1)
     # Weekdays open for pickup/return: 0=segunda ... 6=domingo, empty=every day.
     available_days = ListField(IntField(min_value=0, max_value=6), default=list)
     # Which handoff method(s) the owner accepts for this item. Items created

@@ -14,6 +14,7 @@ from app.services.loan_request_service._common import (
     get_as_owner,
     get_as_requester,
     record_activity,
+    reserved_quantity,
     to_response,
 )
 from app.utils import errors
@@ -58,6 +59,22 @@ def approve_extension(
 
     # Captured before the update below overwrites expected_return_date.
     additional_days = (req.requested_extension_date - req.expected_return_date).days
+
+    # Stretching the return date can now collide with another future request
+    # already accepted for this item — check only the *new* window (the
+    # days being added), excluding this request itself, since the days
+    # before today's expected_return_date were already accounted for.
+    item = req.item
+    extra_reserved = reserved_quantity(
+        item,
+        req.expected_return_date,
+        req.requested_extension_date,
+        exclude_request_id=str(req.id),
+    )
+    if extra_reserved + (req.quantity or 1) > (item.quantity_total or 1):
+        raise errors.conflict(
+            "Não é possível prorrogar — outro pedido já reservado nesse período"
+        )
 
     req.update(
         expected_return_date=req.requested_extension_date,

@@ -100,7 +100,8 @@
       "addFavorite": "Add to favorites",
       "viewOnMap": "View on map",
       "noLocation": "Location not provided",
-      "favoriteError": "Couldn't favorite this right now."
+      "favoriteError": "Couldn't favorite this right now.",
+      "unitsAvailable": "{count} units"
     },
     "ItemFilters": {
       "searchPlaceholder": "Search by name or description...",
@@ -149,6 +150,8 @@
       "freeLoan": "Free (loan)",
       "paidRental": "Paid (rental)",
       "freeLendingOnlyNotice": "Lendly currently only accepts items for free lending.",
+      "quantityTotal": "How many units you have",
+      "quantityTotalHint": "E.g. 4 if you have 4 identical chairs — each request can reserve more than one.",
       "connectMercadoPagoNotice": "Connect your Mercado Pago account before listing a paid item.",
       "connectNow": "Connect now",
       "dailyRate": "Daily rate (R$)",
@@ -283,7 +286,8 @@
         "returnAfterPickup": "The return must be after the pickup",
         "pickupDayUnavailable": "This item isn't available for pickup on that day",
         "returnDayUnavailable": "This item isn't available for return on that day",
-        "fulfillmentMethodRequired": "Choose pickup or delivery"
+        "fulfillmentMethodRequired": "Choose pickup or delivery",
+        "quantityUnavailable": "Not that many units are available for these dates"
       },
       "errorGeneric": "Error sending request",
       "title": "Request item",
@@ -297,6 +301,9 @@
       "fulfillmentDelivery": "Delivery",
       "pickupDate": "Pickup date",
       "expectedReturnDate": "Expected return date",
+      "quantity": "Quantity",
+      "unitsAvailable": "{count, plural, one {# unit available} other {# units available}} for these dates",
+      "unitsAvailableTotal": "{count, plural, one {# unit in total} other {# units in total}}",
       "notes": "Notes (optional)",
       "notesPlaceholder": "Describe what you'll use it for, how you'll pick it up, etc.",
       "submit": "Send request",
@@ -575,6 +582,7 @@
       "perDay": "/day",
       "description": "Description",
       "availableOn": "Available: {days}",
+      "quantityTotal": "{count, plural, one {# unit in total} other {# units in total}}",
       "weekdays": { "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun" },
       "sharedWithGroups": "Shared with:",
       "usageRules": "Usage rules",

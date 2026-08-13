@@ -40,6 +40,7 @@ class ItemCreate(BaseModel):
     subcategory: str | None = None
     photos: list[str] | None = []
     availability_type: AvailabilityType
+    quantity_total: int = Field(default=1, ge=1)
     daily_rate: float | None = Field(None, ge=0)
     weekly_rate: float | None = Field(None, ge=0)
     monthly_rate: float | None = Field(None, ge=0)
@@ -75,6 +76,7 @@ class ItemUpdate(BaseModel):
     subcategory: str | None = None
     photos: list[str] | None = None
     availability_type: AvailabilityType | None = None
+    quantity_total: int | None = Field(None, ge=1)
     daily_rate: float | None = Field(None, ge=0)
     weekly_rate: float | None = Field(None, ge=0)
     monthly_rate: float | None = Field(None, ge=0)
@@ -128,6 +130,7 @@ class ItemResponse(BaseModel):
     subcategory: str | None = None
     photos: list[str]
     availability_type: str
+    quantity_total: int = 1
     daily_rate: float | None = None
     weekly_rate: float | None = None
     monthly_rate: float | None = None
@@ -156,3 +159,8 @@ class ItemResponse(BaseModel):
     requires_identity_verification: bool = False
     fulfillment_options: list[str] = ["pickup"]
     created_at: datetime
+
+
+class ItemAvailabilityResponse(BaseModel):
+    available_units: int
+    quantity_total: int

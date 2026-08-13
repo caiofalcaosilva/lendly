@@ -82,7 +82,7 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
     """
     item = req.item
     days = max((req.expected_return_date - req.pickup_date).days, 1)
-    gross_amount = _calculate_price(item, days)
+    gross_amount = round(_calculate_price(item, days) * (req.quantity or 1), 2)
     if req.fulfillment_method == "delivery" and item.delivery_fee:
         # Folded straight into gross_amount — taxed by the same platform
         # fee % as the rental itself, and refunded automatically along with
@@ -131,7 +131,9 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
     event left to gate it on, the extra days were already granted the
     moment the owner approved the extension."""
     item = req.item
-    gross_amount = _calculate_price(item, additional_days)
+    gross_amount = round(
+        _calculate_price(item, additional_days) * (req.quantity or 1), 2
+    )
     platform_fee_amount = round(gross_amount * settings.PLATFORM_FEE_PERCENT, 2)
 
     try:

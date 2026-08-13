@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { Item } from '@/types'
+import { Item, ItemAvailability } from '@/types'
 
 export interface ItemFilters {
   search?: string
@@ -41,6 +41,7 @@ export interface ItemPayload {
   available_days?: number[]
   requires_identity_verification?: boolean
   fulfillment_options?: ('pickup' | 'delivery')[]
+  quantity_total?: number
 }
 
 export const itemsService = {
@@ -74,4 +75,11 @@ export const itemsService = {
 
   joinWaitlist: (id: string) => api.post<Item>(`/items/${id}/waitlist`).then((r) => r.data),
   leaveWaitlist: (id: string) => api.delete<Item>(`/items/${id}/waitlist`).then((r) => r.data),
+
+  checkAvailability: (id: string, pickupDate: string, expectedReturnDate: string) =>
+    api
+      .get<ItemAvailability>(`/items/${id}/availability`, {
+        params: { pickup_date: pickupDate, expected_return_date: expectedReturnDate },
+      })
+      .then((r) => r.data),
 }

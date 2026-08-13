@@ -22,6 +22,7 @@ class LoanRequestCreate(BaseModel):
     item_id: str
     pickup_date: datetime
     expected_return_date: datetime
+    quantity: int = Field(default=1, ge=1)
     notes: str | None = Field(None, max_length=500)
     # Only required when the item allows more than one fulfillment option —
     # resolved against the item's fulfillment_options server-side, see
@@ -58,6 +59,7 @@ class LoanRequestResponse(BaseModel):
     pickup_date: datetime
     expected_return_date: datetime
     actual_return_date: datetime | None = None
+    quantity: int = 1
     notes: str | None = None
     requested_extension_date: datetime | None = None
     extension_status: str = "none"

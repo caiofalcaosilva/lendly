@@ -235,6 +235,13 @@ export default function ItemDetailClient() {
             </div>
           )}
 
+          {item.quantity_total > 1 && (
+            <div className="flex items-center gap-1.5 text-ink-muted text-sm mb-5">
+              <Package className="w-4 h-4" />
+              {t('quantityTotal', { count: item.quantity_total })}
+            </div>
+          )}
+
           {item.group_summaries.length > 0 && (
             <div className="flex items-start gap-1.5 text-ink-muted text-sm mb-5">
               <Users className="w-4 h-4 flex-shrink-0 mt-0.5" />

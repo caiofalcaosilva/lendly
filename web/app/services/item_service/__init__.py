@@ -3,6 +3,7 @@ photos) — re-exported here so callers keep using `item_service.create_item`
 etc. exactly as before the split."""
 
 from app.services.item_service.crud import (
+    check_availability,
     create_item,
     delete_item,
     get_item,
@@ -20,6 +21,7 @@ from app.services.item_service.favorites import (
 from app.services.item_service.photos import upload_photo
 
 __all__ = [
+    "check_availability",
     "create_item",
     "delete_item",
     "get_favorite_items",

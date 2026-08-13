@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 
 from fastapi import BackgroundTasks
 from mongoengine import Q
@@ -7,7 +8,12 @@ from app.config import settings
 from app.models.group import Group
 from app.models.item import Item
 from app.models.user import User
-from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
+from app.schemas.item import (
+    ItemAvailabilityResponse,
+    ItemCreate,
+    ItemResponse,
+    ItemUpdate,
+)
 from app.services import (
     activity_service,
     category_service,
@@ -15,6 +21,7 @@ from app.services import (
     notification_service,
 )
 from app.services.item_service._common import get_owned_item, to_response
+from app.services.loan_request_service._common import reserved_quantity
 from app.utils import errors
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
@@ -144,6 +151,7 @@ def create_item(
         subcategory=data.subcategory,
         photos=data.photos or [],
         availability_type=data.availability_type.value,
+        quantity_total=data.quantity_total,
         daily_rate=data.daily_rate,
         weekly_rate=data.weekly_rate,
         monthly_rate=data.monthly_rate,
@@ -187,6 +195,23 @@ def get_item(item_id: str, current_user: User | None = None) -> ItemResponse:
     if not item:
         raise errors.not_found("Item not found")
     return to_response(item, current_user)
+
+
+def check_availability(
+    item_id: str, pickup_date: datetime, expected_return_date: datetime
+) -> ItemAvailabilityResponse:
+    """How many units are free for a candidate date range — lets the
+    request form bound its quantity picker before submitting, using the
+    same overlap math create_request itself enforces server-side."""
+    item = Item.objects(id=item_id, is_active=True).first()
+    if not item:
+        raise errors.not_found("Item not found")
+    quantity_total = item.quantity_total or 1
+    reserved = reserved_quantity(item, pickup_date, expected_return_date)
+    return ItemAvailabilityResponse(
+        available_units=max(quantity_total - reserved, 0),
+        quantity_total=quantity_total,
+    )
 
 
 def _search_items(qs, search: str, cap: int | None = None) -> list[Item]:

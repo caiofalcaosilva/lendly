@@ -1,11 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { requestsService } from '@/services/requests'
+import { itemsService } from '@/services/items'
 import { Item } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { calculateRentalPrice } from '@/lib/pricing'
@@ -24,6 +25,7 @@ const toBackendWeekday = (dateStr: string) => (new Date(dateStr).getUTCDay() + 6
 function buildSchema(
   availableDays: number[],
   fulfillmentChoiceRequired: boolean,
+  maxQuantity: number,
   t: ReturnType<typeof useTranslations>,
 ) {
   return z
@@ -31,6 +33,7 @@ function buildSchema(
       pickup_date: z.string().min(1, t('errors.pickupDateRequired')),
       expected_return_date: z.string().min(1, t('errors.returnDateRequired')),
       fulfillment_method: z.enum(['pickup', 'delivery']).optional(),
+      quantity: z.number().int().min(1).max(maxQuantity, t('errors.quantityUnavailable')),
       notes: z.string().max(500).optional(),
     })
     .refine((d) => d.pickup_date < d.expected_return_date, {
@@ -66,7 +69,11 @@ export default function RequestModal({ item, onClose }: Props) {
   const availableDays = item.available_days ?? []
   const fulfillmentOptions = item.fulfillment_options ?? ['pickup']
   const fulfillmentChoiceRequired = fulfillmentOptions.length > 1
-  const schema = buildSchema(availableDays, fulfillmentChoiceRequired, t)
+  const quantityTotal = item.quantity_total ?? 1
+  const hasMultipleUnits = quantityTotal > 1
+  const [availableUnits, setAvailableUnits] = useState<number | null>(null)
+  const maxQuantity = hasMultipleUnits ? availableUnits ?? quantityTotal : 1
+  const schema = buildSchema(availableDays, fulfillmentChoiceRequired, maxQuantity, t)
   type FormData = z.infer<typeof schema>
 
   const {
@@ -74,14 +81,35 @@ export default function RequestModal({ item, onClose }: Props) {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
+  } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { quantity: 1 } })
 
   const today = new Date().toISOString().split('T')[0]
 
   const pickupDate = watch('pickup_date')
   const returnDate = watch('expected_return_date')
+  const quantity = watch('quantity') || 1
   const selectedFulfillment = watch('fulfillment_method')
   const effectiveFulfillment = fulfillmentChoiceRequired ? selectedFulfillment : fulfillmentOptions[0]
+
+  useEffect(() => {
+    if (!hasMultipleUnits || !pickupDate || !returnDate) {
+      setAvailableUnits(null)
+      return
+    }
+    let cancelled = false
+    itemsService
+      .checkAvailability(item.id, new Date(pickupDate).toISOString(), new Date(returnDate).toISOString())
+      .then((res) => {
+        if (!cancelled) setAvailableUnits(res.available_units)
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableUnits(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [hasMultipleUnits, item.id, pickupDate, returnDate])
+
   const estimatedTotal = (() => {
     if (item.availability_type !== 'paid' || !pickupDate || !returnDate) return null
     const days = Math.round(
@@ -91,7 +119,7 @@ export default function RequestModal({ item, onClose }: Props) {
     const base = calculateRentalPrice(item, days)
     if (base == null) return null
     const delivery = effectiveFulfillment === 'delivery' ? item.delivery_fee ?? 0 : 0
-    return Math.round((base + delivery) * 100) / 100
+    return Math.round((base * quantity + delivery) * 100) / 100
   })()
 
   const onSubmit = async (data: FormData) => {
@@ -104,6 +132,7 @@ export default function RequestModal({ item, onClose }: Props) {
         expected_return_date: new Date(data.expected_return_date).toISOString(),
         fulfillment_method: fulfillmentChoiceRequired ? data.fulfillment_method : fulfillmentOptions[0],
         notes: data.notes,
+        quantity: hasMultipleUnits ? data.quantity : undefined,
       })
       onClose()
       router.push('/dashboard')
@@ -166,6 +195,26 @@ export default function RequestModal({ item, onClose }: Props) {
           error={errors.expected_return_date?.message}
           required
         />
+
+        {hasMultipleUnits && (
+          <Input
+            label={t('quantity')}
+            type="number"
+            min="1"
+            max={maxQuantity}
+            step="1"
+            {...register('quantity', { valueAsNumber: true })}
+            error={errors.quantity?.message}
+            helper={
+              pickupDate && returnDate
+                ? availableUnits != null
+                  ? t('unitsAvailable', { count: availableUnits })
+                  : undefined
+                : t('unitsAvailableTotal', { count: quantityTotal })
+            }
+            required
+          />
+        )}
 
         {estimatedTotal != null && (
           <div className="flex items-center justify-between p-3 bg-primary-subtle rounded-control">

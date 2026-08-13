@@ -55,6 +55,7 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
         subcategory=item.subcategory,
         photos=item.photos or [],
         availability_type=item.availability_type,
+        quantity_total=item.quantity_total or 1,
         daily_rate=item.daily_rate,
         weekly_rate=item.weekly_rate,
         monthly_rate=item.monthly_rate,

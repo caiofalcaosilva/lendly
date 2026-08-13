@@ -508,7 +508,13 @@ export interface Item {
   available_days: number[]
   requires_identity_verification: boolean
   fulfillment_options: ('pickup' | 'delivery')[]
+  quantity_total: number
   created_at: string
+}
+
+export interface ItemAvailability {
+  available_units: number
+  quantity_total: number
 }
 
 export interface Voucher {
@@ -599,6 +605,7 @@ export interface LoanRequest {
   owner_phone?: string | null
   status: RequestStatus
   payment_status: PaymentStatus
+  quantity: number
   pickup_date: string
   expected_return_date: string
   actual_return_date?: string
