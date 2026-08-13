@@ -3,18 +3,37 @@ export interface Coordinates {
   longitude: number
 }
 
-// BrasilAPI's CEP v2 endpoint sometimes has no coordinates for a given CEP
-// (returns `location.coordinates: {}`) — when that happens, fall back to a
-// free-text geocode of neighborhood/city/state via Nominatim (OpenStreetMap,
-// no API key needed). Better an approximate neighborhood-level coordinate
-// than none at all, and definitely better than silently reusing someone
-// else's coordinates as a stand-in.
+// BrasilAPI's CEP v2 endpoint (via its "open-cep" source) returns the same
+// fixed city-centroid coordinate for every CEP in a city, regardless of
+// neighborhood — not a per-address coordinate. That made every user/item in
+// the same city end up with identical lat/lng. Nominatim (OpenStreetMap, no
+// API key needed) actually differentiates by neighborhood, so it's the
+// primary source; BrasilAPI's coordinates are only used as a last resort if
+// Nominatim has nothing (e.g. neighborhood/city/state missing).
 export async function resolveCoordinates(
   cepDigits: string,
   neighborhood?: string,
   city?: string,
   state?: string,
 ): Promise<Coordinates | null> {
+  if (neighborhood && city && state) {
+    try {
+      const query = encodeURIComponent(`${neighborhood}, ${city} - ${state}, Brasil`)
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${query}`,
+      )
+      if (res.ok) {
+        const results = await res.json()
+        const hit = results?.[0]
+        if (hit?.lat && hit?.lon) {
+          return { latitude: parseFloat(hit.lat), longitude: parseFloat(hit.lon) }
+        }
+      }
+    } catch {
+      // fall through to the BrasilAPI fallback below
+    }
+  }
+
   try {
     const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${cepDigits}`)
     if (res.ok) {
@@ -23,22 +42,6 @@ export async function resolveCoordinates(
       if (coords?.latitude && coords?.longitude) {
         return { latitude: parseFloat(coords.latitude), longitude: parseFloat(coords.longitude) }
       }
-    }
-  } catch {
-    // fall through to the Nominatim fallback below
-  }
-
-  if (!neighborhood || !city || !state) return null
-  try {
-    const query = encodeURIComponent(`${neighborhood}, ${city} - ${state}, Brasil`)
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${query}`,
-    )
-    if (!res.ok) return null
-    const results = await res.json()
-    const hit = results?.[0]
-    if (hit?.lat && hit?.lon) {
-      return { latitude: parseFloat(hit.lat), longitude: parseFloat(hit.lon) }
     }
   } catch {
     // no coordinates available from either source
