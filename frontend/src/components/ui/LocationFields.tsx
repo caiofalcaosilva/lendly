@@ -1,10 +1,14 @@
 'use client'
-import { Control, UseFormRegister, UseFormSetValue, FieldErrors } from 'react-hook-form'
+import dynamic from 'next/dynamic'
+import { Control, UseFormRegister, UseFormSetValue, FieldErrors, useWatch } from 'react-hook-form'
 import { useTranslations } from 'next-intl'
 import { useCepLookup, BR_STATES } from '@/lib/useCepLookup'
 import CepField from './CepField'
 import Input from './Input'
 import Select from './Select'
+import Spinner from './Spinner'
+
+const LocationMapPicker = dynamic(() => import('./LocationMapPicker'), { ssr: false })
 
 interface Props {
   control: Control<any>
@@ -17,8 +21,10 @@ interface Props {
 // than AddressFields (no street/number), since an item's public location
 // only needs to be precise to the neighborhood.
 export default function LocationFields({ control, register, setValue, errors }: Props) {
-  const { status, lookup } = useCepLookup(setValue, false)
+  const { status, locating, lookup } = useCepLookup(setValue, false)
   const t = useTranslations('Common.LocationFields')
+  const tMap = useTranslations('Common.LocationMapPicker')
+  const [latitude, longitude] = useWatch({ control, name: ['latitude', 'longitude'] })
 
   const errMsg = (field: string) => {
     const e = (errors as any)[field]
@@ -64,6 +70,23 @@ export default function LocationFields({ control, register, setValue, errors }: 
         placeholder="São Paulo"
         error={errMsg('city')}
       />
+
+      {locating && (
+        <p className="text-xs text-ink-subtle flex items-center gap-1.5">
+          <Spinner className="w-3 h-3" /> {tMap('locating')}
+        </p>
+      )}
+
+      {typeof latitude === 'number' && typeof longitude === 'number' && (
+        <LocationMapPicker
+          latitude={latitude}
+          longitude={longitude}
+          onChange={(lat, lng) => {
+            setValue('latitude', lat, { shouldDirty: true })
+            setValue('longitude', lng, { shouldDirty: true })
+          }}
+        />
+      )}
     </div>
   )
 }

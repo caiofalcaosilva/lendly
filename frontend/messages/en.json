@@ -493,6 +493,10 @@
       "title": "Notifications",
       "empty": "No notifications yet.",
       "viewAll": "View all"
+    },
+    "LocationMapPicker": {
+      "hint": "Drag the pin (or tap the map) to mark the exact spot.",
+      "locating": "Looking up the exact location..."
     }
   },
   "Items": {

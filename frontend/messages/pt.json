@@ -493,6 +493,10 @@
       "title": "Notificações",
       "empty": "Nenhuma notificação ainda.",
       "viewAll": "Ver todas"
+    },
+    "LocationMapPicker": {
+      "hint": "Arraste o pino (ou toque no mapa) para marcar o ponto exato.",
+      "locating": "Buscando localização exata..."
     }
   },
   "Items": {

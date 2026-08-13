@@ -20,6 +20,12 @@ export function maskCEP(v: string) {
 // public location — no street/number collected there on purpose).
 export function useCepLookup(setValue: UseFormSetValue<any>, includeStreet: boolean) {
   const [status, setStatus] = useState<CepStatus>('idle')
+  // Separate from `status` — the address fields land as soon as ViaCEP
+  // resolves, but the coordinate (Nominatim, then BrasilAPI as a fallback)
+  // can take a few seconds longer, and that's exactly the gap during which
+  // the map picker either isn't showing yet or is still centered on the
+  // previous point.
+  const [locating, setLocating] = useState(false)
 
   const lookup = useCallback(
     async (raw: string) => {
@@ -37,12 +43,15 @@ export function useCepLookup(setValue: UseFormSetValue<any>, includeStreet: bool
         if (data.uf) setValue('state', data.uf, { shouldDirty: true })
         setStatus('found')
 
-        resolveCoordinates(digits, data.bairro, data.localidade, data.uf).then((coords) => {
-          if (coords) {
-            setValue('latitude', coords.latitude, { shouldDirty: true })
-            setValue('longitude', coords.longitude, { shouldDirty: true })
-          }
-        })
+        setLocating(true)
+        resolveCoordinates(digits, data.bairro, data.localidade, data.uf)
+          .then((coords) => {
+            if (coords) {
+              setValue('latitude', coords.latitude, { shouldDirty: true })
+              setValue('longitude', coords.longitude, { shouldDirty: true })
+            }
+          })
+          .finally(() => setLocating(false))
       } catch {
         setStatus('error')
       }
@@ -50,5 +59,5 @@ export function useCepLookup(setValue: UseFormSetValue<any>, includeStreet: bool
     [setValue, includeStreet],
   )
 
-  return { status, lookup }
+  return { status, locating, lookup }
 }
