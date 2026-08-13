@@ -135,6 +135,7 @@ export default function ItemForm({ item }: { item?: Item }) {
       daily_rate: z.number({ invalid_type_error: t('errors.enterValue') }).min(0.01).optional().nullable(),
       weekly_rate: z.number().min(0.01).optional().nullable(),
       monthly_rate: z.number().min(0.01).optional().nullable(),
+      delivery_fee: z.number().min(0).optional().nullable(),
       usage_rules: z.string().max(500).optional(),
       zip_code: z.string().max(9).optional().or(z.literal('')),
       neighborhood: z.string().max(100).optional(),
@@ -169,6 +170,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           daily_rate: item.daily_rate,
           weekly_rate: item.weekly_rate,
           monthly_rate: item.monthly_rate,
+          delivery_fee: item.delivery_fee,
           usage_rules: item.usage_rules,
           zip_code: (item as any).zip_code ?? '',
           neighborhood: item.neighborhood,
@@ -365,6 +367,23 @@ export default function ItemForm({ item }: { item?: Item }) {
             />
           </div>
           <p className="text-xs text-ink-subtle mt-1.5">{t('tieredRateHint')}</p>
+
+          {fulfillmentOptions.includes('delivery') && (
+            <div className="mt-3">
+              <Input
+                label={t('deliveryFee')}
+                type="number"
+                step="0.01"
+                min="0"
+                {...register('delivery_fee', {
+                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                })}
+                error={errors.delivery_fee?.message}
+                placeholder="0,00"
+              />
+              <p className="text-xs text-ink-subtle mt-1.5">{t('deliveryFeeHint')}</p>
+            </div>
+          )}
         </div>
       )}
 

@@ -83,6 +83,11 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
     item = req.item
     days = max((req.expected_return_date - req.pickup_date).days, 1)
     gross_amount = _calculate_price(item, days)
+    if req.fulfillment_method == "delivery" and item.delivery_fee:
+        # Folded straight into gross_amount — taxed by the same platform
+        # fee % as the rental itself, and refunded automatically along with
+        # it on a pre-pickup cancellation (see refund_payment).
+        gross_amount = round(gross_amount + item.delivery_fee, 2)
     platform_fee_amount = round(gross_amount * settings.PLATFORM_FEE_PERCENT, 2)
 
     try:

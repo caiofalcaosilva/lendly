@@ -43,6 +43,13 @@ class Item(Document):
     fulfillment_options = ListField(
         StringField(choices=["pickup", "delivery"]), default=lambda: ["pickup"]
     )
+    # Flat fee added on top of the rental price when a request picks
+    # "delivery" — folded straight into gross_amount at charge time (see
+    # payment_service.create_payment_for_request), so it's taxed by the same
+    # platform fee % as everything else and refunded automatically along
+    # with the rest on a pre-pickup cancellation. Only takes effect on paid
+    # items — inert on free ones, same as daily_rate already is.
+    delivery_fee = FloatField(min_value=0)
     requires_identity_verification = BooleanField(default=False)
     is_active = BooleanField(default=True)
     # True only for items this specific pause cycle deactivated — lets resume

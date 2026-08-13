@@ -487,6 +487,7 @@ export interface Item {
   daily_rate?: number
   weekly_rate?: number | null
   monthly_rate?: number | null
+  delivery_fee?: number | null
   usage_rules?: string
   zip_code?: string
   neighborhood?: string

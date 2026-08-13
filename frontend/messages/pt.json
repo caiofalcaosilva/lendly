@@ -155,6 +155,8 @@
       "weeklyRate": "Valor semanal (R$, opcional)",
       "monthlyRate": "Valor mensal (R$, opcional)",
       "tieredRateHint": "Deixe em branco pra cobrar sempre pela diária. Se preencher, aluguéis mais longos usam a tarifa semanal/mensal automaticamente pros dias que fecham um período inteiro.",
+      "deliveryFee": "Taxa de entrega (R$, opcional)",
+      "deliveryFeeHint": "Somada ao valor do aluguel quando o solicitante escolher entrega.",
       "availableDays": "Disponível em quais dias da semana",
       "availableDaysHint": "— deixe todos desmarcados para disponibilizar todo dia",
       "weekdays": { "mon": "Seg", "tue": "Ter", "wed": "Qua", "thu": "Qui", "fri": "Sex", "sat": "Sáb", "sun": "Dom" },

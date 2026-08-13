@@ -221,3 +221,87 @@ def test_extension_webhook_confirmation_releases_automatically(client):
     # Still whatever the rental payment already had it as — the extension's
     # confirmation must not touch this field.
     assert req.payment_status == "released"
+
+
+# ── Delivery fee ──────────────────────────────────────────────────────────
+
+
+def _make_delivery_request(delivery_fee=20.0):
+    owner = User(
+        name="Dono",
+        email="dono.entrega@example.com",
+        password_hash="x",
+        is_verified=True,
+        mp_user_id="MP-OWNER-123",
+    ).save()
+    requester = User(
+        name="Solicitante", email="solicitante.entrega@example.com", password_hash="x"
+    ).save()
+    item = Item(
+        owner=owner,
+        title="Furadeira",
+        category="toys",
+        availability_type="paid",
+        daily_rate=50.0,
+        fulfillment_options=["delivery"],
+        delivery_fee=delivery_fee,
+    ).save()
+    return LoanRequest(
+        item=item,
+        requester=requester,
+        owner=owner,
+        pickup_date=datetime(2026, 9, 1),
+        expected_return_date=datetime(2026, 9, 3),
+        fulfillment_method="delivery",
+    ).save()
+
+
+def test_delivery_fee_added_to_gross_amount_and_taxed(client):
+    req = _make_delivery_request(delivery_fee=20.0)
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ):
+        payment = payment_service.create_payment_for_request(req)
+
+    # daily_rate 50 * 2 days + delivery_fee 20 = 120, taxed as a whole.
+    assert payment.gross_amount == 120.0
+    assert payment.platform_fee_amount == 6.0  # 5% of 120
+
+
+def test_delivery_fee_ignored_for_pickup_requests(client):
+    req = _make_delivery_request(delivery_fee=20.0)
+    req.update(fulfillment_method="pickup")
+    req.reload()
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ):
+        payment = payment_service.create_payment_for_request(req)
+
+    assert payment.gross_amount == 100.0  # no delivery fee added
+
+
+def test_cancellation_before_pickup_refunds_delivery_fee_too(client):
+    """No separate refund logic needed for the delivery fee — it's already
+    inside gross_amount, so the existing full-refund-before-pickup path
+    covers it for free."""
+    req = _make_delivery_request(delivery_fee=20.0)
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ):
+        payment_service.create_payment_for_request(req)
+    req.update(payment_status="held")
+    req.reload()
+
+    with patch.object(payment_service.mercadopago_gateway, "refund_payment") as mocked:
+        payment_service.refund_payment(req)
+
+    mocked.assert_called_once()
+    payment = Payment.objects(loan_request=req, kind="rental").first()
+    assert payment.status == "refunded"
+    assert payment.gross_amount == 120.0  # the refunded amount includes delivery

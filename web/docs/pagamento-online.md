@@ -11,7 +11,9 @@ Todo `LoanRequest` tem dois campos de status independentes:
 
 Eles avançam juntos, mas por gatilhos diferentes: `status` muda quando dono ou solicitante agem na API; `payment_status` muda quando o Mercado Pago confirma algo (via webhook) ou quando o próprio backend libera/estorna no momento certo do fluxo.
 
-Existe também um terceiro registro, o documento `Payment` — criado só para itens pagos. Ele é o "livro-razão": guarda `gross_amount`/`platform_fee_amount` **congelados no momento da cobrança** (nunca recalculados a partir de `Item.daily_rate`/`weekly_rate`/`monthly_rate` depois — se o dono editar o preço no meio do caminho, não retroage — o cálculo em si, com as tarifas por período, está em `payment_service._calculate_price`), o QR code do Pix, e os timestamps de cada transição (`held_at`, `released_at`, `refunded_at`).
+Existe também um terceiro registro, o documento `Payment` — criado só para itens pagos. Ele é o "livro-razão": guarda `gross_amount`/`platform_fee_amount` **congelados no momento da cobrança** (nunca recalculados a partir de `Item.daily_rate`/`weekly_rate`/`monthly_rate`/`delivery_fee` depois — se o dono editar o preço no meio do caminho, não retroage — o cálculo em si, com as tarifas por período, está em `payment_service._calculate_price`), o QR code do Pix, e os timestamps de cada transição (`held_at`, `released_at`, `refunded_at`).
+
+`Item.delivery_fee` (quando o pedido escolheu `fulfillment_method="delivery"`) entra somado direto no `gross_amount` da cobrança do aluguel, antes de calcular `platform_fee_amount` — ou seja, é taxado pela mesma porcentagem de plataforma que o resto, e sai estornado junto automaticamente num cancelamento pré-retirada (não existe um `Payment` separado só pra entrega; só a extensão tem isso, ver seção abaixo). Só tem efeito em item pago — em item gratuito fica inerte, igual `daily_rate` já fica hoje.
 
 ## `Payment.kind` — aluguel vs. prorrogação
 

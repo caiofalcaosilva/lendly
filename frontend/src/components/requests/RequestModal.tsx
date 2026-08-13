@@ -80,13 +80,18 @@ export default function RequestModal({ item, onClose }: Props) {
 
   const pickupDate = watch('pickup_date')
   const returnDate = watch('expected_return_date')
+  const selectedFulfillment = watch('fulfillment_method')
+  const effectiveFulfillment = fulfillmentChoiceRequired ? selectedFulfillment : fulfillmentOptions[0]
   const estimatedTotal = (() => {
     if (item.availability_type !== 'paid' || !pickupDate || !returnDate) return null
     const days = Math.round(
       (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / 86_400_000,
     )
     if (days <= 0) return null
-    return calculateRentalPrice(item, days)
+    const base = calculateRentalPrice(item, days)
+    if (base == null) return null
+    const delivery = effectiveFulfillment === 'delivery' ? item.delivery_fee ?? 0 : 0
+    return Math.round((base + delivery) * 100) / 100
   })()
 
   const onSubmit = async (data: FormData) => {

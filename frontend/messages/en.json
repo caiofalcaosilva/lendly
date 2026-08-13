@@ -155,6 +155,8 @@
       "weeklyRate": "Weekly rate (R$, optional)",
       "monthlyRate": "Monthly rate (R$, optional)",
       "tieredRateHint": "Leave blank to always charge by the day. If filled in, longer rentals automatically use the weekly/monthly rate for whichever days make up a full period.",
+      "deliveryFee": "Delivery fee (R$, optional)",
+      "deliveryFeeHint": "Added to the rental price when the requester chooses delivery.",
       "availableDays": "Available on which days of the week",
       "availableDaysHint": "— leave all unchecked to make it available every day",
       "weekdays": { "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun" },

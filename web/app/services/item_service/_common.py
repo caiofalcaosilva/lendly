@@ -53,6 +53,7 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
         daily_rate=item.daily_rate,
         weekly_rate=item.weekly_rate,
         monthly_rate=item.monthly_rate,
+        delivery_fee=item.delivery_fee,
         usage_rules=item.usage_rules,
         zip_code=item.zip_code,
         neighborhood=item.neighborhood,
