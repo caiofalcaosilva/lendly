@@ -9,7 +9,7 @@ import { requestsService } from '@/services/requests'
 import { itemsService } from '@/services/items'
 import { Item } from '@/types'
 import { formatCurrency } from '@/lib/utils'
-import { calculateRentalPrice } from '@/lib/pricing'
+import { calculateRentalPrice, GUARANTEE_FEE_PERCENT } from '@/lib/pricing'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -110,7 +110,7 @@ export default function RequestModal({ item, onClose }: Props) {
     }
   }, [hasMultipleUnits, item.id, pickupDate, returnDate])
 
-  const estimatedTotal = (() => {
+  const priceBreakdown = (() => {
     if (item.availability_type !== 'paid' || !pickupDate || !returnDate) return null
     const days = Math.round(
       (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) / 86_400_000,
@@ -118,8 +118,13 @@ export default function RequestModal({ item, onClose }: Props) {
     if (days <= 0) return null
     const base = calculateRentalPrice(item, days)
     if (base == null) return null
+    const rental = Math.round(base * quantity * 100) / 100
     const delivery = effectiveFulfillment === 'delivery' ? item.delivery_fee ?? 0 : 0
-    return Math.round((base * quantity + delivery) * 100) / 100
+    const guarantee = item.has_declared_value
+      ? Math.round((rental + delivery) * GUARANTEE_FEE_PERCENT * 100) / 100
+      : 0
+    const total = Math.round((rental + delivery + guarantee) * 100) / 100
+    return { rental, delivery, guarantee, total }
   })()
 
   const onSubmit = async (data: FormData) => {
@@ -216,10 +221,28 @@ export default function RequestModal({ item, onClose }: Props) {
           />
         )}
 
-        {estimatedTotal != null && (
-          <div className="flex items-center justify-between p-3 bg-primary-subtle rounded-control">
-            <span className="text-sm text-ink-muted">{t('estimatedTotal')}</span>
-            <span className="text-lg font-bold text-primary">{formatCurrency(estimatedTotal, locale)}</span>
+        {priceBreakdown != null && (
+          <div className="p-3 bg-primary-subtle rounded-control space-y-1.5">
+            <div className="flex items-center justify-between text-sm text-ink-muted">
+              <span>{t('rentalSubtotal')}</span>
+              <span>{formatCurrency(priceBreakdown.rental, locale)}</span>
+            </div>
+            {priceBreakdown.delivery > 0 && (
+              <div className="flex items-center justify-between text-sm text-ink-muted">
+                <span>{t('deliveryFeeLine')}</span>
+                <span>{formatCurrency(priceBreakdown.delivery, locale)}</span>
+              </div>
+            )}
+            {priceBreakdown.guarantee > 0 && (
+              <div className="flex items-center justify-between text-sm text-ink-muted">
+                <span>{t('guaranteeFeeLine')}</span>
+                <span>{formatCurrency(priceBreakdown.guarantee, locale)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-1.5 border-t border-primary/20">
+              <span className="text-sm text-ink-muted">{t('estimatedTotal')}</span>
+              <span className="text-lg font-bold text-primary">{formatCurrency(priceBreakdown.total, locale)}</span>
+            </div>
           </div>
         )}
 

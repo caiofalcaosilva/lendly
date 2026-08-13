@@ -10,6 +10,7 @@ class PaymentResponse(BaseModel):
     status: str
     gross_amount: float
     platform_fee_amount: float
+    guarantee_fee_amount: float = 0.0
     pix_qr_code: str | None = None
     pix_qr_code_base64: str | None = None
     expires_at: datetime | None = None

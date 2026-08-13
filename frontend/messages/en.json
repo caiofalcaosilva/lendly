@@ -55,6 +55,7 @@
         "items": "Item management",
         "groups": "All groups",
         "moderation": "Moderation",
+        "claims": "Claims and guarantee",
         "verification": "Identity verification",
         "actions": "Action history",
         "activities": "Activity history (all users)",
@@ -171,7 +172,7 @@
       "usageRules": "Usage rules",
       "usageRulesPlaceholder": "E.g. Return clean, no commercial use...",
       "declaredValue": "Replacement value (R$, optional)",
-      "declaredValueHint": "Not shown on the public item page — visible only to you. Helps you keep track of what it would cost to replace.",
+      "declaredValueHint": "Not shown on the public item page — visible only to you. Setting a value activates guarantee protection: paid rentals of this item charge the requester an extra 3%, and you can file a claim (up to this amount) if it comes back damaged or doesn't come back at all.",
       "visibility": "Visibility",
       "visibleInPublicSearch": "Visible in public search",
       "alsoShareInGroups": "Also share in these groups:",
@@ -251,7 +252,27 @@
       "requestExtension": "Request extension",
       "viewConversation": "View conversation",
       "accept": "Accept",
-      "refuse": "Refuse"
+      "refuse": "Refuse",
+      "fileClaim": "Report damage/loss",
+      "claimStatus": {
+        "pending": "Claim under review",
+        "approved": "Claim approved",
+        "rejected": "Claim rejected",
+        "paid": "Claim paid"
+      }
+    },
+    "ClaimModal": {
+      "errorDescriptionTooShort": "Describe what happened (minimum 10 characters)",
+      "errorAmountRequired": "Enter the requested amount",
+      "errorAmountOverCeiling": "The amount can't exceed the item's replacement value",
+      "errorGeneric": "Error filing the claim",
+      "title": "Report damage/loss",
+      "ceiling": "Item's replacement value: {amount} — that's the claim's ceiling",
+      "description": "What happened",
+      "descriptionPlaceholder": "Describe the damage or what happened to the item...",
+      "requestedAmount": "Requested amount (R$)",
+      "submit": "Submit claim",
+      "cancel": "Cancel"
     },
     "ChatPanel": {
       "errorLoading": "Could not load messages",
@@ -295,6 +316,9 @@
       "paidRental": "Rental · {price}/day",
       "owner": "Owner: {name}",
       "availableDaysNotice": "This item is only available for pickup and return on: {days}",
+      "rentalSubtotal": "Rental",
+      "deliveryFeeLine": "Delivery fee",
+      "guaranteeFeeLine": "Guarantee fee (3%)",
       "estimatedTotal": "Estimated total",
       "fulfillmentMethod": "Pickup or delivery",
       "fulfillmentPickup": "Pickup",
@@ -647,6 +671,40 @@
       "dismiss": "Dismiss",
       "error": "Couldn't complete the action.",
       "groupDeleted": "Group deleted"
+    },
+    "Claims": {
+      "title": "Claims and guarantee",
+      "subtitle": "Damage/loss claims filed by owners, and the guarantee pool's balance.",
+      "collected": "Collected",
+      "paidOut": "Paid out in claims",
+      "balance": "Balance",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "paid": "Paid"
+      },
+      "statusBadge": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "paid": "Paid"
+      },
+      "empty": "No claims in this category",
+      "filedBy": "Filed by {name} on {date}",
+      "requestedAmount": "Requested amount:",
+      "ceiling": "Ceiling (replacement value):",
+      "approvedAmount": "Approved amount:",
+      "rejectionReason": "Rejection reason:",
+      "reviewedBy": "Reviewed by {name} on {date}",
+      "approvedAmountLabel": "Amount to approve (R$)",
+      "rejectReasonLabel": "Rejection reason",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "markPaid": "Mark as paid",
+      "error": "Couldn't complete the action."
     },
     "Settings": {
       "errorSaving": "Error saving settings",

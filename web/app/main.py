@@ -19,6 +19,7 @@ from app.routers import (
     activities,
     admin,
     auth,
+    claims,
     groups,
     items,
     loan_requests,
@@ -134,6 +135,7 @@ app.include_router(notifications.router)
 app.include_router(reviews.router)
 app.include_router(groups.router)
 app.include_router(reports.router)
+app.include_router(claims.router)
 app.include_router(verification.router)
 app.include_router(admin.router)
 app.include_router(webhooks.router)

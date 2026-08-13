@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     MP_WEBHOOK_SECRET: str = ""
     # Lendly's cut of every paid loan, taken from the seller's payout.
     PLATFORM_FEE_PERCENT: float = 0.05
+    # Guarantee pool fee — charged on top of gross_amount (paid by the
+    # requester, doesn't touch the owner's payout), only for items with a
+    # declared_value. Funds damage/loss claim payouts (see claim_service.py).
+    GUARANTEE_FEE_PERCENT: float = 0.03
 
     # Kill switch for the paid-rental side of the marketplace — set to true
     # to run a free-lending-only pilot before the business has a CNPJ (Mercado

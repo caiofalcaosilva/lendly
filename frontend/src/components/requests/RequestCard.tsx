@@ -10,9 +10,17 @@ import Badge, { STATUS_COLORS } from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import ReviewModal from '@/components/reviews/ReviewModal'
 import ExtensionModal from '@/components/requests/ExtensionModal'
+import ClaimModal from '@/components/requests/ClaimModal'
 import PixCheckout from '@/components/requests/PixCheckout'
 import ExtensionPixCheckout from '@/components/requests/ExtensionPixCheckout'
 import DeliveryCodeConfirm from '@/components/requests/DeliveryCodeConfirm'
+
+const CLAIM_STATUS_COLORS: Record<string, 'green' | 'blue' | 'yellow' | 'red' | 'gray'> = {
+  pending: 'yellow',
+  approved: 'blue',
+  rejected: 'red',
+  paid: 'green',
+}
 
 const PAYMENT_STATUS_KEYS: Partial<Record<PaymentStatus, string>> = {
   processing: 'processing',
@@ -40,6 +48,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
   const [loading, setLoading] = useState<string | null>(null)
   const [showReview, setShowReview] = useState(false)
   const [showExtension, setShowExtension] = useState(false)
+  const [showClaim, setShowClaim] = useState(false)
   const [actionError, setActionError] = useState('')
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Common.RequestCard')
@@ -222,6 +231,18 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           </Button>
         )}
 
+        {role === 'owner' && req.status === 'finished' && req.declared_value != null && (
+          req.claim_id ? (
+            <Badge variant={CLAIM_STATUS_COLORS[req.claim_status ?? 'pending']}>
+              {t(`claimStatus.${req.claim_status ?? 'pending'}`)}
+            </Badge>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => setShowClaim(true)}>
+              {t('fileClaim')}
+            </Button>
+          )
+        )}
+
         {role === 'requester' && req.status === 'in_progress' && req.extension_status !== 'pending' && (
           <Button size="sm" variant="outline" onClick={() => setShowExtension(true)}>
             <CalendarClock className="w-3.5 h-3.5" /> {t('requestExtension')}
@@ -256,6 +277,15 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           currentExpectedReturnDate={req.expected_return_date}
           onClose={() => setShowExtension(false)}
           onSuccess={() => { setShowExtension(false); onUpdate() }}
+        />
+      )}
+
+      {showClaim && req.declared_value != null && (
+        <ClaimModal
+          requestId={req.id}
+          declaredValue={req.declared_value}
+          onClose={() => setShowClaim(false)}
+          onSuccess={() => { setShowClaim(false); onUpdate() }}
         />
       )}
     </div>

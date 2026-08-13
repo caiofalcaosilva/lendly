@@ -24,6 +24,11 @@ class Payment(Document):
     payee = ReferenceField("User", required=True)
     gross_amount = FloatField(required=True, min_value=0)
     platform_fee_amount = FloatField(required=True, min_value=0)
+    # Slice of gross_amount that funds the damage/loss claims pool — folded
+    # into gross_amount (the requester pays it) but tracked separately from
+    # platform_fee_amount so the two can be reported independently. 0 for
+    # any item without a declared_value. See claim_service.get_fund_summary.
+    guarantee_fee_amount = FloatField(default=0.0, min_value=0)
     status = StringField(default="pending", choices=PAYMENT_STATUSES)
     mp_payment_id = StringField()
     # Cached so the checkout screen can re-render on refresh without

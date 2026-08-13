@@ -55,6 +55,7 @@
         "items": "Gerenciamento de itens",
         "groups": "Todos os grupos",
         "moderation": "Moderação",
+        "claims": "Sinistros e garantia",
         "verification": "Verificação de identidade",
         "actions": "Histórico de ações",
         "activities": "Histórico de atividades (todos)",
@@ -171,7 +172,7 @@
       "usageRules": "Regras de uso",
       "usageRulesPlaceholder": "Ex: Devolver limpo, não usar para fins comerciais...",
       "declaredValue": "Valor de reposição (R$, opcional)",
-      "declaredValueHint": "Não aparece na página pública do item — visível só pra você. Ajuda a registrar quanto custaria repor o item.",
+      "declaredValueHint": "Não aparece na página pública do item — visível só pra você. Definir um valor ativa a proteção de garantia: cobramos 3% do solicitante em aluguéis pagos desse item, e você pode registrar um sinistro (até esse valor) se ele voltar danificado ou não voltar.",
       "visibility": "Visibilidade",
       "visibleInPublicSearch": "Visível na busca pública",
       "alsoShareInGroups": "Também compartilhar nestes grupos:",
@@ -251,7 +252,27 @@
       "requestExtension": "Pedir prorrogação",
       "viewConversation": "Ver conversa",
       "accept": "Aceitar",
-      "refuse": "Recusar"
+      "refuse": "Recusar",
+      "fileClaim": "Registrar dano/perda",
+      "claimStatus": {
+        "pending": "Sinistro em análise",
+        "approved": "Sinistro aprovado",
+        "rejected": "Sinistro recusado",
+        "paid": "Sinistro pago"
+      }
+    },
+    "ClaimModal": {
+      "errorDescriptionTooShort": "Descreva o que aconteceu (mínimo 10 caracteres)",
+      "errorAmountRequired": "Informe o valor pedido",
+      "errorAmountOverCeiling": "O valor não pode passar do valor de reposição do item",
+      "errorGeneric": "Erro ao registrar o sinistro",
+      "title": "Registrar dano/perda",
+      "ceiling": "Valor de reposição do item: {amount} — esse é o teto do sinistro",
+      "description": "O que aconteceu",
+      "descriptionPlaceholder": "Descreva o dano ou o que houve com o item...",
+      "requestedAmount": "Valor pedido (R$)",
+      "submit": "Enviar sinistro",
+      "cancel": "Cancelar"
     },
     "ChatPanel": {
       "errorLoading": "Não foi possível carregar as mensagens",
@@ -295,6 +316,9 @@
       "paidRental": "Aluguel · {price}/dia",
       "owner": "Dono: {name}",
       "availableDaysNotice": "Esse item só está disponível pra retirada e devolução em: {days}",
+      "rentalSubtotal": "Aluguel",
+      "deliveryFeeLine": "Taxa de entrega",
+      "guaranteeFeeLine": "Taxa de garantia (3%)",
       "estimatedTotal": "Total estimado",
       "fulfillmentMethod": "Retirada ou entrega",
       "fulfillmentPickup": "Retirada",
@@ -647,6 +671,40 @@
       "dismiss": "Dispensar",
       "error": "Não foi possível concluir a ação.",
       "groupDeleted": "Grupo excluído"
+    },
+    "Claims": {
+      "title": "Sinistros e garantia",
+      "subtitle": "Danos e perdas registrados pelos donos, e o saldo do fundo coletivo formado pela taxa de garantia.",
+      "collected": "Arrecadado",
+      "paidOut": "Pago em sinistros",
+      "balance": "Saldo",
+      "status": {
+        "pending": "Pendentes",
+        "approved": "Aprovados",
+        "rejected": "Recusados",
+        "paid": "Pagos"
+      },
+      "statusBadge": {
+        "pending": "Pendente",
+        "approved": "Aprovado",
+        "rejected": "Recusado",
+        "paid": "Pago"
+      },
+      "empty": "Nenhum sinistro nessa categoria",
+      "filedBy": "Registrado por {name} em {date}",
+      "requestedAmount": "Valor pedido:",
+      "ceiling": "Teto (valor de reposição):",
+      "approvedAmount": "Valor aprovado:",
+      "rejectionReason": "Motivo da recusa:",
+      "reviewedBy": "Revisado por {name} em {date}",
+      "approvedAmountLabel": "Valor a aprovar (R$)",
+      "rejectReasonLabel": "Motivo da recusa",
+      "approve": "Aprovar",
+      "reject": "Recusar",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "markPaid": "Marcar como pago",
+      "error": "Não foi possível concluir a ação."
     },
     "Settings": {
       "errorSaving": "Erro ao salvar configurações",

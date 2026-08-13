@@ -61,6 +61,7 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
         monthly_rate=item.monthly_rate,
         delivery_fee=item.delivery_fee,
         declared_value=item.declared_value if show_declared_value else None,
+        has_declared_value=item.declared_value is not None,
         usage_rules=item.usage_rules,
         zip_code=item.zip_code,
         neighborhood=item.neighborhood,

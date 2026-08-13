@@ -49,6 +49,7 @@ def _record_payment_activity(payment: Payment, event: str) -> None:
             metadata={
                 "gross_amount": payment.gross_amount,
                 "platform_fee_amount": payment.platform_fee_amount,
+                "guarantee_fee_amount": payment.guarantee_fee_amount,
             },
         )
 
@@ -61,6 +62,7 @@ def _to_response(payment: Payment) -> PaymentResponse:
         status=payment.status,
         gross_amount=payment.gross_amount,
         platform_fee_amount=payment.platform_fee_amount,
+        guarantee_fee_amount=payment.guarantee_fee_amount,
         pix_qr_code=payment.pix_qr_code,
         pix_qr_code_base64=payment.pix_qr_code_base64,
         expires_at=payment.expires_at,
@@ -89,13 +91,26 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
         # it on a pre-pickup cancellation (see refund_payment).
         gross_amount = round(gross_amount + item.delivery_fee, 2)
     platform_fee_amount = round(gross_amount * settings.PLATFORM_FEE_PERCENT, 2)
+    # Guarantee fee — extra charge to the requester, only for items with a
+    # declared_value (that's what a claim would be capped at). Computed on
+    # the pre-guarantee gross_amount so it isn't itself taxed by the
+    # platform fee, then folded into gross_amount like delivery_fee.
+    guarantee_fee_amount = (
+        round(gross_amount * settings.GUARANTEE_FEE_PERCENT, 2)
+        if item.declared_value
+        else 0.0
+    )
+    gross_amount = round(gross_amount + guarantee_fee_amount, 2)
 
     try:
         result = mercadopago_gateway.create_pix_charge(
             external_reference=str(req.id),
             payer_email=req.requester.email,
             gross_amount=gross_amount,
-            platform_fee_amount=platform_fee_amount,
+            # Both the platform's own cut and the guarantee fee are retained
+            # by us rather than disbursed to the seller — combined here only
+            # for the gateway call, kept separate on the Payment doc below.
+            platform_fee_amount=platform_fee_amount + guarantee_fee_amount,
             seller_mp_user_id=req.owner.mp_user_id,
         )
     except MercadoPagoError as e:
@@ -111,6 +126,7 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
         payee=req.owner,
         gross_amount=gross_amount,
         platform_fee_amount=platform_fee_amount,
+        guarantee_fee_amount=guarantee_fee_amount,
         status="pending",
         mp_payment_id=result["mp_payment_id"],
         pix_qr_code=result["pix_qr_code"],
@@ -135,6 +151,12 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
         _calculate_price(item, additional_days) * (req.quantity or 1), 2
     )
     platform_fee_amount = round(gross_amount * settings.PLATFORM_FEE_PERCENT, 2)
+    guarantee_fee_amount = (
+        round(gross_amount * settings.GUARANTEE_FEE_PERCENT, 2)
+        if item.declared_value
+        else 0.0
+    )
+    gross_amount = round(gross_amount + guarantee_fee_amount, 2)
 
     try:
         result = mercadopago_gateway.create_pix_charge(
@@ -143,7 +165,7 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
             external_reference=f"{req.id}-ext-{secrets.token_hex(4)}",
             payer_email=req.requester.email,
             gross_amount=gross_amount,
-            platform_fee_amount=platform_fee_amount,
+            platform_fee_amount=platform_fee_amount + guarantee_fee_amount,
             seller_mp_user_id=req.owner.mp_user_id,
         )
     except MercadoPagoError as e:
@@ -159,6 +181,7 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
         payee=req.owner,
         gross_amount=gross_amount,
         platform_fee_amount=platform_fee_amount,
+        guarantee_fee_amount=guarantee_fee_amount,
         status="pending",
         mp_payment_id=result["mp_payment_id"],
         pix_qr_code=result["pix_qr_code"],

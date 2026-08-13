@@ -77,5 +77,10 @@ class LoanRequestResponse(BaseModel):
     return_confirmed_by_owner_at: datetime | None = None
     return_confirmed_by_requester_at: datetime | None = None
     return_forced: bool = False
+    # Only ever populated for the owner or an admin — same gate as
+    # ItemResponse.declared_value, see _common.to_response.
+    declared_value: float | None = None
+    claim_id: str | None = None
+    claim_status: str | None = None
     created_at: datetime
     updated_at: datetime

@@ -540,6 +540,7 @@ def test_release_payment_records_activity_for_payer_and_payee(client):
     assert payer_activities[0].metadata == {
         "gross_amount": 100.0,
         "platform_fee_amount": 5.0,
+        "guarantee_fee_amount": 0.0,
     }
 
 

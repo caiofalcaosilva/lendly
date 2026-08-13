@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from app.models.claim import Claim
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.payment import Payment
@@ -48,6 +49,10 @@ def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResp
     # verbally/in person and types it in blind. Defaulting viewer to None
     # hides the code (fails closed) if a caller forgets to pass one.
     is_requester_viewer = viewer is not None and str(viewer.id) == str(req.requester.id)
+    is_owner_viewer = viewer is not None and (
+        str(viewer.id) == str(req.owner.id) or viewer.is_admin
+    )
+    claim = Claim.objects(loan_request=req).order_by("-created_at").first()
     return LoanRequestResponse(
         id=str(req.id),
         item_id=str(req.item.id),
@@ -84,6 +89,9 @@ def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResp
         return_confirmed_by_owner_at=req.return_confirmed_by_owner_at,
         return_confirmed_by_requester_at=req.return_confirmed_by_requester_at,
         return_forced=req.return_forced or False,
+        declared_value=req.item.declared_value if is_owner_viewer else None,
+        claim_id=str(claim.id) if claim else None,
+        claim_status=claim.status if claim else None,
         created_at=req.created_at,
         updated_at=req.updated_at,
     )

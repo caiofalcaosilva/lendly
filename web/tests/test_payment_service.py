@@ -19,7 +19,7 @@ _MOCK_CHARGE_RESULT = {
 }
 
 
-def _make_paid_loan_request(quantity=1):
+def _make_paid_loan_request(quantity=1, declared_value=None):
     owner = User(
         name="Dono",
         email="dono.pagamento@example.com",
@@ -37,6 +37,7 @@ def _make_paid_loan_request(quantity=1):
         availability_type="paid",
         daily_rate=50.0,
         quantity_total=max(quantity, 1),
+        declared_value=declared_value,
     ).save()
     return LoanRequest(
         item=item,
@@ -341,3 +342,68 @@ def test_delivery_fee_not_multiplied_by_quantity(client):
 
     # (daily_rate 50 * 2 days * 3 units) + delivery_fee 20 = 320
     assert payment.gross_amount == 320.0
+
+
+# ── Guarantee fee ─────────────────────────────────────────────────────────
+
+
+def test_guarantee_fee_charged_when_declared_value_set(client):
+    req = _make_paid_loan_request(declared_value=800.0)
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ):
+        payment = payment_service.create_payment_for_request(req)
+
+    # base = daily_rate 50 * 2 days = 100; guarantee = 3% of 100 = 3.0
+    assert payment.guarantee_fee_amount == 3.0
+    assert payment.gross_amount == 103.0
+    assert payment.platform_fee_amount == 5.0  # unaffected — still 5% of the base
+
+
+def test_no_guarantee_fee_without_declared_value(client):
+    req = _make_paid_loan_request()
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ):
+        payment = payment_service.create_payment_for_request(req)
+
+    assert payment.guarantee_fee_amount == 0.0
+    assert payment.gross_amount == 100.0
+
+
+def test_guarantee_fee_does_not_leak_into_owner_payout(client):
+    """The requester pays the extra 3%, but the owner's disbursed share
+    (gross_amount minus whatever platform_fee_amount is passed to the
+    gateway) must stay exactly what it would've been without the guarantee
+    fee — the fee has to be retained by the platform, not passed through."""
+    req = _make_paid_loan_request(declared_value=800.0)
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value=_MOCK_CHARGE_RESULT,
+    ) as mocked:
+        payment_service.create_payment_for_request(req)
+
+    call_kwargs = mocked.call_args.kwargs
+    owner_payout = call_kwargs["gross_amount"] - call_kwargs["platform_fee_amount"]
+    assert owner_payout == 95.0  # 100 base - 5.0 platform fee, same as without the fee
+
+
+def test_guarantee_fee_applies_to_extension_charge(client):
+    req = _make_in_progress_paid_request()
+    Item.objects(id=req.item.id).update(declared_value=800.0)
+    req.item.reload()
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value={**_MOCK_CHARGE_RESULT, "mp_payment_id": "ext-guarantee"},
+    ):
+        payment = payment_service.create_payment_for_extension(req, 3)
+
+    # base = 3 days * 50 = 150; guarantee = 3% of 150 = 4.5
+    assert payment.guarantee_fee_amount == 4.5
+    assert payment.gross_amount == 154.5

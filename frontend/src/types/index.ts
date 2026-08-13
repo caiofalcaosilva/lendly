@@ -491,6 +491,9 @@ export interface Item {
   // Only ever populated for the owner or an admin — never on the public
   // item page.
   declared_value?: number | null
+  // Always visible (unlike declared_value itself) — whether the guarantee
+  // fee applies to this item, without leaking the actual replacement value.
+  has_declared_value: boolean
   usage_rules?: string
   zip_code?: string
   neighborhood?: string
@@ -624,8 +627,43 @@ export interface LoanRequest {
   return_confirmed_by_owner_at?: string | null
   return_confirmed_by_requester_at?: string | null
   return_forced: boolean
+  // Only ever populated for the owner or an admin — see the item's own
+  // declared_value gate.
+  declared_value?: number | null
+  claim_id?: string | null
+  claim_status?: ClaimStatus | null
   created_at: string
   updated_at: string
+}
+
+export type ClaimStatus = 'pending' | 'approved' | 'rejected' | 'paid'
+
+export interface Claim {
+  id: string
+  loan_request_id: string
+  item_id: string
+  item_title: string
+  owner_id: string
+  owner_name: string
+  requester_id: string
+  requester_name: string
+  description: string
+  requested_amount: number
+  declared_value: number
+  photos: string[]
+  status: ClaimStatus
+  approved_amount?: number | null
+  rejection_reason?: string | null
+  reviewed_by_name?: string | null
+  reviewed_at?: string | null
+  paid_at?: string | null
+  created_at: string
+}
+
+export interface FundSummary {
+  collected: number
+  paid_out: number
+  balance: number
 }
 
 export interface Payment {
@@ -635,6 +673,7 @@ export interface Payment {
   status: 'pending' | 'held' | 'released' | 'refunded' | 'failed'
   gross_amount: number
   platform_fee_amount: number
+  guarantee_fee_amount: number
   pix_qr_code?: string | null
   pix_qr_code_base64?: string | null
   expires_at?: string | null

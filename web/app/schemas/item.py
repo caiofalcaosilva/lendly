@@ -138,6 +138,10 @@ class ItemResponse(BaseModel):
     # Only ever populated for the owner or an admin — see
     # item_service._common.to_response.
     declared_value: float | None = None
+    # Always visible (unlike declared_value itself) — lets the requester's
+    # price preview know whether the guarantee fee applies, without leaking
+    # the actual replacement value. See payment_service.GUARANTEE_FEE_PERCENT.
+    has_declared_value: bool = False
     usage_rules: str | None = None
     zip_code: str | None = None
     neighborhood: str | None = None

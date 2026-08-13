@@ -22,3 +22,9 @@ export function calculateRentalPrice(
   total += remaining * item.daily_rate
   return Math.round(total * 100) / 100
 }
+
+// Mirrors settings.GUARANTEE_FEE_PERCENT in app/config.py — must be kept in
+// manual sync, same tradeoff the app already accepts for the (also
+// unexposed) platform fee percentage. Used for the price preview only; the
+// backend's own calculation at charge time is always authoritative.
+export const GUARANTEE_FEE_PERCENT = 0.03
