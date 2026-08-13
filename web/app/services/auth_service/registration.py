@@ -21,7 +21,7 @@ from app.utils.time import utcnow
 # Bumped whenever the terms of use / privacy policy text changes materially —
 # stamped on the user at registration as consent evidence (see
 # terms_accepted_version on the User model). Not tied to app releases.
-CURRENT_TERMS_VERSION = "2026-08-12"
+CURRENT_TERMS_VERSION = "2026-08-13"
 
 
 def register_user(
