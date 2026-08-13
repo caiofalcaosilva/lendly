@@ -167,6 +167,8 @@
       "requireVerification": "Require approved identity verification to borrow",
       "usageRules": "Usage rules",
       "usageRulesPlaceholder": "E.g. Return clean, no commercial use...",
+      "declaredValue": "Replacement value (R$, optional)",
+      "declaredValueHint": "Not shown on the public item page — visible only to you. Helps you keep track of what it would cost to replace.",
       "visibility": "Visibility",
       "visibleInPublicSearch": "Visible in public search",
       "alsoShareInGroups": "Also share in these groups:",

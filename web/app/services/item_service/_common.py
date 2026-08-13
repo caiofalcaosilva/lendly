@@ -31,6 +31,11 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
     is_waitlisted = False
     if current_user and item.waitlist:
         is_waitlisted = any(str(u.id) == str(current_user.id) for u in item.waitlist)
+    # Never shown on the public item page — a security/trust call made
+    # explicitly, not an oversight (see docs on the roadmap decision).
+    show_declared_value = current_user is not None and (
+        str(owner.id) == str(current_user.id) or current_user.is_admin
+    )
     return ItemResponse(
         id=str(item.id),
         owner=ItemOwnerResponse(
@@ -54,6 +59,7 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
         weekly_rate=item.weekly_rate,
         monthly_rate=item.monthly_rate,
         delivery_fee=item.delivery_fee,
+        declared_value=item.declared_value if show_declared_value else None,
         usage_rules=item.usage_rules,
         zip_code=item.zip_code,
         neighborhood=item.neighborhood,

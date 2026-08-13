@@ -167,6 +167,8 @@
       "requireVerification": "Exigir verificação de identidade pra emprestar",
       "usageRules": "Regras de uso",
       "usageRulesPlaceholder": "Ex: Devolver limpo, não usar para fins comerciais...",
+      "declaredValue": "Valor de reposição (R$, opcional)",
+      "declaredValueHint": "Não aparece na página pública do item — visível só pra você. Ajuda a registrar quanto custaria repor o item.",
       "visibility": "Visibilidade",
       "visibleInPublicSearch": "Visível na busca pública",
       "alsoShareInGroups": "Também compartilhar nestes grupos:",

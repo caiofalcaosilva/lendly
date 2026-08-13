@@ -148,6 +148,7 @@ def create_item(
         weekly_rate=data.weekly_rate,
         monthly_rate=data.monthly_rate,
         delivery_fee=data.delivery_fee,
+        declared_value=data.declared_value,
         usage_rules=data.usage_rules,
         zip_code=data.zip_code
         or (current_user.zip_code if using_owner_address else None),
@@ -178,7 +179,7 @@ def create_item(
     )
     if background_tasks and groups:
         _notify_groups_of_new_item(groups, item, current_user, background_tasks)
-    return to_response(item)
+    return to_response(item, current_user)
 
 
 def get_item(item_id: str, current_user: User | None = None) -> ItemResponse:
@@ -380,7 +381,7 @@ def update_item(
                     f"/items/{item.id}",
                 )
 
-    return to_response(item)
+    return to_response(item, current_user)
 
 
 def _notify_fans_item_gone(
@@ -511,7 +512,7 @@ def set_availability(
                 f"/items/{item.id}",
             )
 
-    return to_response(item)
+    return to_response(item, current_user)
 
 
 def get_user_items(

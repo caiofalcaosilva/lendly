@@ -50,6 +50,12 @@ class Item(Document):
     # with the rest on a pre-pickup cancellation. Only takes effect on paid
     # items — inert on free ones, same as daily_rate already is.
     delivery_fee = FloatField(min_value=0)
+    # Replacement value, set by the owner — never shown on the public item
+    # page (see item_service._common.to_response), only to the owner and
+    # admins. Independent of availability_type: a free item still has real
+    # value if it's lost or damaged. Currently just a record; will become
+    # the guarantee payout ceiling once that feature exists.
+    declared_value = FloatField(min_value=0)
     requires_identity_verification = BooleanField(default=False)
     is_active = BooleanField(default=True)
     # True only for items this specific pause cycle deactivated — lets resume

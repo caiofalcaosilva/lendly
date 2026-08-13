@@ -488,6 +488,9 @@ export interface Item {
   weekly_rate?: number | null
   monthly_rate?: number | null
   delivery_fee?: number | null
+  // Only ever populated for the owner or an admin — never on the public
+  // item page.
+  declared_value?: number | null
   usage_rules?: string
   zip_code?: string
   neighborhood?: string

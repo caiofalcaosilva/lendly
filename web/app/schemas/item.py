@@ -44,6 +44,7 @@ class ItemCreate(BaseModel):
     weekly_rate: float | None = Field(None, ge=0)
     monthly_rate: float | None = Field(None, ge=0)
     delivery_fee: float | None = Field(None, ge=0)
+    declared_value: float | None = Field(None, ge=0)
     usage_rules: str | None = Field(None, max_length=500)
     zip_code: str | None = Field(None, max_length=10)
     neighborhood: str | None = Field(None, max_length=100)
@@ -78,6 +79,7 @@ class ItemUpdate(BaseModel):
     weekly_rate: float | None = Field(None, ge=0)
     monthly_rate: float | None = Field(None, ge=0)
     delivery_fee: float | None = Field(None, ge=0)
+    declared_value: float | None = Field(None, ge=0)
     usage_rules: str | None = Field(None, max_length=500)
     zip_code: str | None = Field(None, max_length=10)
     neighborhood: str | None = Field(None, max_length=100)
@@ -130,6 +132,9 @@ class ItemResponse(BaseModel):
     weekly_rate: float | None = None
     monthly_rate: float | None = None
     delivery_fee: float | None = None
+    # Only ever populated for the owner or an admin — see
+    # item_service._common.to_response.
+    declared_value: float | None = None
     usage_rules: str | None = None
     zip_code: str | None = None
     neighborhood: str | None = None
