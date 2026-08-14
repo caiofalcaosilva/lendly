@@ -4,7 +4,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { UserCog, Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle } from 'lucide-react'
+import { UserCog, Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle, Bell } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/contexts/AuthContext'
 import { usersService } from '@/services/users'
@@ -546,15 +546,6 @@ export default function ProfilePage() {
           {/* Connected devices / active sessions */}
           <SessionsSection />
 
-          {/* Passive login history */}
-          <LoginHistorySection />
-
-          {/* Email notification toggles */}
-          {user && <NotificationPreferencesSection user={user} updateUser={updateUser} />}
-
-          {/* In-app (bell) notification toggles — separate from email */}
-          {user && <InAppNotificationPreferencesSection user={user} updateUser={updateUser} />}
-
           {/* TOTP 2FA */}
           <div className="p-4 rounded-panel border border-border bg-surface-2">
             <div className="flex items-start justify-between gap-4">
@@ -609,6 +600,25 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* History & notifications section */}
+      <div className="mt-6 bg-surface rounded-panel border border-border p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Bell className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold text-ink">{t('historyAndNotifications')}</h2>
+        </div>
+
+        <div className="space-y-5">
+          {/* Passive login history */}
+          <LoginHistorySection />
+
+          {/* Email notification toggles */}
+          {user && <NotificationPreferencesSection user={user} updateUser={updateUser} />}
+
+          {/* In-app (bell) notification toggles — separate from email */}
+          {user && <InAppNotificationPreferencesSection user={user} updateUser={updateUser} />}
         </div>
       </div>
 
