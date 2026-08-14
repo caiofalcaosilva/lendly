@@ -106,7 +106,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
   },
   {
     heading: '17. Contato',
-    body: ['Dúvidas sobre estes termos podem ser enviadas para contato@lendly.app.'],
+    body: ['Dúvidas sobre estes termos podem ser enviadas para contato@lendly.com.br.'],
   },
 ]
 

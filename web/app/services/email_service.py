@@ -1,9 +1,12 @@
 import asyncio
+import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _send_sync(to: str, subject: str, html: str) -> None:
@@ -13,12 +16,23 @@ def _send_sync(to: str, subject: str, html: str) -> None:
     msg["To"] = to
     msg.attach(MIMEText(html, "html"))
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        if settings.SMTP_TLS:
-            server.starttls()
-        if settings.SMTP_USER:
-            server.login(settings.SMTP_USER, settings.SMTP_PASS)
-        server.sendmail(settings.SMTP_FROM, to, msg.as_string())
+    try:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            if settings.SMTP_TLS:
+                server.starttls()
+            if settings.SMTP_USER:
+                server.login(settings.SMTP_USER, settings.SMTP_PASS)
+            server.sendmail(settings.SMTP_FROM, to, msg.as_string())
+    except Exception:
+        # Always called from a fire-and-forget BackgroundTask (see call
+        # sites in auth_service etc.) — the request that triggered this has
+        # already returned a success response, so an exception here has no
+        # one left to reach. Logging is the only way this failure is ever
+        # visible; a wrong SMTP_HOST/SMTP_TLS silently drops every email
+        # otherwise.
+        logger.error(
+            "email send failed", extra={"to": to, "subject": subject}, exc_info=True
+        )
 
 
 async def send_email(to: str, subject: str, html: str) -> None:

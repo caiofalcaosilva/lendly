@@ -74,7 +74,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
   {
     heading: '11. Contato',
     body: [
-      'Para exercer seus direitos ou tirar dúvidas sobre o tratamento dos seus dados, entre em contato pelo e-mail contato@lendly.app.',
+      'Para exercer seus direitos ou tirar dúvidas sobre o tratamento dos seus dados, entre em contato pelo e-mail contato@lendly.com.br.',
     ],
   },
 ]

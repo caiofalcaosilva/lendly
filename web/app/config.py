@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 1025
     SMTP_USER: str = ""
     SMTP_PASS: str = ""
-    SMTP_FROM: str = "noreply@lendly.app"
+    SMTP_FROM: str = "noreply@lendly.com.br"
     SMTP_TLS: bool = False
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
 

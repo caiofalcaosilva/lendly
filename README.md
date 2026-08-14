@@ -126,8 +126,8 @@ Cria ~20 usuários (5 contas empresariais), ~112 itens, 3 grupos e ~35 emprésti
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `30` | Validade do refresh token |
 | `SMTP_HOST` / `SMTP_PORT` | `mailhog` / `1025` | Servidor de e-mail (verificação de conta, notificações) |
 | `SMTP_USER` / `SMTP_PASS` | *(vazio)* | Credenciais SMTP — vazio funciona com o MailHog do compose |
-| `SMTP_FROM` | `noreply@lendly.app` | Remetente dos e-mails |
-| `SMTP_TLS` | `false` | Usar TLS na conexão SMTP |
+| `SMTP_FROM` | `noreply@lendly.com.br` | Remetente dos e-mails |
+| `SMTP_TLS` | `false` | Usar TLS na conexão SMTP — precisa ser `true` em produção com provedores como o Resend, ou o login SMTP falha |
 | `EMAIL_VERIFICATION_EXPIRE_HOURS` | `24` | Validade do link de verificação de e-mail |
 | `FRONTEND_URL` | `http://localhost:3000` | Usado para montar links absolutos (verificação de e-mail, callback do Mercado Pago) |
 | `TOTP_ISSUER` | `Lendly` | Nome exibido no app autenticador (2FA) |
