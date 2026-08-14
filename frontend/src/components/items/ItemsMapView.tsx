@@ -186,7 +186,10 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
 
   return (
     <div>
-      <div className="h-[600px] w-full rounded-panel overflow-hidden border border-border">
+      {/* isolate: Leaflet's own panes/controls use z-index up to 1000 (meant
+          for full-page maps) — without a new stacking context here, they'd
+          render above this page's sticky header (z-40) once scrolled. */}
+      <div className="h-[600px] w-full rounded-panel overflow-hidden border border-border isolate">
         <MapContainer center={initialCenter} zoom={12} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
           <TileLayer
             attribution={CARTO_ATTRIBUTION}
