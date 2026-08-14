@@ -113,6 +113,25 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
+    const flashTarget = () => {
+      const el = document.getElementById(window.location.hash.slice(1))
+      if (!el) return
+      // scroll-mt utilities use a fixed value, but the sticky header's real
+      // height varies with how many warning banners (email, identity, ...)
+      // are stacked in it — a fixed offset leaves the target tucked under
+      // the header when more than one is showing. Measure it instead.
+      const headerHeight = document.querySelector('nav')?.getBoundingClientRect().height ?? 96
+      const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 16
+      window.scrollTo({ top, behavior: 'smooth' })
+      el.classList.add('ring-2', 'ring-primary')
+      setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 1800)
+    }
+    flashTarget()
+    window.addEventListener('hashchange', flashTarget)
+    return () => window.removeEventListener('hashchange', flashTarget)
+  }, [])
+
+  useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login?redirect=/profile')
       return
@@ -487,7 +506,7 @@ export default function ProfilePage() {
 
         <div className="space-y-5">
           {/* Email verification */}
-          <div className="flex items-start justify-between gap-4 p-4 rounded-panel border border-border bg-surface-2">
+          <div id="email-verification" className="flex items-start justify-between gap-4 p-4 rounded-panel border border-border bg-surface-2 scroll-mt-24 transition-shadow duration-700">
             <div className="flex items-start gap-3">
               {user?.is_verified ? (
                 <MailCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />

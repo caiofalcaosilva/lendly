@@ -1,5 +1,5 @@
 'use client'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
@@ -15,10 +15,17 @@ function VerifyEmailContent() {
   const { updateUser, isAuthenticated } = useAuth()
   const [state, setState] = useState<State>('loading')
   const t = useTranslations('VerifyEmail')
+  // updateUser isn't referentially stable (AuthContext recreates it on every
+  // render), so calling it re-triggers this effect — without this guard the
+  // token gets verified twice, and the second call fails because the token
+  // is already consumed, flipping a successful verification to an error.
+  const attempted = useRef(false)
 
   useEffect(() => {
+    if (attempted.current) return
     const token = params.get('token')
     if (!token) { setState('error'); return }
+    attempted.current = true
 
     authService.verifyEmail(token)
       .then((user) => {

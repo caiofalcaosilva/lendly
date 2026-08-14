@@ -88,18 +88,47 @@ async def send_email(to: str, subject: str, html: str) -> None:
 async def send_verification_email(to: str, name: str, token: str) -> None:
     url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
     html = f"""
-    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
-      <h2 style="color:#16a34a">Bem-vindo(a) ao Lendly, {name}!</h2>
-      <p>Para ativar sua conta, clique no botão abaixo:</p>
-      <a href="{url}"
-         style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;
-                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
-        Verificar e-mail
-      </a>
-      <p style="color:#6b7280;font-size:13px">
-        Link válido por {settings.EMAIL_VERIFICATION_EXPIRE_HOURS} horas.<br>
-        Se você não criou esta conta, ignore este e-mail.
-      </p>
+    <div style="background:#f3f4f6;padding:40px 16px;font-family:-apple-system,
+                BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+      <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;
+                  border:1px solid #e5e7eb;overflow:hidden">
+        <div style="background:#16a34a;padding:28px 32px;text-align:center">
+          <div style="display:inline-block;width:40px;height:40px;border-radius:50%;
+                      background:#ffffff;line-height:40px;text-align:center;
+                      font-size:20px;font-weight:800;color:#16a34a;margin-bottom:8px">L</div>
+          <div style="color:#ffffff;font-size:18px;font-weight:800;
+                      letter-spacing:-0.3px">
+            Lendly
+          </div>
+        </div>
+        <div style="padding:36px 32px 32px">
+          <h1 style="margin:0 0 12px;font-size:22px;font-weight:800;color:#111827">
+            Bem-vindo(a), {name}!
+          </h1>
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563">
+            Falta só um passo para você começar a emprestar e pegar emprestado
+            com seus vizinhos: confirmar seu e-mail.
+          </p>
+          <div style="text-align:center;margin:0 0 24px">
+            <a href="{url}"
+               style="display:inline-block;background:#16a34a;color:#ffffff;
+                      padding:14px 32px;border-radius:10px;text-decoration:none;
+                      font-weight:700;font-size:15px">
+              Verificar e-mail
+            </a>
+          </div>
+          <p style="margin:0 0 20px;font-size:13px;line-height:1.5;color:#9ca3af">
+            Se o botão não funcionar, copie e cole este link no navegador:<br>
+            <a href="{url}" style="color:#16a34a;word-break:break-all">{url}</a>
+          </p>
+          <div style="border-top:1px solid #e5e7eb;padding-top:16px">
+            <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af">
+              Este link é válido por {settings.EMAIL_VERIFICATION_EXPIRE_HOURS} horas.
+              Se você não criou esta conta, é só ignorar este e-mail.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
     """
     await send_email(to, "Verifique seu e-mail — Lendly", html)

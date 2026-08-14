@@ -56,7 +56,7 @@ export default function IdentityVerificationSection({ user, updateUser }: Props)
   const identityStatus = status?.identity_status ?? user.identity_status ?? 'none'
 
   return (
-    <div id="identity-verification" className="p-4 rounded-panel border border-border bg-surface-2 scroll-mt-24">
+    <div id="identity-verification" className="p-4 rounded-panel border border-border bg-surface-2 scroll-mt-24 transition-shadow duration-700">
       <div className="flex items-start gap-3 mb-1">
         {identityStatus === 'approved' ? (
           <BadgeCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />

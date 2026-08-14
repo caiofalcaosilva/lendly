@@ -94,7 +94,7 @@ export default function Navbar() {
         <div className="bg-warning-subtle border-b border-warning/30 px-4 py-2 flex items-center justify-center gap-2 text-warning text-xs">
           <MailWarning className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{t('verifyEmail')}</span>
-          <Link href="/profile" className="font-semibold underline hover:opacity-75">
+          <Link href="/profile#email-verification" className="font-semibold underline hover:opacity-75">
             {t('resendLink')}
           </Link>
         </div>
