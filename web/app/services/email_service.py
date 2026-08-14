@@ -9,7 +9,17 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
+# No timeout on smtplib.SMTP() means a network that silently drops outbound
+# packets to SMTP_HOST/SMTP_PORT (rather than actively refusing the
+# connection — common on cloud hosts that block outbound SMTP) hangs this
+# call forever instead of raising. A background task stuck like that never
+# logs anything and never shows up at the provider either, indistinguishable
+# from "never ran" — this bounds it so a blocked port fails fast and loud.
+_SMTP_TIMEOUT_SECONDS = 15
+
+
 def _send_sync(to: str, subject: str, html: str) -> None:
+    logger.info("sending email", extra={"to": to, "subject": subject})
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = settings.SMTP_FROM
@@ -17,12 +27,15 @@ def _send_sync(to: str, subject: str, html: str) -> None:
     msg.attach(MIMEText(html, "html"))
 
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        with smtplib.SMTP(
+            settings.SMTP_HOST, settings.SMTP_PORT, timeout=_SMTP_TIMEOUT_SECONDS
+        ) as server:
             if settings.SMTP_TLS:
                 server.starttls()
             if settings.SMTP_USER:
                 server.login(settings.SMTP_USER, settings.SMTP_PASS)
             server.sendmail(settings.SMTP_FROM, to, msg.as_string())
+        logger.info("email sent", extra={"to": to, "subject": subject})
     except Exception:
         # Always called from a fire-and-forget BackgroundTask (see call
         # sites in auth_service etc.) — the request that triggered this has
