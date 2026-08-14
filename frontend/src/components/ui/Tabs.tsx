@@ -13,9 +13,15 @@ interface TabsProps {
 }
 
 export default function Tabs({ items, activeId, onChange }: TabsProps) {
+  // No overflow-x scroll wrapper: with this component's actual (short)
+  // labels it's never needed, and pairing it with the -mb-px border trick
+  // below made browsers compute a 1px vertical overflow, which — per the CSS
+  // overflow spec, where a non-"visible" x-axis forces the y-axis's computed
+  // value to "auto" too — showed a spurious vertical scrollbar. flex-wrap is
+  // enough of a safety net for pathologically narrow viewports.
   return (
-    <div className="border-b border-border mb-6 overflow-x-auto">
-      <div role="tablist" className="flex gap-0 -mb-px w-max min-w-full">
+    <div className="border-b border-border mb-6">
+      <div role="tablist" className="flex flex-wrap gap-0 -mb-px">
         {items.map(({ id, label }) => (
           <button
             key={id}
