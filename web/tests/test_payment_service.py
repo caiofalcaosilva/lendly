@@ -95,10 +95,10 @@ def test_release_payment_updates_status(client):
     ):
         payment_service.create_payment_for_request(req)
 
-    with patch.object(payment_service.mercadopago_gateway, "release_payment") as mocked:
-        payment_service.release_payment(req)
+    # No gateway call anymore — release_payment is pure bookkeeping now
+    # (see its docstring in payment_service.py).
+    payment_service.release_payment(req)
 
-    mocked.assert_called_once()
     req.reload()
     assert req.payment_status == "released"
     payment = Payment.objects(loan_request=req).first()
@@ -161,8 +161,7 @@ def _make_in_progress_paid_request():
         return_value=_MOCK_CHARGE_RESULT,
     ):
         payment_service.create_payment_for_request(req)
-    with patch.object(payment_service.mercadopago_gateway, "release_payment"):
-        payment_service.release_payment(req)
+    payment_service.release_payment(req)
     req.update(status="in_progress")
     req.reload()
     return req
@@ -207,17 +206,13 @@ def test_extension_webhook_confirmation_releases_automatically(client):
         patch.object(
             payment_service.mercadopago_gateway,
             "get_payment_status",
-            return_value="approved",
+            return_value="processed",
         ),
-        patch.object(
-            payment_service.mercadopago_gateway, "release_payment"
-        ) as mocked_release,
     ):
         payment_service.handle_webhook(
             {"data": {"id": "ext-2"}}, x_signature="sig", x_request_id="req-id"
         )
 
-    mocked_release.assert_called_once()
     extension = Payment.objects(loan_request=req, kind="extension").first()
     assert extension.status == "released"
     req.reload()
@@ -389,7 +384,7 @@ def test_guarantee_fee_does_not_leak_into_owner_payout(client):
         payment_service.create_payment_for_request(req)
 
     call_kwargs = mocked.call_args.kwargs
-    owner_payout = call_kwargs["gross_amount"] - call_kwargs["platform_fee_amount"]
+    owner_payout = call_kwargs["gross_amount"] - call_kwargs["marketplace_fee_amount"]
     assert owner_payout == 95.0  # 100 base - 5.0 platform fee, same as without the fee
 
 

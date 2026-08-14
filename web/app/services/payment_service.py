@@ -7,7 +7,7 @@ from app.models.loan_request import LoanRequest
 from app.models.payment import Payment
 from app.models.user import User
 from app.schemas.payment import PaymentResponse
-from app.services import activity_service, mercadopago_gateway
+from app.services import activity_service, mercadopago_gateway, mp_connect_service
 from app.services.mercadopago_gateway import MercadoPagoError
 from app.utils import errors
 from app.utils.time import utcnow
@@ -73,9 +73,10 @@ def _to_response(payment: Payment) -> PaymentResponse:
 def create_payment_for_request(req: LoanRequest) -> Payment:
     """Called right after the owner accepts a paid item's request (and,
     as a self-healing retry, from get_payment_for_request if that first
-    attempt failed). Charges the requester now, holds the owner's share
-    until release_payment() is called once both sides confirm pickup
-    (confirm_pickup/force_pickup).
+    attempt failed). Charges the requester now — the owner's share settles
+    to their connected account the moment Mercado Pago confirms the Pix
+    (see handle_webhook; the Orders API has no delayed-release step for
+    Pix, unlike the old Advanced Payments flow this replaced).
 
     Nothing is written to LoanRequest/Payment until the gateway call
     itself succeeds — if Mercado Pago rejects it, payment_status stays
@@ -103,15 +104,16 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
     gross_amount = round(gross_amount + guarantee_fee_amount, 2)
 
     try:
+        seller_access_token = mp_connect_service.get_valid_access_token(req.owner)
         result = mercadopago_gateway.create_pix_charge(
             external_reference=str(req.id),
             payer_email=req.requester.email,
             gross_amount=gross_amount,
-            # Both the platform's own cut and the guarantee fee are retained
-            # by us rather than disbursed to the seller — combined here only
-            # for the gateway call, kept separate on the Payment doc below.
-            platform_fee_amount=platform_fee_amount + guarantee_fee_amount,
-            seller_mp_user_id=req.owner.mp_user_id,
+            # Both the platform's own cut and the guarantee fee are withheld
+            # from the seller via marketplace_fee — combined here only for
+            # the gateway call, kept separate on the Payment doc below.
+            marketplace_fee_amount=platform_fee_amount + guarantee_fee_amount,
+            seller_access_token=seller_access_token,
         )
     except MercadoPagoError as e:
         raise errors.bad_gateway(
@@ -159,14 +161,15 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
     gross_amount = round(gross_amount + guarantee_fee_amount, 2)
 
     try:
+        seller_access_token = mp_connect_service.get_valid_access_token(req.owner)
         result = mercadopago_gateway.create_pix_charge(
             # str(req.id) alone is already used by the original rental charge —
             # each extension needs its own unique reference.
             external_reference=f"{req.id}-ext-{secrets.token_hex(4)}",
             payer_email=req.requester.email,
             gross_amount=gross_amount,
-            platform_fee_amount=platform_fee_amount + guarantee_fee_amount,
-            seller_mp_user_id=req.owner.mp_user_id,
+            marketplace_fee_amount=platform_fee_amount + guarantee_fee_amount,
+            seller_access_token=seller_access_token,
         )
     except MercadoPagoError as e:
         raise errors.bad_gateway(
@@ -247,31 +250,38 @@ def get_extension_payment_for_request(
 
 
 def _release_payment_doc(payment: Payment) -> None:
-    mercadopago_gateway.release_payment(payment.mp_payment_id)
+    """Pure bookkeeping now — no gateway call. Mercado Pago itself already
+    moved the seller's share the moment the Pix was confirmed (see module
+    docstring in mercadopago_gateway.py); this just marks our own records
+    to match, at whatever point in the workflow that's meant to become
+    visible (webhook time for extensions, pickup-confirmation time for
+    rentals — see call sites)."""
     payment.update(status="released", released_at=utcnow())
     _record_payment_activity(payment, "payment.released")
 
 
 def release_payment(req: LoanRequest) -> None:
     """Called once both sides have confirmed pickup (confirm_pickup/
-    force_pickup) and payment_status is already 'held' — moves the owner's
-    share out of hold."""
+    force_pickup) and payment_status is already 'held' — moves the rental
+    Payment (and the gating payment_status field) to 'released'. No gateway
+    call happens here anymore (see _release_payment_doc): Mercado Pago
+    already settled the seller's share back when the webhook confirmed the
+    Pix, this just changes when our own bookkeeping — and the pickup gate
+    downstream code relies on — catches up to that."""
     payment = _get_payment(req, kind="rental")
-    try:
-        _release_payment_doc(payment)
-    except MercadoPagoError as e:
-        raise errors.bad_gateway(
-            f"Não foi possível liberar o pagamento agora ({e}). "
-            "Tente novamente em instantes."
-        ) from e
+    _release_payment_doc(payment)
     req.update(payment_status="released", updated_at=utcnow())
 
 
 def refund_payment(req: LoanRequest) -> None:
-    """Called from cancel_request when the item hasn't been picked up yet."""
+    """Called from cancel_request when the item hasn't been picked up yet.
+    Relies on Mercado Pago's marketplace refund clawing back the seller's
+    already-settled share automatically — see mercadopago_gateway.
+    refund_payment's docstring."""
     payment = _get_payment(req, kind="rental")
     try:
-        mercadopago_gateway.refund_payment(payment.mp_payment_id)
+        seller_access_token = mp_connect_service.get_valid_access_token(payment.payee)
+        mercadopago_gateway.refund_payment(payment.mp_payment_id, seller_access_token)
     except MercadoPagoError as e:
         raise errors.bad_gateway(
             f"Não foi possível estornar o pagamento agora ({e}). "
@@ -307,13 +317,19 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
         return
 
     try:
-        remote_status = mercadopago_gateway.get_payment_status(data_id)
+        seller_access_token = mp_connect_service.get_valid_access_token(payment.payee)
+        remote_status = mercadopago_gateway.get_payment_status(
+            data_id, seller_access_token
+        )
     except MercadoPagoError as e:
         raise errors.bad_gateway(
             f"Não foi possível confirmar o status do pagamento agora ({e})."
         ) from e
 
-    if remote_status == "approved":
+    # "processed"/"accredited" is the Orders API's confirmed-Pix terminal
+    # status (confirmed live against the sandbox — the Advanced Payments-era
+    # API this replaced used "approved" instead).
+    if remote_status == "processed":
         payment.update(status="held", held_at=utcnow())
         # payment_status on the LoanRequest tracks the rental charge only —
         # it's what gates confirm_pickup. An extension payment reaching
@@ -329,15 +345,13 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
             # No escrow gate applies to extensions — the extra days were
             # already granted when the owner approved, so release as soon
             # as the charge itself is confirmed instead of waiting for some
-            # other event.
-            try:
-                _release_payment_doc(payment)
-            except MercadoPagoError as e:
-                logger.error(
-                    "extension payment release failed, left held for manual follow-up",
-                    extra={"mp_payment_id": data_id, "error": str(e)},
-                )
-    elif remote_status in ("rejected", "cancelled"):
+            # other event. (Rentals still wait for pickup confirmation via
+            # lifecycle.py's release_payment(req) call — Mercado Pago has
+            # already settled the seller's share by this point either way
+            # [see mercadopago_gateway's module docstring], but the
+            # LoanRequest-level gate/UX still tracks pickup, unchanged.)
+            _release_payment_doc(payment)
+    elif remote_status in ("failed", "rejected", "cancelled"):
         payment.update(status="failed")
         if payment.kind == "rental":
             payment.loan_request.update(payment_status="failed", updated_at=utcnow())

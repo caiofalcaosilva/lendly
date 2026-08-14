@@ -524,10 +524,9 @@ def _make_paid_loan_request():
 
 def test_release_payment_records_activity_for_payer_and_payee(client):
     req, payment = _make_paid_loan_request()
-    with patch.object(
-        payment_service.mercadopago_gateway, "release_payment", return_value=None
-    ):
-        payment_service.release_payment(req)
+    # release_payment is pure bookkeeping now — no gateway call to mock
+    # (see its docstring in payment_service.py).
+    payment_service.release_payment(req)
 
     payer_activities = activity_service.list_activities(
         req.requester, before_id=None, limit=10

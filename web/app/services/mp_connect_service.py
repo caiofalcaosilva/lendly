@@ -6,10 +6,13 @@ from app.schemas.payment import MercadoPagoConnectResponse, MercadoPagoConnectSt
 from app.services import activity_service, mercadopago_gateway
 from app.services.mercadopago_gateway import MercadoPagoError
 from app.utils import errors
-from app.utils.crypto import encrypt
+from app.utils.crypto import decrypt, encrypt
 from app.utils.time import utcnow
 
 _REDIRECT_PATH = "/mercadopago/callback"
+# Refresh a bit before the real expiry rather than exactly at it, so a
+# token that's valid-but-about-to-expire when checked doesn't die mid-request.
+_REFRESH_MARGIN = timedelta(minutes=5)
 
 
 def get_connect_url(current_user: User) -> MercadoPagoConnectResponse:
@@ -61,3 +64,30 @@ def get_connect_status(current_user: User) -> MercadoPagoConnectStatus:
         connected=bool(current_user.mp_user_id),
         connected_at=current_user.mp_connected_at,
     )
+
+
+def get_valid_access_token(user: User) -> str:
+    """Decrypts the connected seller's stored access token, transparently
+    refreshing it first if it's expired (or close to it) — introduced for
+    the Orders API migration: unlike the old Advanced Payments flow, every
+    charge/status-check/refund now runs *as* the seller, so this token
+    actually gets used instead of just sitting on the User doc."""
+    if not user.mp_access_token or not user.mp_refresh_token:
+        raise MercadoPagoError(
+            f"Usuário {user.id} não tem conta Mercado Pago conectada"
+        )
+
+    if (
+        user.mp_token_expires_at
+        and utcnow() < user.mp_token_expires_at - _REFRESH_MARGIN
+    ):
+        return decrypt(user.mp_access_token)
+
+    token_data = mercadopago_gateway.refresh_oauth_token(decrypt(user.mp_refresh_token))
+    expires_in = token_data.get("expires_in", 15552000)  # MP default ~6 months
+    user.update(
+        mp_access_token=encrypt(token_data["access_token"]),
+        mp_refresh_token=encrypt(token_data["refresh_token"]),
+        mp_token_expires_at=utcnow() + timedelta(seconds=expires_in),
+    )
+    return str(token_data["access_token"])

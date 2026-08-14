@@ -84,8 +84,9 @@ def test_approving_extension_on_paid_item_creates_extension_charge(
 
     LoanRequest.objects(id=req["id"]).update(payment_status="held")
 
-    with patch.object(payment_service.mercadopago_gateway, "release_payment"):
-        _confirm_pickup_paid(client, req["id"], owner_token, requester_token)
+    # release_payment is pure bookkeeping now — no gateway call to mock
+    # (see its docstring in payment_service.py).
+    _confirm_pickup_paid(client, req["id"], owner_token, requester_token)
 
     get_before = client.get(
         f"/requests/{req['id']}", headers={"Authorization": f"Bearer {requester_token}"}

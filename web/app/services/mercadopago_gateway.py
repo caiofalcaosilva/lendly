@@ -1,7 +1,20 @@
 """Only module that imports `mercadopago` directly, so a wrong assumption
-is one file to fix. Not yet run against a real sandbox account (see
-docs/pagamento-online.md) — create_pix_charge()'s Pix QR fields on an
-Advanced Payment are our best reading of the SDK, unconfirmed live."""
+is one file to fix. Uses the Orders API (POST /v1/orders) rather than the
+older Advanced Payments API (/v1/advanced_payments) that Lendly originally
+shipped against — that one no longer appears in Mercado Pago's own docs
+(its reference page 404s live) and the app the platform is registered
+under was provisioned for Orders + Checkout Transparente. Confirmed live
+against a real sandbox app on 2026-08-14 — see docs/pagamento-online.md.
+
+Charging functions authenticate as the connected SELLER's own OAuth access
+token (see mp_connect_service.get_valid_access_token), not the platform's —
+`marketplace_fee` is what the platform keeps, the rest settles straight to
+the seller. Pix orders reject capture_mode="manual" outright (confirmed:
+the API's validation error names only credit_card/debit_card/wallet as
+valid there), so unlike the old Advanced Payments flow there is no
+"hold, then release at pickup" step anymore — the seller's share lands the
+moment the Pix is confirmed. See handle_webhook in payment_service.py for
+how the payment_status state machine adapted to that."""
 
 import logging
 import uuid
@@ -9,7 +22,6 @@ import uuid
 import mercadopago
 
 from app.config import settings
-from app.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +32,8 @@ class MercadoPagoError(Exception):
     is what turns a bad status into an actual exception."""
 
 
-def _sdk(access_token: str | None = None) -> mercadopago.SDK:
-    return mercadopago.SDK(access_token or settings.MP_ACCESS_TOKEN)
+def _sdk(access_token: str) -> mercadopago.SDK:
+    return mercadopago.SDK(access_token)
 
 
 def _unwrap(result: dict, action: str) -> dict:
@@ -42,11 +54,13 @@ def _unwrap(result: dict, action: str) -> dict:
 
 
 # ─── OAuth (seller connects their own Mercado Pago account) ──────────────────
+# Unchanged from the Advanced Payments-era integration — same endpoints,
+# still run as the platform's own app (settings.MP_ACCESS_TOKEN).
 
 
 def get_authorization_url(redirect_uri: str, state: str) -> str:
     return (
-        _sdk()
+        _sdk(settings.MP_ACCESS_TOKEN)
         .oauth()
         .get_authorization_url(
             app_id=settings.MP_APP_ID,
@@ -59,7 +73,7 @@ def get_authorization_url(redirect_uri: str, state: str) -> str:
 def exchange_oauth_code(code: str, redirect_uri: str) -> dict:
     """Returns dict with access_token, refresh_token, user_id, expires_in."""
     result = (
-        _sdk()
+        _sdk(settings.MP_ACCESS_TOKEN)
         .oauth()
         .create(
             {
@@ -76,7 +90,7 @@ def exchange_oauth_code(code: str, redirect_uri: str) -> dict:
 
 def refresh_oauth_token(refresh_token: str) -> dict:
     result = (
-        _sdk()
+        _sdk(settings.MP_ACCESS_TOKEN)
         .oauth()
         .refresh(
             {
@@ -90,7 +104,10 @@ def refresh_oauth_token(refresh_token: str) -> dict:
     return _unwrap(result, "OAuth token refresh")
 
 
-# ─── Charging the requester, holding, releasing, refunding ───────────────────
+# ─── Charging the requester, checking status, refunding ──────────────────────
+# All three run as the seller (seller_access_token), since the order (and
+# whatever it's later queried/refunded through) belongs to whichever
+# account created it.
 
 
 def create_pix_charge(
@@ -98,61 +115,61 @@ def create_pix_charge(
     external_reference: str,
     payer_email: str,
     gross_amount: float,
-    platform_fee_amount: float,
-    seller_mp_user_id: str,
+    marketplace_fee_amount: float,
+    seller_access_token: str,
 ) -> dict:
-    """Creates the Pix charge for a loan request. Splits `platform_fee_amount`
-    to Lendly, the rest to the seller's connected account — but held (not
-    released) until release_payment() is called at pickup check-in.
+    """Creates the Pix order for a loan request, run as the seller with
+    `marketplace_fee` withheld for the platform — the rest settles to the
+    seller immediately once Mercado Pago confirms the Pix (see module
+    docstring: there's no delayed-release step for Pix in this API).
 
     Returns dict with: mp_payment_id, status, pix_qr_code, pix_qr_code_base64.
     """
-    advanced_payment_object = {
+    order_object = {
+        "type": "online",
+        "total_amount": f"{gross_amount:.2f}",
         "external_reference": external_reference,
+        "processing_mode": "automatic",
+        "marketplace_fee": f"{marketplace_fee_amount:.2f}",
+        "transactions": {
+            "payments": [
+                {
+                    "amount": f"{gross_amount:.2f}",
+                    "payment_method": {"id": "pix", "type": "bank_transfer"},
+                }
+            ]
+        },
         "payer": {"email": payer_email},
-        "payment_method_id": "pix",
-        "disbursements": [
-            {
-                "amount": round(gross_amount - platform_fee_amount, 2),
-                "external_reference": external_reference,
-                "collector_id": seller_mp_user_id,
-                "application_fee": round(platform_fee_amount, 2),
-                # Far-future placeholder — release_payment() does the real release.
-                "money_release_date": "2099-01-01T00:00:00.000-00:00",
-            }
-        ],
     }
-    result = _sdk().advanced_payment().create(advanced_payment_object)
-    response = _unwrap(result, "Pix charge creation")
-    poi = response.get("point_of_interaction", {}) or {}
-    transaction_data = poi.get("transaction_data", {}) or {}
+    result = _sdk(seller_access_token).order().create(order_object)
+    response = _unwrap(result, "Pix order creation")
+    payment = ((response.get("transactions") or {}).get("payments") or [{}])[0]
+    payment_method = payment.get("payment_method") or {}
     return {
         "mp_payment_id": str(response.get("id")),
         "status": response.get("status"),
-        "pix_qr_code": transaction_data.get("qr_code"),
-        "pix_qr_code_base64": transaction_data.get("qr_code_base64"),
+        "pix_qr_code": payment_method.get("qr_code"),
+        "pix_qr_code_base64": payment_method.get("qr_code_base64"),
     }
 
 
-def get_payment_status(mp_payment_id: str) -> str:
+def get_payment_status(mp_payment_id: str, seller_access_token: str) -> str:
     """Re-fetches the authoritative status directly from Mercado Pago —
     used by the webhook handler instead of trusting the notification body,
     so a forged POST can't fake an approval even with a guessed valid id."""
-    result = _sdk().advanced_payment().get(mp_payment_id)
+    result = _sdk(seller_access_token).order().get(mp_payment_id)
     return str(_unwrap(result, "payment status lookup").get("status"))
 
 
-def release_payment(mp_payment_id: str) -> None:
-    """Moves the seller's held disbursement into their available balance —
-    called the moment the requester's pickup QR scan is confirmed."""
-    result = _sdk().advanced_payment().update_release_date(mp_payment_id, utcnow())
-    _unwrap(result, "payment release")
-
-
-def refund_payment(mp_payment_id: str) -> None:
-    """Full refund of every disbursement — called only when cancellation
-    happens before pickup (payment_status == 'held', status != 'in_progress')."""
-    result = _sdk().disbursement_refund().create_all(mp_payment_id, {})
+def refund_payment(mp_payment_id: str, seller_access_token: str) -> None:
+    """Full refund — called only when cancellation happens before pickup
+    (payment_status == 'held', status != 'in_progress'). Since the seller's
+    share may already have settled to their account by this point (no more
+    delayed release for Pix, see module docstring), this relies on Mercado
+    Pago's marketplace refund behavior clawing that back automatically —
+    confirmed against the sandbox (see docs/pagamento-online.md), not yet
+    exercised against a real settled seller balance."""
+    result = _sdk(seller_access_token).order().refund(mp_payment_id)
     _unwrap(result, "payment refund")
 
 

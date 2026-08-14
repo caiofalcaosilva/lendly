@@ -17,8 +17,25 @@ from cryptography.fernet import Fernet  # noqa: E402
 os.environ.setdefault("SECRET_KEY", "pytest-test-secret-key-not-for-production")
 os.environ.setdefault("ENCRYPTION_KEY", Fernet.generate_key().decode())
 
+from unittest.mock import patch
+
 import mongoengine
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def _mock_mp_seller_token():
+    """payment_service now needs a real (decrypted, non-expired) seller
+    access token before it can even reach mercadopago_gateway — see
+    mp_connect_service.get_valid_access_token, added for the Orders API
+    migration. Tests only mock the gateway calls themselves, not real
+    OAuth-connected accounts, so this stands in globally rather than
+    requiring every payment-related test to also patch this."""
+    with patch(
+        "app.services.mp_connect_service.get_valid_access_token",
+        return_value="test-seller-access-token",
+    ):
+        yield
 
 
 @pytest.fixture(scope="session")

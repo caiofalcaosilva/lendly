@@ -74,7 +74,7 @@ def _finished_paid_request(client, register_user, suffix, declared_value=800.0):
         patch.object(
             payment_service.mercadopago_gateway,
             "get_payment_status",
-            return_value="approved",
+            return_value="processed",
         ),
     ):
         payment_service.handle_webhook(
@@ -83,13 +83,10 @@ def _finished_paid_request(client, register_user, suffix, declared_value=800.0):
             x_request_id="req-id",
         )
 
-    with patch.object(
-        payment_service.mercadopago_gateway, "release_payment", return_value=None
-    ):
-        client.patch(f"/requests/{request_id}/start", headers=owner_headers)
-        started = client.patch(
-            f"/requests/{request_id}/start", headers=requester_headers
-        )
+    # release_payment is pure bookkeeping now — no gateway call to mock
+    # (see its docstring in payment_service.py).
+    client.patch(f"/requests/{request_id}/start", headers=owner_headers)
+    started = client.patch(f"/requests/{request_id}/start", headers=requester_headers)
     assert started.json()["status"] == "in_progress"
 
     client.patch(f"/requests/{request_id}/finish", headers=owner_headers)
