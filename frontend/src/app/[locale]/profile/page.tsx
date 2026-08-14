@@ -4,7 +4,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle } from 'lucide-react'
+import { Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/contexts/AuthContext'
 import { usersService } from '@/services/users'
@@ -66,6 +66,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [showTotpSetup, setShowTotpSetup] = useState(false)
+  const [showDisableTotp, setShowDisableTotp] = useState(false)
   const [disablingTotp, setDisablingTotp] = useState(false)
   const [totpDisableCode, setTotpDisableCode] = useState('')
   const [totpDisableError, setTotpDisableError] = useState('')
@@ -302,6 +303,7 @@ export default function ProfilePage() {
       const updated = await authService.disableTotp(totpDisableCode)
       updateUser(updated)
       setTotpDisableCode('')
+      setShowDisableTotp(false)
     } catch (e: any) {
       setTotpDisableError(e.response?.data?.detail || t('errors.invalidCode'))
     } finally {
@@ -571,15 +573,6 @@ export default function ProfilePage() {
                 {/* Identity verification */}
                 {user && <IdentityVerificationSection user={user} updateUser={updateUser} />}
 
-                {/* Mercado Pago connection — required to sell paid items */}
-                <MercadoPagoConnectSection />
-
-                {/* Connected devices / active sessions */}
-                <SessionsSection />
-
-                {/* Passive login history */}
-                <LoginHistorySection />
-
                 {/* TOTP 2FA */}
                 <div className="p-4 rounded-panel border border-border bg-surface-2">
                   <div className="flex items-start justify-between gap-4">
@@ -607,33 +600,55 @@ export default function ProfilePage() {
 
                   {user?.totp_enabled && (
                     <div className="mt-4 pt-4 border-t border-border">
-                      <p className="text-xs text-ink-muted mb-2">{t('totpDisableHint')}</p>
-                      <div className="flex flex-wrap gap-2 items-start">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={6}
-                          placeholder="000000"
-                          value={totpDisableCode}
-                          onChange={(e) => setTotpDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          className="w-32 border border-border bg-surface text-ink rounded-control px-3 py-1.5 text-sm text-center font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-danger"
-                        />
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={handleDisableTotp}
-                          loading={disablingTotp}
-                          disabled={totpDisableCode.length < 6}
-                        >
-                          {t('disable2fa')}
-                        </Button>
-                      </div>
-                      {totpDisableError && (
-                        <p className="text-xs text-danger mt-1">{totpDisableError}</p>
+                      <button
+                        type="button"
+                        onClick={() => setShowDisableTotp((v) => !v)}
+                        className="flex items-center gap-1.5 text-sm font-medium text-danger"
+                      >
+                        {showDisableTotp ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        {t('disable2fa')}
+                      </button>
+
+                      {showDisableTotp && (
+                        <div className="mt-3">
+                          <p className="text-xs text-ink-muted mb-2">{t('totpDisableHint')}</p>
+                          <div className="flex flex-wrap gap-2 items-start">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              placeholder="000000"
+                              value={totpDisableCode}
+                              onChange={(e) => setTotpDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                              className="w-32 border border-border bg-surface text-ink rounded-control px-3 py-1.5 text-sm text-center font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-danger"
+                            />
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={handleDisableTotp}
+                              loading={disablingTotp}
+                              disabled={totpDisableCode.length < 6}
+                            >
+                              {t('disable2fa')}
+                            </Button>
+                          </div>
+                          {totpDisableError && (
+                            <p className="text-xs text-danger mt-1">{totpDisableError}</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
                 </div>
+
+                {/* Mercado Pago connection — required to sell paid items */}
+                <MercadoPagoConnectSection />
+
+                {/* Connected devices / active sessions */}
+                <SessionsSection />
+
+                {/* Passive login history */}
+                <LoginHistorySection />
               </div>
             </div>
           )}
