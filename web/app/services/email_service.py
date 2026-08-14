@@ -1,6 +1,8 @@
 import asyncio
+import json
 import logging
 import smtplib
+import urllib.request
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -8,33 +10,64 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-
 # No timeout on smtplib.SMTP() means a network that silently drops outbound
 # packets to SMTP_HOST/SMTP_PORT (rather than actively refusing the
 # connection — common on cloud hosts that block outbound SMTP) hangs this
 # call forever instead of raising. A background task stuck like that never
 # logs anything and never shows up at the provider either, indistinguishable
 # from "never ran" — this bounds it so a blocked port fails fast and loud.
-_SMTP_TIMEOUT_SECONDS = 15
+_TIMEOUT_SECONDS = 15
 
 
-def _send_sync(to: str, subject: str, html: str) -> None:
-    logger.info("sending email", extra={"to": to, "subject": subject})
+def _send_via_resend_api(to: str, subject: str, html: str) -> None:
+    """HTTPS (443) instead of SMTP — used whenever RESEND_API_KEY is set.
+    Render (and other hosts) block outbound SMTP ports outright, which is
+    exactly what _send_via_smtp below hits in production; plain HTTPS to
+    Resend's API sidesteps that entirely. See settings.RESEND_API_KEY."""
+    body = json.dumps(
+        {"from": settings.SMTP_FROM, "to": [to], "subject": subject, "html": html}
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+            "Content-Type": "application/json",
+            # Cloudflare (fronting Resend's API) blocks urllib's default
+            # "Python-urllib/x.y" User-Agent as a bot signature (403, "error
+            # code: 1010") — any normal-looking value clears it.
+            "User-Agent": "Lendly/1.0",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=_TIMEOUT_SECONDS):
+        pass
+
+
+def _send_via_smtp(to: str, subject: str, html: str) -> None:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = settings.SMTP_FROM
     msg["To"] = to
     msg.attach(MIMEText(html, "html"))
 
+    with smtplib.SMTP(
+        settings.SMTP_HOST, settings.SMTP_PORT, timeout=_TIMEOUT_SECONDS
+    ) as server:
+        if settings.SMTP_TLS:
+            server.starttls()
+        if settings.SMTP_USER:
+            server.login(settings.SMTP_USER, settings.SMTP_PASS)
+        server.sendmail(settings.SMTP_FROM, to, msg.as_string())
+
+
+def _send_sync(to: str, subject: str, html: str) -> None:
+    logger.info("sending email", extra={"to": to, "subject": subject})
     try:
-        with smtplib.SMTP(
-            settings.SMTP_HOST, settings.SMTP_PORT, timeout=_SMTP_TIMEOUT_SECONDS
-        ) as server:
-            if settings.SMTP_TLS:
-                server.starttls()
-            if settings.SMTP_USER:
-                server.login(settings.SMTP_USER, settings.SMTP_PASS)
-            server.sendmail(settings.SMTP_FROM, to, msg.as_string())
+        if settings.RESEND_API_KEY:
+            _send_via_resend_api(to, subject, html)
+        else:
+            _send_via_smtp(to, subject, html)
         logger.info("email sent", extra={"to": to, "subject": subject})
     except Exception:
         # Always called from a fire-and-forget BackgroundTask (see call

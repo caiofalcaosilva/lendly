@@ -9,13 +9,19 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
-    # Email
+    # Email — SMTP is used locally (Mailhog). In production, prefer
+    # RESEND_API_KEY: several hosts (Render included) block outbound SMTP
+    # ports entirely, which makes smtplib hang or time out with no usable
+    # error, whereas Resend's HTTP API rides plain HTTPS (443), which is
+    # never blocked. Blank by default — same "inert until filled in"
+    # pattern as Mercado Pago/R2 below. See app/services/email_service.py.
     SMTP_HOST: str = "mailhog"
     SMTP_PORT: int = 1025
     SMTP_USER: str = ""
     SMTP_PASS: str = ""
     SMTP_FROM: str = "noreply@lendly.com.br"
     SMTP_TLS: bool = False
+    RESEND_API_KEY: str = ""
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
 
     # App
