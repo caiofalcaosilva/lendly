@@ -4,7 +4,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { UserCog, Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle, Bell } from 'lucide-react'
+import { Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/contexts/AuthContext'
 import { usersService } from '@/services/users'
@@ -15,6 +15,7 @@ import Textarea from '@/components/ui/Textarea'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import AddressFields from '@/components/ui/AddressFields'
+import Tabs from '@/components/ui/Tabs'
 import TotpSetupModal from '@/components/auth/TotpSetupModal'
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal'
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal'
@@ -34,6 +35,18 @@ import { useToast } from '@/contexts/ToastContext'
 
 const opt = z.string().optional().or(z.literal(''))
 
+type ProfileTabId = 'perfil' | 'seguranca' | 'notificacoes' | 'conta'
+
+// Inbound deep links (Navbar's warning banners, ItemDetailClient's identity
+// verification prompt) point at these element ids expecting them to be on
+// the page — since they now live inside a specific tab's panel, this maps
+// each id to the tab that needs to be selected before the element can be
+// found and scrolled to.
+const SECTION_TAB_MAP: Record<string, ProfileTabId> = {
+  'email-verification': 'seguranca',
+  'identity-verification': 'seguranca',
+}
+
 function formatAddress(user: { street?: string; number?: string; complement?: string; neighborhood?: string; city?: string; state?: string; zip_code?: string }) {
   const parts = [
     user.street && user.number ? `${user.street}, ${user.number}` : user.street,
@@ -48,6 +61,7 @@ function formatAddress(user: { street?: string; number?: string; complement?: st
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading: authLoading, updateUser, logout } = useAuth()
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<ProfileTabId>('perfil')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -112,14 +126,32 @@ export default function ProfilePage() {
     },
   })
 
+  // Hash -> tab: runs on mount and whenever the hash changes (covers both a
+  // fresh navigation into /profile#x and a same-page anchor click while
+  // already here).
+  useEffect(() => {
+    const syncTabFromHash = () => {
+      const tab = SECTION_TAB_MAP[window.location.hash.slice(1)]
+      if (tab) setActiveTab(tab)
+    }
+    syncTabFromHash()
+    window.addEventListener('hashchange', syncTabFromHash)
+    return () => window.removeEventListener('hashchange', syncTabFromHash)
+  }, [])
+
+  // Scroll + flash the hash target. Reruns whenever activeTab changes (so it
+  // retries once a just-switched-to panel has mounted) AND listens for
+  // hashchange directly (so a hash change to a different target *within the
+  // same tab* — e.g. email-verification -> identity-verification, both in
+  // "seguranca" — still re-flashes even though activeTab itself didn't change
+  // and this effect wouldn't otherwise rerun).
   useEffect(() => {
     const flashTarget = () => {
-      const el = document.getElementById(window.location.hash.slice(1))
+      const hash = window.location.hash.slice(1)
+      if (!hash) return
+      if (SECTION_TAB_MAP[hash] && SECTION_TAB_MAP[hash] !== activeTab) return
+      const el = document.getElementById(hash)
       if (!el) return
-      // scroll-mt utilities use a fixed value, but the sticky header's real
-      // height varies with how many warning banners (email, identity, ...)
-      // are stacked in it — a fixed offset leaves the target tucked under
-      // the header when more than one is showing. Measure it instead.
       const headerHeight = document.querySelector('nav')?.getBoundingClientRect().height ?? 96
       const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 16
       window.scrollTo({ top, behavior: 'smooth' })
@@ -129,7 +161,7 @@ export default function ProfilePage() {
     flashTarget()
     window.addEventListener('hashchange', flashTarget)
     return () => window.removeEventListener('hashchange', flashTarget)
-  }, [])
+  }, [activeTab])
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -287,6 +319,13 @@ export default function ProfilePage() {
 
   const addressLine = user ? formatAddress(user) : ''
 
+  const tabItems = [
+    { id: 'perfil', label: t('tabs.profile') },
+    { id: 'seguranca', label: t('tabs.security') },
+    { id: 'notificacoes', label: t('tabs.notifications') },
+    { id: 'conta', label: t('tabs.account') },
+  ]
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="mb-8">
@@ -390,262 +429,269 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Form */}
+        {/* Tabbed content */}
         <div className="md:col-span-2">
-          <div className="bg-surface rounded-panel border border-border p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <UserCog className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-ink">{t('personalInfo')}</h2>
-            </div>
+          <Tabs items={tabItems} activeId={activeTab} onChange={(id) => setActiveTab(id as ProfileTabId)} />
 
-            {error && (
-              <div className="mb-5 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
-                {error}
-              </div>
-            )}
-
-            {saved && (
-              <div className="mb-5 p-3 bg-primary-subtle border border-primary/30 text-primary rounded-control text-sm flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                {t('savedSuccess')}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <Input
-                label={t('fullName')}
-                {...register('name')}
-                error={errors.name?.message}
-                placeholder="Maria Silva"
-                required
-              />
-
-              <Input
-                label={t('phoneLabel')}
-                type="tel"
-                {...register('phone')}
-                error={errors.phone?.message}
-                placeholder="(11) 99999-0000"
-                helper={t('phoneHelper')}
-              />
-
-              <Textarea
-                label={user?.account_type === 'business' ? t('aboutBusiness') : t('aboutYou')}
-                {...register('bio')}
-                rows={3}
-                maxLength={500}
-                placeholder={
-                  user?.account_type === 'business'
-                    ? t('bioPlaceholderBusiness')
-                    : t('bioPlaceholderIndividual')
-                }
-                className="resize-none"
-                error={errors.bio?.message}
-              />
-
-              <div className="pt-4 border-t border-border">
-                <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-4 h-4 text-ink-subtle" />
-                  <h3 className="text-sm font-medium text-ink-muted">{t('address')}</h3>
-                  <span className="text-xs text-ink-subtle">{t('addressPrivacyHint')}</span>
+          {activeTab === 'perfil' && (
+            <div className="bg-surface rounded-panel border border-border p-6">
+              {error && (
+                <div className="mb-5 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
+                  {error}
                 </div>
+              )}
 
-                <AddressFields
-                  control={control as any}
-                  register={register}
-                  setValue={setValue as any}
-                  errors={errors}
+              {saved && (
+                <div className="mb-5 p-3 bg-primary-subtle border border-primary/30 text-primary rounded-control text-sm flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  {t('savedSuccess')}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <Input
+                  label={t('fullName')}
+                  {...register('name')}
+                  error={errors.name?.message}
+                  placeholder="Maria Silva"
+                  required
                 />
-              </div>
 
-              {user?.account_type === 'business' && (
+                <Input
+                  label={t('phoneLabel')}
+                  type="tel"
+                  {...register('phone')}
+                  error={errors.phone?.message}
+                  placeholder="(11) 99999-0000"
+                  helper={t('phoneHelper')}
+                />
+
+                <Textarea
+                  label={user?.account_type === 'business' ? t('aboutBusiness') : t('aboutYou')}
+                  {...register('bio')}
+                  rows={3}
+                  maxLength={500}
+                  placeholder={
+                    user?.account_type === 'business'
+                      ? t('bioPlaceholderBusiness')
+                      : t('bioPlaceholderIndividual')
+                  }
+                  className="resize-none"
+                  error={errors.bio?.message}
+                />
+
                 <div className="pt-4 border-t border-border">
                   <div className="flex items-center gap-2 mb-4">
-                    <Building2 className="w-4 h-4 text-ink-subtle" />
-                    <h3 className="text-sm font-medium text-ink-muted">{t('businessData')}</h3>
+                    <MapPin className="w-4 h-4 text-ink-subtle" />
+                    <h3 className="text-sm font-medium text-ink-muted">{t('address')}</h3>
+                    <span className="text-xs text-ink-subtle">{t('addressPrivacyHint')}</span>
                   </div>
 
-                  <div className="space-y-4">
-                    <Input
-                      label="CNPJ"
-                      {...register('cnpj')}
-                      onBlur={(e) => setValue('cnpj', formatCnpj(e.target.value), { shouldDirty: true })}
-                      error={errors.cnpj?.message}
-                    />
-                    <Input label={t('companyName')} {...register('company_name')} error={errors.company_name?.message} />
-                    <Input label={t('tradeName')} {...register('trade_name')} />
-                    <Input label={t('businessCategory')} {...register('business_category')} placeholder="Ex: Ferramentas e equipamentos" />
-                    <Input label={t('businessPhone')} type="tel" {...register('business_phone')} />
-                    <Input label={t('businessHours')} {...register('business_hours')} placeholder="Ex: Seg-Sex 9h-18h" />
-                    <Input label={t('website')} type="url" {...register('website')} placeholder="https://" />
-                    <Input label="Instagram" {...register('instagram')} placeholder="@sua_empresa" />
-                    <Input label="WhatsApp" type="tel" {...register('whatsapp')} placeholder="(11) 99999-0000" />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <Button type="submit" loading={saving} disabled={!isDirty} className="flex-1">
-                  {t('saveChanges')}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>
-                  {t('back')}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      {/* Security section */}
-      <div className="mt-6 bg-surface rounded-panel border border-border p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <ShieldCheck className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-ink">{t('security')}</h2>
-        </div>
-
-        <div className="space-y-5">
-          {/* Email verification */}
-          <div id="email-verification" className="flex items-start justify-between gap-4 p-4 rounded-panel border border-border bg-surface-2 scroll-mt-24 transition-shadow duration-700">
-            <div className="flex items-start gap-3">
-              {user?.is_verified ? (
-                <MailCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-              ) : (
-                <MailWarning className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
-              )}
-              <div>
-                <p className="text-sm font-medium text-ink">{t('emailVerification')}</p>
-                <p className="text-xs text-ink-muted mt-0.5">
-                  {user?.is_verified
-                    ? t('emailVerified')
-                    : t('emailNotVerified')}
-                </p>
-              </div>
-            </div>
-            {!user?.is_verified && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={resendEmail}
-                loading={resendingEmail}
-                disabled={emailResent}
-              >
-                {emailResent ? (
-                  <><CheckCircle2 className="w-3.5 h-3.5 text-primary" /> {t('sent')}</>
-                ) : t('resend')}
-              </Button>
-            )}
-          </div>
-
-          {/* Identity verification */}
-          {user && <IdentityVerificationSection user={user} updateUser={updateUser} />}
-
-          {/* Mercado Pago connection — required to sell paid items */}
-          <MercadoPagoConnectSection />
-
-          {/* Connected devices / active sessions */}
-          <SessionsSection />
-
-          {/* TOTP 2FA */}
-          <div className="p-4 rounded-panel border border-border bg-surface-2">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                {user?.totp_enabled ? (
-                  <ShieldCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                ) : (
-                  <ShieldOff className="w-5 h-5 text-ink-subtle mt-0.5 flex-shrink-0" />
-                )}
-                <div>
-                  <p className="text-sm font-medium text-ink">{t('totpTitle')}</p>
-                  <p className="text-xs text-ink-muted mt-0.5">
-                    {user?.totp_enabled
-                      ? t('totpEnabled')
-                      : t('totpDisabled')}
-                  </p>
-                </div>
-              </div>
-              {!user?.totp_enabled && (
-                <Button size="sm" onClick={() => setShowTotpSetup(true)}>
-                  {t('activate')}
-                </Button>
-              )}
-            </div>
-
-            {user?.totp_enabled && (
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-xs text-ink-muted mb-2">{t('totpDisableHint')}</p>
-                <div className="flex flex-wrap gap-2 items-start">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="000000"
-                    value={totpDisableCode}
-                    onChange={(e) => setTotpDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="w-32 border border-border bg-surface text-ink rounded-control px-3 py-1.5 text-sm text-center font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-danger"
+                  <AddressFields
+                    control={control as any}
+                    register={register}
+                    setValue={setValue as any}
+                    errors={errors}
                   />
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={handleDisableTotp}
-                    loading={disablingTotp}
-                    disabled={totpDisableCode.length < 6}
-                  >
-                    {t('disable2fa')}
+                </div>
+
+                {user?.account_type === 'business' && (
+                  <div className="pt-4 border-t border-border">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Building2 className="w-4 h-4 text-ink-subtle" />
+                      <h3 className="text-sm font-medium text-ink-muted">{t('businessData')}</h3>
+                    </div>
+
+                    <div className="space-y-4">
+                      <Input
+                        label="CNPJ"
+                        {...register('cnpj')}
+                        onBlur={(e) => setValue('cnpj', formatCnpj(e.target.value), { shouldDirty: true })}
+                        error={errors.cnpj?.message}
+                      />
+                      <Input label={t('companyName')} {...register('company_name')} error={errors.company_name?.message} />
+                      <Input label={t('tradeName')} {...register('trade_name')} />
+                      <Input label={t('businessCategory')} {...register('business_category')} placeholder="Ex: Ferramentas e equipamentos" />
+                      <Input label={t('businessPhone')} type="tel" {...register('business_phone')} />
+                      <Input label={t('businessHours')} {...register('business_hours')} placeholder="Ex: Seg-Sex 9h-18h" />
+                      <Input label={t('website')} type="url" {...register('website')} placeholder="https://" />
+                      <Input label="Instagram" {...register('instagram')} placeholder="@sua_empresa" />
+                      <Input label="WhatsApp" type="tel" {...register('whatsapp')} placeholder="(11) 99999-0000" />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <Button type="submit" loading={saving} disabled={!isDirty} className="flex-1">
+                    {t('saveChanges')}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>
+                    {t('back')}
                   </Button>
                 </div>
-                {totpDisableError && (
-                  <p className="text-xs text-danger mt-1">{totpDisableError}</p>
-                )}
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'seguranca' && (
+            <div className="bg-surface rounded-panel border border-border p-6">
+              <div className="space-y-5">
+                {/* Email verification */}
+                <div id="email-verification" className="flex items-start justify-between gap-4 p-4 rounded-panel border border-border bg-surface-2 scroll-mt-24 transition-shadow duration-700">
+                  <div className="flex items-start gap-3">
+                    {user?.is_verified ? (
+                      <MailCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <MailWarning className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-ink">{t('emailVerification')}</p>
+                      <p className="text-xs text-ink-muted mt-0.5">
+                        {user?.is_verified
+                          ? t('emailVerified')
+                          : t('emailNotVerified')}
+                      </p>
+                    </div>
+                  </div>
+                  {!user?.is_verified && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={resendEmail}
+                      loading={resendingEmail}
+                      disabled={emailResent}
+                    >
+                      {emailResent ? (
+                        <><CheckCircle2 className="w-3.5 h-3.5 text-primary" /> {t('sent')}</>
+                      ) : t('resend')}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Identity verification */}
+                {user && <IdentityVerificationSection user={user} updateUser={updateUser} />}
+
+                {/* Mercado Pago connection — required to sell paid items */}
+                <MercadoPagoConnectSection />
+
+                {/* Connected devices / active sessions */}
+                <SessionsSection />
+
+                {/* Passive login history */}
+                <LoginHistorySection />
+
+                {/* TOTP 2FA */}
+                <div className="p-4 rounded-panel border border-border bg-surface-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      {user?.totp_enabled ? (
+                        <ShieldCheck className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <ShieldOff className="w-5 h-5 text-ink-subtle mt-0.5 flex-shrink-0" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-ink">{t('totpTitle')}</p>
+                        <p className="text-xs text-ink-muted mt-0.5">
+                          {user?.totp_enabled
+                            ? t('totpEnabled')
+                            : t('totpDisabled')}
+                        </p>
+                      </div>
+                    </div>
+                    {!user?.totp_enabled && (
+                      <Button size="sm" onClick={() => setShowTotpSetup(true)}>
+                        {t('activate')}
+                      </Button>
+                    )}
+                  </div>
+
+                  {user?.totp_enabled && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <p className="text-xs text-ink-muted mb-2">{t('totpDisableHint')}</p>
+                      <div className="flex flex-wrap gap-2 items-start">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="000000"
+                          value={totpDisableCode}
+                          onChange={(e) => setTotpDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          className="w-32 border border-border bg-surface text-ink rounded-control px-3 py-1.5 text-sm text-center font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-danger"
+                        />
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={handleDisableTotp}
+                          loading={disablingTotp}
+                          disabled={totpDisableCode.length < 6}
+                        >
+                          {t('disable2fa')}
+                        </Button>
+                      </div>
+                      {totpDisableError && (
+                        <p className="text-xs text-danger mt-1">{totpDisableError}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {activeTab === 'notificacoes' && (
+            <div className="bg-surface rounded-panel border border-border p-6">
+              <div className="space-y-5">
+                {/* Email notification toggles */}
+                {user && <NotificationPreferencesSection user={user} updateUser={updateUser} />}
+
+                {/* In-app (bell) notification toggles — separate from email */}
+                {user && <InAppNotificationPreferencesSection user={user} updateUser={updateUser} />}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'conta' && user && (
+            <div className="space-y-6">
+              {/* Pause account — reversible, unlike deletion below */}
+              <div className="bg-surface rounded-panel border border-warning/30 p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <PauseCircle className="w-5 h-5 text-warning" />
+                  <h2 className="font-semibold text-ink">
+                    {user.is_paused ? t('accountPaused') : t('pauseAccount')}
+                  </h2>
+                </div>
+                <p className="text-sm text-ink-muted mb-4">
+                  {user.is_paused
+                    ? t('pausedDescription')
+                    : t('pauseDescription')}
+                </p>
+                <Button
+                  variant={user.is_paused ? 'secondary' : 'outline'}
+                  size="sm"
+                  loading={pausing}
+                  onClick={requestTogglePause}
+                >
+                  {user.is_paused ? t('reactivateAccount') : t('pauseAccount')}
+                </Button>
+              </div>
+
+              {/* Danger zone */}
+              <div className="bg-surface rounded-panel border border-danger/30 p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <ShieldOff className="w-5 h-5 text-danger" />
+                  <h2 className="font-semibold text-ink">{t('dangerZone')}</h2>
+                </div>
+                <p className="text-sm text-ink-muted mb-4">
+                  {t('deleteAccountNotice')}
+                </p>
+                <Button variant="danger" size="sm" onClick={() => setShowDeleteAccount(true)}>
+                  {t('deleteAccount')}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* History & notifications section */}
-      <div className="mt-6 bg-surface rounded-panel border border-border p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Bell className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-ink">{t('historyAndNotifications')}</h2>
-        </div>
-
-        <div className="space-y-5">
-          {/* Passive login history */}
-          <LoginHistorySection />
-
-          {/* Email notification toggles */}
-          {user && <NotificationPreferencesSection user={user} updateUser={updateUser} />}
-
-          {/* In-app (bell) notification toggles — separate from email */}
-          {user && <InAppNotificationPreferencesSection user={user} updateUser={updateUser} />}
-        </div>
-      </div>
-
-      {/* Pause account — reversible, unlike deletion below */}
-      {user && (
-        <div className="mt-6 bg-surface rounded-panel border border-warning/30 p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <PauseCircle className="w-5 h-5 text-warning" />
-            <h2 className="font-semibold text-ink">
-              {user.is_paused ? t('accountPaused') : t('pauseAccount')}
-            </h2>
-          </div>
-          <p className="text-sm text-ink-muted mb-4">
-            {user.is_paused
-              ? t('pausedDescription')
-              : t('pauseDescription')}
-          </p>
-          <Button
-            variant={user.is_paused ? 'secondary' : 'outline'}
-            size="sm"
-            loading={pausing}
-            onClick={requestTogglePause}
-          >
-            {user.is_paused ? t('reactivateAccount') : t('pauseAccount')}
-          </Button>
-        </div>
-      )}
 
       <ConfirmDialog
         open={showPauseConfirm}
@@ -656,20 +702,6 @@ export default function ProfilePage() {
         confirmLabel={t('pauseAccount')}
         loading={pausing}
       />
-
-      {/* Danger zone */}
-      <div className="mt-6 bg-surface rounded-panel border border-danger/30 p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <ShieldOff className="w-5 h-5 text-danger" />
-          <h2 className="font-semibold text-ink">{t('dangerZone')}</h2>
-        </div>
-        <p className="text-sm text-ink-muted mb-4">
-          {t('deleteAccountNotice')}
-        </p>
-        <Button variant="danger" size="sm" onClick={() => setShowDeleteAccount(true)}>
-          {t('deleteAccount')}
-        </Button>
-      </div>
 
       {showTotpSetup && (
         <TotpSetupModal

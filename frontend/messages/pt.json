@@ -1156,7 +1156,12 @@
     "saveChanges": "Salvar alterações",
     "back": "Voltar",
     "security": "Segurança",
-    "historyAndNotifications": "Histórico e notificações",
+    "tabs": {
+      "profile": "Perfil",
+      "security": "Segurança",
+      "notifications": "Notificações",
+      "account": "Conta"
+    },
     "emailVerification": "Verificação de e-mail",
     "emailVerified": "Seu e-mail foi verificado.",
     "emailNotVerified": "E-mail ainda não verificado. Verifique sua caixa de entrada.",
