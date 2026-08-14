@@ -1,6 +1,6 @@
 'use client'
 import { Link, usePathname, useRouter } from '@/i18n/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Menu, X, Plus, MailWarning, Sun, Moon, ShieldQuestion, Megaphone, Eye } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -24,6 +24,8 @@ export default function Navbar() {
   const t = useTranslations('Common.Navbar')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [announcement, setAnnouncement] = useState<string | null>(null)
+  const topBarRef = useRef<HTMLDivElement>(null)
+  const [topBarHeight, setTopBarHeight] = useState(0)
 
   useEffect(() => {
     platformSettingsService.announcement().then((a) => {
@@ -32,6 +34,25 @@ export default function Navbar() {
       }
     })
   }, [])
+
+  // The mobile menu panel is `fixed` (see render below) precisely so it can
+  // scroll independently of the page underneath — position it right below
+  // whatever's currently in the sticky bar above it (banners + the h-16 row,
+  // whose combined height varies with which banners are showing), and lock
+  // background scroll while it's open so that height can't shift under it.
+  useEffect(() => {
+    if (!mobileOpen) return
+    setTopBarHeight(topBarRef.current?.getBoundingClientRect().bottom ?? 0)
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [mobileOpen])
 
   const dismissAnnouncement = () => {
     if (announcement) localStorage.setItem(ANNOUNCEMENT_DISMISSED_KEY, announcement)
@@ -65,6 +86,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-surface border-b border-border sticky top-0 z-40 transition-colors">
+      <div ref={topBarRef}>
       {viewAsActive && user && (
         <div className="bg-accent px-4 py-2 flex items-center justify-center gap-2 text-accent-on text-xs font-medium">
           <Eye className="w-3.5 h-3.5 flex-shrink-0" />
@@ -208,9 +230,19 @@ export default function Navbar() {
           </button>
         </div>
       </div>
+      </div>
 
       {mobileOpen && (
-        <div className="md:hidden bg-surface border-t border-border px-4 py-4 space-y-3">
+        // fixed + its own overflow-y-auto, not just appended in normal flow:
+        // this panel used to sit inline inside the sticky nav, so on an admin
+        // account (with banners above stacking on top of a long link list)
+        // its bottom could render below the viewport with no way to reach it
+        // short of scrolling the whole (possibly much longer) page under a
+        // sticky element — see the fix commit for the full story.
+        <div
+          className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-surface border-t border-border px-4 py-4 space-y-3 overflow-y-auto"
+          style={{ top: topBarHeight }}
+        >
           <Link href="/items" className="block text-ink-muted py-2" onClick={() => setMobileOpen(false)}>{t('exploreItems')}</Link>
           <Link href="/empresas" className="block text-ink-muted py-2" onClick={() => setMobileOpen(false)}>{t('companies')}</Link>
           {isAuthenticated ? (
