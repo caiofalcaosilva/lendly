@@ -10,6 +10,7 @@ Este documento descreve o sistema de design **efetivamente implementado** no có
 
 **Princípios de design:**
 - Cor com função: verde é exclusivamente a cor de ação/marca; nunca decorativa em outro contexto (ver §3 e §10).
+- Neutros sem matiz: `bg`/`surface`/`border`/`ink` (e as variantes `-2`/`-muted`/`-subtle`/`-strong`) são cinza verdadeiro (R=G=B) nos dois temas — só a paleta semântica (`primary`, `danger`, `clay`...) carrega matiz. Antes de 2026-08-15 esses neutros tinham um viés verde/oliva sutil (ex.: `border-strong` escuro era `106 118 86`); no escuro isso lia como "sistema/terminal" em vez de marca — corrigido para que o verde apareça só onde tem função (§3).
 - Elevação (sombra) é reservada para o que está "por cima" de algo — overlay e hover — não para todo card em repouso.
 - Nenhuma segunda tipografia: a personalidade de destaque vem de peso e rastreamento do próprio Inter, não de uma fonte nova.
 - Todo estado assíncrono que pode falhar em silêncio dá feedback visível (toast) — ver §16.
@@ -36,14 +37,14 @@ Definidos como variáveis CSS em `globals.css` (formato `"R G B"`, para suportar
 
 | Token | Claro | Escuro | Uso |
 |---|---|---|---|
-| `bg` | `#FBFAF6` | `#14170F` | fundo da página (`body`) |
-| `surface` | `#FFFFFF` | `#1C2016` | cards, modais, navbar, inputs |
-| `surface-2` | `#F1EFE6` | `#242A1E` | fundo sutil (hover, chip neutro, seção alternada) |
-| `border` | `#E5E2D6` | `#2F3527` | borda padrão (decorativa — ver nota de contraste abaixo) |
-| `border-strong` | `#929084` | `#6A7656` | borda de foco/hover — precisa ser identificável por si só |
-| `ink` | `#14170F` | `#F3F1E9` | texto principal |
-| `ink-muted` | `#5B6152` | `#9BA290` | texto secundário |
-| `ink-subtle` | `#707466` | `#8A937E` | texto terciário, ícones inertes |
+| `bg` | `#FAFAFA` | `#121212` | fundo da página (`body`) |
+| `surface` | `#FFFFFF` | `#1A1A1A` | cards, modais, navbar, inputs |
+| `surface-2` | `#F2F2F2` | `#222222` | fundo sutil (hover, chip neutro, seção alternada) |
+| `border` | `#E3E3E3` | `#2F2F2F` | borda padrão (decorativa — ver nota de contraste abaixo) |
+| `border-strong` | `#8E8E8E` | `#6B6B6B` | borda de foco/hover — precisa ser identificável por si só |
+| `ink` | `#161616` | `#F0F0F0` | texto principal |
+| `ink-muted` | `#5F5F5F` | `#9D9D9D` | texto secundário |
+| `ink-subtle` | `#727272` | `#8D8D8D` | texto terciário, ícones inertes |
 | `primary` / `primary-hover` / `primary-active` | `#1F7A46` / `#1A6B3D` / `#155C35` | `#4FD182` / `#3DBF70` / `#2DA860` | ação primária, links, marca |
 | `primary-subtle` | `#E3F0E7` | `#182D20` | fundo de chip/avatar sobre a cor da marca |
 | `primary-on` | branco | `#0B140D` | texto sobre fundo `primary` sólido (inverte no escuro porque o verde escuro fica claro) |
@@ -67,7 +68,7 @@ Definidos como variáveis CSS em `globals.css` (formato `"R G B"`, para suportar
 
 Ficou fora de propósito (decisão deliberada, não falha):
 - **`border`** (não-`strong`) fica em ~1.3:1 nos dois temas — mesma prática de praticamente todo produto construído sobre Tailwind. Nunca é o único jeito de identificar um campo: label, placeholder e o anel de foco (`focus:ring-primary`) cumprem esse papel. O trade-off deliberado é manter cards/inputs silenciosos em repouso e reservar contraste forte para `border-strong`.
-- **`text-subtle` sobre `surface-2`** (claro) fica em 4.16:1 — passa confortavelmente o mínimo de 3:1 para UI/texto grande, mas fica pouco abaixo de 4.5:1 para corpo de texto. Aceitável porque esse par só aparece em legendas curtas (contagem, distância, "há 2 dias"), nunca em texto corrido.
+- **`text-subtle` sobre `surface-2`** fica em 4.3:1 (claro) / 4.79:1 (escuro) — passa confortavelmente o mínimo de 3:1 para UI/texto grande, mas fica pouco abaixo de 4.5:1 para corpo de texto no claro. Aceitável porque esse par só aparece em legendas curtas (contagem, distância, "há 2 dias"), nunca em texto corrido.
 
 ## 4. Tipografia
 

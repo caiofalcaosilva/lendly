@@ -28,17 +28,17 @@
   --color-business: 67 56 202;
   --color-business-subtle: 238 242 255;
 
-  --color-bg: 251 250 246;
+  --color-bg: 250 250 250;
   --color-surface: 255 255 255;
-  --color-surface-2: 241 239 230;
-  --color-border: 229 226 214;
-  --color-border-strong: 146 144 132;
-  --color-text: 20 23 15;
-  --color-text-muted: 91 97 82;
-  --color-text-subtle: 112 116 102;
+  --color-surface-2: 242 242 242;
+  --color-border: 227 227 227;
+  --color-border-strong: 142 142 142;
+  --color-text: 22 22 22;
+  --color-text-muted: 95 95 95;
+  --color-text-subtle: 114 114 114;
 
-  --shadow-elevated: 0 8px 20px -4px rgb(20 23 15 / 0.14), 0 2px 6px -2px rgb(20 23 15 / 0.10);
-  --shadow-overlay: 0 24px 48px -12px rgb(20 23 15 / 0.30), 0 8px 16px -8px rgb(20 23 15 / 0.16);
+  --shadow-elevated: 0 8px 20px -4px rgb(22 22 22 / 0.14), 0 2px 6px -2px rgb(22 22 22 / 0.10);
+  --shadow-overlay: 0 24px 48px -12px rgb(22 22 22 / 0.30), 0 8px 16px -8px rgb(22 22 22 / 0.16);
 }
 
 .dark {
@@ -64,14 +64,14 @@
   --color-business: 129 140 248;
   --color-business-subtle: 30 28 58;
 
-  --color-bg: 20 23 15;
-  --color-surface: 28 32 22;
-  --color-surface-2: 36 42 30;
-  --color-border: 47 53 39;
-  --color-border-strong: 106 118 86;
-  --color-text: 243 241 233;
-  --color-text-muted: 155 162 144;
-  --color-text-subtle: 138 147 126;
+  --color-bg: 18 18 18;
+  --color-surface: 26 26 26;
+  --color-surface-2: 34 34 34;
+  --color-border: 47 47 47;
+  --color-border-strong: 107 107 107;
+  --color-text: 240 240 240;
+  --color-text-muted: 157 157 157;
+  --color-text-subtle: 141 141 141;
 
   --shadow-elevated: 0 8px 20px -4px rgb(0 0 0 / 0.45), 0 2px 6px -2px rgb(0 0 0 / 0.3);
   --shadow-overlay: 0 24px 48px -12px rgb(0 0 0 / 0.6), 0 8px 16px -8px rgb(0 0 0 / 0.4);
