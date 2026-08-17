@@ -102,6 +102,11 @@
     "AdSlot": {
       "placeholder": "Ad space"
     },
+    "ItemsPageCarousel": {
+      "previousSlide": "Previous slide",
+      "nextSlide": "Next slide",
+      "goToSlide": "Go to slide {number}"
+    },
     "ImageLightbox": {
       "close": "Close"
     },
@@ -589,7 +594,6 @@
   },
   "Items": {
     "loadingMap": "Loading map...",
-    "bannerLinkDefault": "Learn more",
     "title": "Browse items",
     "subtitleWithCity": "Find available items near you in {city}",
     "subtitle": "Find items available for loan in your area",
@@ -770,15 +774,17 @@
       "announcementHint": "Banner visible to all visitors, logged in or not (e.g. scheduled maintenance).",
       "announcementPlaceholder": "E.g.: Scheduled maintenance today at 10 PM — the site may be unstable.",
       "announcementActive": "Announcement active",
-      "itemsBanner": "Items page banner",
-      "itemsBannerHint": "Only shows on \"Browse items\" — for useful platform info and links (not the placeholder reserved for third-party ads).",
-      "itemsBannerPlaceholder": "E.g.: Check out our safety tips before lending an item.",
-      "itemsBannerLinkUrl": "Link (optional)",
-      "itemsBannerLinkLabel": "Link text",
-      "itemsBannerActive": "Banner active",
+      "itemsBanner": "Items page carousel",
+      "itemsBannerHint": "Only shows on \"Browse items\" — your own artwork/banners, auto-rotating (not the placeholder reserved for third-party ads).",
       "lastUpdated": "Last changed by {name} on {date}",
       "saveChanges": "Save changes",
       "saved": "Saved"
+    },
+    "ItemsBannerSlides": {
+      "removeSlide": "Remove slide",
+      "addSlide": "Add slide",
+      "linkPlaceholder": "Link (optional)",
+      "errorUpload": "Error uploading image"
     },
     "Actions": {
       "title": "Admin action history",

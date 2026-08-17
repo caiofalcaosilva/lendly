@@ -102,6 +102,11 @@
     "AdSlot": {
       "placeholder": "Espaço para anúncio"
     },
+    "ItemsPageCarousel": {
+      "previousSlide": "Slide anterior",
+      "nextSlide": "Próximo slide",
+      "goToSlide": "Ir para o slide {number}"
+    },
     "ImageLightbox": {
       "close": "Fechar"
     },
@@ -589,7 +594,6 @@
   },
   "Items": {
     "loadingMap": "Carregando mapa...",
-    "bannerLinkDefault": "Saiba mais",
     "title": "Explorar itens",
     "subtitleWithCity": "Encontre objetos disponíveis perto de você em {city}",
     "subtitle": "Encontre objetos disponíveis para empréstimo na sua região",
@@ -770,15 +774,17 @@
       "announcementHint": "Banner visível a todos os visitantes, logados ou não (ex: manutenção programada).",
       "announcementPlaceholder": "Ex: Manutenção programada hoje às 22h — o site pode ficar instável.",
       "announcementActive": "Aviso ativo",
-      "itemsBanner": "Banner da página de itens",
-      "itemsBannerHint": "Aparece só em \"Explorar itens\" — pra informações e links úteis da plataforma (não é o espaço reservado pra anúncios de terceiros).",
-      "itemsBannerPlaceholder": "Ex: Confira nossas dicas de segurança antes de emprestar.",
-      "itemsBannerLinkUrl": "Link (opcional)",
-      "itemsBannerLinkLabel": "Texto do link",
-      "itemsBannerActive": "Banner ativo",
+      "itemsBanner": "Carrossel da página de itens",
+      "itemsBannerHint": "Aparece só em \"Explorar itens\" — suas próprias artes/banners, em rotação automática (não é o espaço reservado pra anúncios de terceiros).",
       "lastUpdated": "Última alteração por {name} em {date}",
       "saveChanges": "Salvar alterações",
       "saved": "Salvo"
+    },
+    "ItemsBannerSlides": {
+      "removeSlide": "Remover slide",
+      "addSlide": "Adicionar slide",
+      "linkPlaceholder": "Link (opcional)",
+      "errorUpload": "Erro ao enviar imagem"
     },
     "Actions": {
       "title": "Histórico de ações do admin",

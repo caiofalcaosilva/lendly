@@ -32,13 +32,6 @@ class PlatformSettings(Document):
     handoff_confirmation_grace_hours = IntField(default=2, min_value=1)
     announcement_message = StringField(max_length=280)
     announcement_active = BooleanField(default=False)
-    # Separate from the navbar announcement above: this one only shows on
-    # the items/browse page, for platform-owned info/links (not third-party
-    # ads — that's a separate static placeholder in the frontend, AdSlot).
-    items_banner_message = StringField(max_length=280)
-    items_banner_active = BooleanField(default=False)
-    items_banner_link_url = StringField(max_length=500)
-    items_banner_link_label = StringField(max_length=40)
     updated_by = ReferenceField("User")
     updated_at = DateTimeField(default=utcnow)
 

@@ -12,6 +12,7 @@ from app.routers.admin import (
     exports,
     groups,
     items,
+    items_banner_slides,
     reviews,
     settings,
     users,
@@ -24,6 +25,7 @@ router.include_router(users.router)
 router.include_router(items.router)
 router.include_router(actions.router)
 router.include_router(settings.router)
+router.include_router(items_banner_slides.router)
 router.include_router(groups.router)
 router.include_router(reviews.router)
 router.include_router(exports.router)

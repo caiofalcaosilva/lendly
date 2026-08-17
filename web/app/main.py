@@ -22,6 +22,7 @@ from app.routers import (
     claims,
     groups,
     items,
+    items_banner_slides,
     loan_requests,
     notifications,
     reports,
@@ -31,7 +32,7 @@ from app.routers import (
     webhooks,
 )
 from app.schemas.category import CategoryResponse
-from app.schemas.platform_settings import AnnouncementResponse, ItemsBannerResponse
+from app.schemas.platform_settings import AnnouncementResponse
 from app.services import category_service, platform_settings_service
 from app.services.review_reminder_service import send_pending_review_reminders
 from app.utils.security import decode_token
@@ -130,6 +131,7 @@ app.include_router(auth.router)
 app.include_router(activities.router)
 app.include_router(users.router)
 app.include_router(items.router)
+app.include_router(items_banner_slides.router)
 app.include_router(loan_requests.router)
 app.include_router(notifications.router)
 app.include_router(reviews.router)
@@ -159,13 +161,6 @@ def get_public_config():
 def get_announcement():
     """The platform-wide banner shown to every visitor, logged in or not."""
     return platform_settings_service.get_announcement()
-
-
-@app.get("/items-banner", response_model=ItemsBannerResponse, tags=["public"])
-def get_items_banner():
-    """Info/link banner shown only on the items/browse page — distinct from
-    the site-wide /announcement above, editable in /admin/settings."""
-    return platform_settings_service.get_items_banner()
 
 
 @app.get("/categories", response_model=list[CategoryResponse], tags=["public"])

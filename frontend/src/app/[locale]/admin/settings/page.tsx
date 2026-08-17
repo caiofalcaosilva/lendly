@@ -12,6 +12,7 @@ import Textarea from '@/components/ui/Textarea'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import Checkbox from '@/components/ui/Checkbox'
+import ItemsBannerSlidesManager from '@/components/admin/ItemsBannerSlidesManager'
 
 const FIELD_KEYS: (keyof PlatformSettings)[] = [
   'access_token_expire_minutes', 'refresh_token_expire_days', 'email_verification_expire_hours',
@@ -71,10 +72,6 @@ export default function AdminSettingsPage() {
         handoff_confirmation_grace_hours: settings.handoff_confirmation_grace_hours,
         announcement_message: settings.announcement_message ?? '',
         announcement_active: settings.announcement_active,
-        items_banner_message: settings.items_banner_message ?? '',
-        items_banner_active: settings.items_banner_active,
-        items_banner_link_url: settings.items_banner_link_url ?? '',
-        items_banner_link_label: settings.items_banner_link_label ?? '',
       })
       setSettings(updated)
       setSaved(true)
@@ -153,33 +150,7 @@ export default function AdminSettingsPage() {
             <p className="text-xs text-ink-muted -mt-2">
               {t('itemsBannerHint')}
             </p>
-            <Textarea
-              value={settings.items_banner_message ?? ''}
-              onChange={(e) => setSettings((prev) => (prev ? { ...prev, items_banner_message: e.target.value.slice(0, 280) } : prev))}
-              rows={2}
-              maxLength={280}
-              placeholder={t('itemsBannerPlaceholder')}
-              className="resize-none"
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input
-                label={t('itemsBannerLinkUrl')}
-                value={settings.items_banner_link_url ?? ''}
-                onChange={(e) => setSettings((prev) => (prev ? { ...prev, items_banner_link_url: e.target.value } : prev))}
-                placeholder="https://..."
-              />
-              <Input
-                label={t('itemsBannerLinkLabel')}
-                value={settings.items_banner_link_label ?? ''}
-                onChange={(e) => setSettings((prev) => (prev ? { ...prev, items_banner_link_label: e.target.value.slice(0, 40) } : prev))}
-                maxLength={40}
-              />
-            </div>
-            <Checkbox
-              checked={settings.items_banner_active}
-              onChange={(checked) => setSettings((prev) => (prev ? { ...prev, items_banner_active: checked } : prev))}
-              label={t('itemsBannerActive')}
-            />
+            <ItemsBannerSlidesManager />
           </div>
 
           {settings.updated_by_name && settings.updated_at && (
