@@ -267,9 +267,9 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
                         {item.availability_type === 'free' ? (
                           <span className="text-green-600 font-medium">{t('free')}</span>
                         ) : (
-                          <>{formatCurrency(item.daily_rate ?? 0, locale)}<span className="text-gray-400">{t('perDay')}</span></>
+                          <><span className="font-mono tabular-nums">{formatCurrency(item.daily_rate ?? 0, locale)}</span><span className="text-gray-400">{t('perDay')}</span></>
                         )}
-                        {distanceKm != null && <span className="text-gray-400"> · {formatDistance(distanceKm)}</span>}
+                        {distanceKm != null && <span className="text-gray-400 font-mono tabular-nums"> · {formatDistance(distanceKm)}</span>}
                       </p>
                       <span className="text-xs font-medium text-green-700">{t('viewDetails')}</span>
                     </Link>

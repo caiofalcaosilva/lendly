@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getCategoryLabel, formatCurrency, formatDate } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import Badge, { STATUS_COLORS } from '@/components/ui/Badge'
+import Tooltip from '@/components/ui/Tooltip'
 import EmptyState from '@/components/ui/EmptyState'
 import Spinner from '@/components/ui/Spinner'
 import Skeleton from '@/components/ui/Skeleton'
@@ -174,7 +175,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-ink">{t('greeting', { name: user?.name.split(' ')[0] ?? '' })}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('greeting', { name: user?.name.split(' ')[0] ?? '' })}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
             <span className="text-sm text-ink-muted">
@@ -286,7 +287,7 @@ export default function DashboardPage() {
                           <span className="font-medium text-ink truncate">{item.title}</span>
                           <Badge variant="gray">{getCategoryLabel(categories, item.category)}</Badge>
                           {item.availability_type === 'paid' && item.daily_rate && (
-                            <Badge variant="blue">{formatCurrency(item.daily_rate, locale)}{t('perDay')}</Badge>
+                            <Badge variant="blue"><span className="font-mono tabular-nums">{formatCurrency(item.daily_rate, locale)}</span>{t('perDay')}</Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
@@ -297,27 +298,29 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          loading={featuring === item.id}
-                          disabled={!(user?.featured_item_ids ?? []).includes(item.id) && (user?.featured_item_ids?.length ?? 0) >= MAX_FEATURED}
-                          onClick={() => toggleFeatured(item)}
-                          title={(user?.featured_item_ids ?? []).includes(item.id) ? t('removeFromFeatured') : t('featureOnProfile', { max: MAX_FEATURED })}
-                          aria-label={(user?.featured_item_ids ?? []).includes(item.id) ? t('removeFromFeatured') : t('featureOnProfile', { max: MAX_FEATURED })}
-                        >
-                          <Star className={`w-4 h-4 ${(user?.featured_item_ids ?? []).includes(item.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          loading={toggling === item.id}
-                          onClick={() => toggleAvailability(item)}
-                          title={item.is_available ? t('deactivate') : t('activate')}
-                          aria-label={item.is_available ? t('deactivate') : t('activate')}
-                        >
-                          {item.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
+                        <Tooltip label={(user?.featured_item_ids ?? []).includes(item.id) ? t('removeFromFeatured') : t('featureOnProfile', { max: MAX_FEATURED })}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            loading={featuring === item.id}
+                            disabled={!(user?.featured_item_ids ?? []).includes(item.id) && (user?.featured_item_ids?.length ?? 0) >= MAX_FEATURED}
+                            onClick={() => toggleFeatured(item)}
+                            aria-label={(user?.featured_item_ids ?? []).includes(item.id) ? t('removeFromFeatured') : t('featureOnProfile', { max: MAX_FEATURED })}
+                          >
+                            <Star className={`w-4 h-4 ${(user?.featured_item_ids ?? []).includes(item.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip label={item.is_available ? t('deactivate') : t('activate')}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            loading={toggling === item.id}
+                            onClick={() => toggleAvailability(item)}
+                            aria-label={item.is_available ? t('deactivate') : t('activate')}
+                          >
+                            {item.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                        </Tooltip>
                         <Link href={`/items/${item.id}/edit`}>
                           <Button size="sm" variant="outline" aria-label={t('editItem')}>
                             <Edit className="w-4 h-4" />
@@ -355,7 +358,7 @@ export default function DashboardPage() {
                 <div className="bg-surface rounded-panel border border-border p-4 flex items-center justify-between">
                   <div>
                     <p className="text-xs text-ink-muted">{t('sent.totalSpent')}</p>
-                    <p className="text-lg font-bold text-ink">{formatCurrency(spending.total_spent, locale)}</p>
+                    <p className="text-lg font-bold font-mono tabular-nums text-ink">{formatCurrency(spending.total_spent, locale)}</p>
                   </div>
                   <p className="text-xs text-ink-subtle">
                     {t('sent.paymentsCount', { count: spending.payments_count })}
@@ -397,7 +400,7 @@ export default function DashboardPage() {
                           <p className="text-xs text-ink-muted mt-0.5 truncate">
                             {isOwner ? t('requester', { name: req.requester_name }) : t('owner', { name: req.owner_name })}
                           </p>
-                          <p className="text-xs text-ink-subtle mt-1">
+                          <p className="text-xs text-ink-subtle mt-1 font-mono tabular-nums">
                             {formatDate(req.pickup_date, locale)} → {formatDate(req.expected_return_date, locale)}
                           </p>
                         </div>
@@ -471,7 +474,7 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex items-center gap-1 text-xs text-ink-subtle">
                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            {u.average_rating.toFixed(1)}
+                            <span className="font-mono tabular-nums">{u.average_rating.toFixed(1)}</span>
                           </div>
                         </div>
                       </Link>
@@ -519,7 +522,7 @@ export default function DashboardPage() {
                         <TrendingUp className="w-3.5 h-3.5" />
                         <span className="text-xs">{t('analytics.totalRevenue')}</span>
                       </div>
-                      <div className="text-xl font-bold text-primary">
+                      <div className="text-xl font-bold font-mono tabular-nums text-primary">
                         {formatCurrency(analytics.total_revenue, locale)}
                       </div>
                     </div>
@@ -528,7 +531,7 @@ export default function DashboardPage() {
                         <History className="w-3.5 h-3.5" />
                         <span className="text-xs">{t('analytics.finishedLoans')}</span>
                       </div>
-                      <div className="text-xl font-bold text-ink">
+                      <div className="text-xl font-bold font-mono tabular-nums text-ink">
                         {analytics.total_loans}
                       </div>
                     </div>
@@ -537,7 +540,7 @@ export default function DashboardPage() {
                         <Percent className="w-3.5 h-3.5" />
                         <span className="text-xs">{t('analytics.averageOccupancy')}</span>
                       </div>
-                      <div className="text-xl font-bold text-ink">
+                      <div className="text-xl font-bold font-mono tabular-nums text-ink">
                         {analytics.average_occupancy_rate}%
                       </div>
                     </div>
@@ -572,8 +575,8 @@ export default function DashboardPage() {
                               </Link>
                               <div className="text-xs text-ink-subtle">{getCategoryLabel(categories, it.category)}</div>
                             </td>
-                            <td className="px-4 py-3 text-right text-ink-muted">{it.times_borrowed}</td>
-                            <td className="px-4 py-3 text-right text-ink-muted">
+                            <td className="px-4 py-3 text-right text-ink-muted font-mono tabular-nums">{it.times_borrowed}</td>
+                            <td className="px-4 py-3 text-right text-ink-muted font-mono tabular-nums">
                               {it.revenue > 0 ? formatCurrency(it.revenue, locale) : '—'}
                             </td>
                             <td className="px-4 py-3 text-right">
@@ -584,7 +587,7 @@ export default function DashboardPage() {
                                     style={{ width: `${it.occupancy_rate}%` }}
                                   />
                                 </div>
-                                <span className="text-xs text-ink-muted w-9 text-right">{it.occupancy_rate}%</span>
+                                <span className="text-xs text-ink-muted w-9 text-right font-mono tabular-nums">{it.occupancy_rate}%</span>
                               </div>
                             </td>
                           </tr>

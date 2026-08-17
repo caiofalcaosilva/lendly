@@ -63,6 +63,7 @@ Definidos como variáveis CSS em `globals.css` (formato `"R G B"`, para suportar
 - Coração de "favoritar" (`ItemCard.tsx`, `UserPublicClient.tsx`) — `red-500` literal, convenção universal de "curtir", dimensão semântica diferente de `danger`.
 - Estrela de avaliação (`fill-yellow-400 text-yellow-400`) e o selo "destaque" — amarelo/dourado é convenção universal de nota/destaque, não um estado do sistema (não é `warning`).
 - `text-white` sobre uma **foto** ou overlay `bg-black/60` (controles sobre imagem em `ItemCard`, `ItemPhotoUploader`/`Picker`, visualizador de documento em `admin/verification`) — correto ficar literal porque o fundo é a própria foto, não um token que muda de tom por tema. Diferente de `text-white` sobre um **token** sólido (`bg-danger`/`bg-warning`), que deve usar `-on` porque esses tokens invertem de tom no escuro.
+- **Selo "versão beta"** (`BetaBadge.tsx`, ao lado da logo na navbar) — degradê magenta literal (`.beta-badge` em `globals.css`), de propósito fora de qualquer token semântico: é um aviso de ciclo de vida do produto, não um estado (não pode ler como `danger`/`warning`/`info`), e a cor foi escolhida deliberadamente oposta ao verde da marca no círculo cromático pra nunca ser confundida com nada do sistema. **Temporário** — remover o componente (e este item da lista) quando: CNPJ ativo, termos de uso publicados e a primeira transação real acontecer.
 
 **Contraste WCAG AA** — todo par token de texto/ícone sobre token de fundo realmente usado no código atende ao mínimo (4.5:1 texto, 3:1 UI/não-textual), calculado pela fórmula de luminância relativa do WCAG 2.1. `border-strong` (borda de foco/hover) atende ao mínimo de 3:1 exigido pelo critério 1.4.11 para indicadores de estado não-textuais.
 
@@ -72,15 +73,18 @@ Ficou fora de propósito (decisão deliberada, não falha):
 
 ## 4. Tipografia
 
-**Família única:** Inter (`next/font/google`, carregada em `layout.tsx`). Nenhuma segunda fonte — a hierarquia de destaque vem de peso + rastreamento, não de trocar de família.
+**Família de interface:** Inter (`next/font/google`, carregada em `layout.tsx`) — a hierarquia de destaque vem de peso + rastreamento, não de trocar de família em texto corrido.
+
+**Números:** JetBrains Mono (`next/font/google`, token `font-mono` no Tailwind), aplicado *só* onde o valor é um número que o olho precisa comparar em coluna ou ler como dado exato — preço, distância, telefone, data, contagem. Nunca usado em texto corrido. Sempre com `tabular-nums` junto, pra alinhar os dígitos. Ex.: `ItemCard.tsx`/`ItemDetailClient.tsx` (preço, nota), `RequestCard.tsx` (telefone liberado), `NotificationBell.tsx` e as tabelas admin (data).
 
 | Papel | Tamanho | Peso | Rastreamento | Onde |
 |---|---|---|---|---|
 | Display | `text-4xl`/`text-5xl` | `font-extrabold` (800) | `tracking-tight` | hero da home, número "100%", `<h1>` de autenticação |
-| Título de página | `text-2xl`/`text-3xl` | `font-bold`/`font-extrabold` | — | cabeçalhos de seção |
+| Título de página | `text-2xl`/`text-3xl` | `font-bold`/`font-extrabold` | `tracking-tight` no extremo mais pesado | cabeçalhos de seção, título/preço do detalhe do item |
 | Título de card | `text-sm`/`text-base` | `font-semibold` | — | `ItemCard`, cards de conteúdo |
 | Corpo | `text-sm` | `font-normal` | — | texto de interface |
 | Rótulo/eyebrow | `text-[10px]`/`text-xs` | `font-semibold` | `tracking-wide`/`uppercase` | tag de categoria, rótulo de campo |
+| Número | tamanho do contexto | herdado | `font-mono tabular-nums` | preço, distância, telefone, data, contagem |
 
 ## 5. Espaçamento
 

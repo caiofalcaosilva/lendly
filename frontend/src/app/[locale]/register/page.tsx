@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import AddressFields from '@/components/ui/AddressFields'
 import { LogoMark } from '@/components/ui/Logo'
+import Checkbox from '@/components/ui/Checkbox'
 
 const opt = z.string().optional().or(z.literal(''))
 
@@ -269,27 +270,22 @@ export default function RegisterPage() {
               />
 
               <div>
-                <label className="flex items-start gap-2 cursor-pointer text-ink">
-                  <input
-                    type="checkbox"
-                    {...register('accepted_terms')}
-                    className="mt-0.5 text-primary rounded"
-                  />
-                  <span className="text-sm">
-                    {t.rich('acceptTerms', {
-                      terms: (chunks) => (
-                        <Link href="/termos" target="_blank" className="text-primary hover:text-primary-hover underline">
-                          {chunks}
-                        </Link>
-                      ),
-                      privacy: (chunks) => (
-                        <Link href="/privacidade" target="_blank" className="text-primary hover:text-primary-hover underline">
-                          {chunks}
-                        </Link>
-                      ),
-                    })}
-                  </span>
-                </label>
+                <Checkbox
+                  checked={!!watch('accepted_terms')}
+                  onChange={(checked) => setValue('accepted_terms', checked, { shouldValidate: true })}
+                  label={t.rich('acceptTerms', {
+                    terms: (chunks) => (
+                      <Link href="/termos" target="_blank" className="text-primary hover:text-primary-hover underline">
+                        {chunks}
+                      </Link>
+                    ),
+                    privacy: (chunks) => (
+                      <Link href="/privacidade" target="_blank" className="text-primary hover:text-primary-hover underline">
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
+                />
                 {errors.accepted_terms && (
                   <p className="text-danger text-xs mt-1">{errors.accepted_terms.message}</p>
                 )}

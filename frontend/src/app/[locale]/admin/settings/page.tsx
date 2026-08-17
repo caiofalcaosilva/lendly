@@ -11,6 +11,7 @@ import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
+import Checkbox from '@/components/ui/Checkbox'
 
 const FIELD_KEYS: (keyof PlatformSettings)[] = [
   'access_token_expire_minutes', 'refresh_token_expire_days', 'email_verification_expire_hours',
@@ -133,15 +134,11 @@ export default function AdminSettingsPage() {
               placeholder={t('announcementPlaceholder')}
               className="resize-none"
             />
-            <label className="flex items-center gap-2 text-sm text-ink-muted cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.announcement_active}
-                onChange={(e) => setSettings((prev) => (prev ? { ...prev, announcement_active: e.target.checked } : prev))}
-                className="w-4 h-4 rounded accent-primary"
-              />
-              {t('announcementActive')}
-            </label>
+            <Checkbox
+              checked={settings.announcement_active}
+              onChange={(checked) => setSettings((prev) => (prev ? { ...prev, announcement_active: checked } : prev))}
+              label={t('announcementActive')}
+            />
           </div>
 
           {settings.updated_by_name && settings.updated_at && (

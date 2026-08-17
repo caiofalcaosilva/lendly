@@ -4,6 +4,7 @@ import { ShieldCheck, Smartphone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
+import Checkbox from '@/components/ui/Checkbox'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface Props {
@@ -101,16 +102,7 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
 
         {error && <p className="text-center text-sm text-danger">{error}</p>}
 
-        <label className="flex items-center gap-3 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={trustDevice}
-            onChange={(e) => setTrustDevice(e.target.checked)}
-            className="w-4 h-4 text-primary rounded border-border"
-          />
-          <span className="text-sm text-ink-muted">{t('trustDevice')}</span>
-
-        </label>
+        <Checkbox checked={trustDevice} onChange={setTrustDevice} label={t('trustDevice')} />
 
         <div className="flex gap-3">
           <Button

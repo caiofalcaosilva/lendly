@@ -15,12 +15,14 @@ import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Skeleton from '@/components/ui/Skeleton'
+import { TableShell, TableHeadRow, TableRow } from '@/components/ui/Table'
+import Checkbox from '@/components/ui/Checkbox'
 
 const LIMIT = 20
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-border last:border-0">
+    <TableRow>
       <td className="px-4 py-3"><Skeleton className="w-4 h-4" /></td>
       <td className="px-4 py-3 space-y-1.5">
         <Skeleton className="h-4 w-32" />
@@ -31,7 +33,7 @@ function SkeletonRow() {
       <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
       <td className="px-4 py-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
       <td className="px-4 py-3"><div className="flex justify-end"><Skeleton className="h-8 w-8" /></div></td>
-    </tr>
+    </TableRow>
   )
 }
 
@@ -217,62 +219,31 @@ export default function AdminItemsPage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="bg-surface rounded-panel border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-ink-subtle uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium w-8" />
-                  <th className="px-4 py-3 font-medium">{t('columnItem')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnOwner')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnCity')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnSignup')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnStatus')}</th>
-                  <th className="px-4 py-3 font-medium text-right">{t('columnAction')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : items.length === 0 ? (
+      {!loading && items.length === 0 ? (
         <EmptyState icon={Package} title={t('emptyTitle')} description={t('emptyDescription')} />
       ) : (
         <>
-          <div className="bg-surface rounded-panel border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-ink-subtle uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium w-8">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded accent-primary"
-                    />
-                  </th>
-                  <th className="px-4 py-3 font-medium">{t('columnItem')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnOwner')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnCity')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnSignup')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnStatus')}</th>
-                  <th className="px-4 py-3 font-medium text-right">{t('columnAction')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((it) => (
-                  <tr key={it.id} className="border-b border-border last:border-0">
+          <TableShell>
+            <TableHeadRow>
+              <th className="px-4 py-3 font-medium w-8">
+                {!loading && (
+                  <Checkbox checked={allSelected} onChange={toggleSelectAll} />
+                )}
+              </th>
+              <th className="px-4 py-3 font-medium">{t('columnItem')}</th>
+              <th className="px-4 py-3 font-medium">{t('columnOwner')}</th>
+              <th className="px-4 py-3 font-medium">{t('columnCity')}</th>
+              <th className="px-4 py-3 font-medium">{t('columnSignup')}</th>
+              <th className="px-4 py-3 font-medium">{t('columnStatus')}</th>
+              <th className="px-4 py-3 font-medium text-right">{t('columnAction')}</th>
+            </TableHeadRow>
+            <tbody>
+              {loading
+                ? Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
+                : items.map((it) => (
+                  <TableRow key={it.id}>
                     <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(it.id)}
-                        onChange={() => toggleSelected(it.id)}
-                        className="w-4 h-4 rounded accent-primary"
-                      />
+                      <Checkbox checked={selected.has(it.id)} onChange={() => toggleSelected(it.id)} />
                     </td>
                     <td className="px-4 py-3">
                       <Link href={`/items/${it.id}`} className="font-medium text-ink hover:text-primary transition-colors">
@@ -289,7 +260,7 @@ export default function AdminItemsPage() {
                     <td className="px-4 py-3 text-ink-muted">
                       {[it.neighborhood, it.city].filter(Boolean).join(', ') || '—'}
                     </td>
-                    <td className="px-4 py-3 text-ink-muted">{formatDate(it.created_at, locale)}</td>
+                    <td className="px-4 py-3 text-ink-muted font-mono tabular-nums">{formatDate(it.created_at, locale)}</td>
                     <td className="px-4 py-3">
                       <Badge variant={it.is_active ? 'green' : 'red'}>{it.is_active ? t('statusActive') : t('statusInactive')}</Badge>
                     </td>
@@ -303,14 +274,12 @@ export default function AdminItemsPage() {
                         {it.is_active ? <><Ban className="w-3.5 h-3.5" /> {t('deactivate')}</> : <><CheckCircle2 className="w-3.5 h-3.5" /> {t('activate')}</>}
                       </Button>
                     </td>
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-            </div>
-          </div>
+            </tbody>
+          </TableShell>
 
-          {hasMore && (
+          {!loading && hasMore && (
             <div className="flex justify-center mt-4">
               <Button variant="outline" size="sm" loading={loadingMore} onClick={loadMore}>
                 {t('loadMore')}

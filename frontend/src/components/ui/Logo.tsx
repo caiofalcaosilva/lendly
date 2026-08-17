@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import BetaBadge from '@/components/ui/BetaBadge'
 
 // Two mirrored leaf shapes in rotational symmetry — standing for an item
 // circulating between neighbors (lent out, then returned), rather than a
@@ -15,11 +16,20 @@ export function LogoMark({ className = 'w-8 h-8' }: { className?: string }) {
   )
 }
 
-export function Logo({ className, markClassName = 'w-7 h-7' }: { className?: string; markClassName?: string }) {
+export function Logo({
+  className,
+  markClassName = 'w-7 h-7',
+  showBeta = false,
+}: {
+  className?: string
+  markClassName?: string
+  showBeta?: boolean
+}) {
   return (
     <span className={cn('inline-flex items-center gap-2', className)}>
       <LogoMark className={markClassName} />
       <span className="font-extrabold text-lg tracking-tight text-primary">Lendly</span>
+      {showBeta && <BetaBadge />}
     </span>
   )
 }

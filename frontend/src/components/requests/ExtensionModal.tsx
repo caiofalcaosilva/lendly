@@ -74,7 +74,7 @@ export default function ExtensionModal({ requestId, itemId, currentExpectedRetur
         {estimatedCost != null && (
           <div className="flex items-center justify-between p-3 bg-primary-subtle rounded-control">
             <span className="text-sm text-ink-muted">{t('estimatedCost')}</span>
-            <span className="text-lg font-bold text-primary">{formatCurrency(estimatedCost, locale)}</span>
+            <span className="text-lg font-bold font-mono tabular-nums text-primary">{formatCurrency(estimatedCost, locale)}</span>
           </div>
         )}
 

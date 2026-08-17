@@ -1,3 +1,5 @@
+import defaultTheme from 'tailwindcss/defaultTheme'
+
 // Reads a "R G B" CSS variable (see globals.css) so Tailwind's opacity
 // modifiers keep working, e.g. bg-primary/40 -> rgb(var(--color-primary) / 0.4).
 // Not typed against tailwindcss's `Config` below — its color type doesn't
@@ -35,11 +37,16 @@ const config = {
         accent: { DEFAULT: withOpacity('--color-accent'), subtle: withOpacity('--color-accent-subtle'), on: withOpacity('--color-accent-on') },
         business: { DEFAULT: withOpacity('--color-business'), subtle: withOpacity('--color-business-subtle') },
       },
+      fontFamily: {
+        // Numbers only (price, date, phone, counts) — see design_system.md.
+        mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
+      },
       borderRadius: {
         control: '10px',
         panel: '16px',
       },
       boxShadow: {
+        subtle: 'var(--shadow-subtle)',
         elevated: 'var(--shadow-elevated)',
         overlay: 'var(--shadow-overlay)',
       },

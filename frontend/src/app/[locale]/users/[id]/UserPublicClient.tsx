@@ -15,6 +15,7 @@ import ReviewCard from '@/components/reviews/ReviewCard'
 import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
 import BusinessBadge from '@/components/ui/BusinessBadge'
 import ReputationBadges from '@/components/ui/ReputationBadges'
+import Badge from '@/components/ui/Badge'
 import ReportModal from '@/components/reports/ReportModal'
 import Avatar from '@/components/ui/Avatar'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -120,7 +121,7 @@ export default function UserPublicClient() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-ink">{user.trade_name || user.name}</h1>
+              <h1 className="text-2xl font-extrabold tracking-tight text-ink">{user.trade_name || user.name}</h1>
               <BusinessBadge accountType={user.account_type} size="md" />
             </div>
             {user.account_type === 'business' && user.business_category && (
@@ -136,7 +137,10 @@ export default function UserPublicClient() {
 
             <p className="flex items-center gap-1.5 text-ink-subtle text-xs mt-1">
               <Calendar className="w-3 h-3" />
-              {t('memberSince', { date: formatDate(user.created_at, locale) })}
+              {t.rich('memberSince', {
+                date: formatDate(user.created_at, locale),
+                d: (chunks) => <span className="font-mono tabular-nums">{chunks}</span>,
+              })}
             </p>
 
             {user.bio && (
@@ -162,7 +166,7 @@ export default function UserPublicClient() {
                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{user.business_hours}</span>
                 )}
                 {user.business_phone && (
-                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{user.business_phone}</span>
+                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /><span className="font-mono tabular-nums">{user.business_phone}</span></span>
                 )}
                 {user.website && isHttpUrl(user.website) && (
                   <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-primary transition-colors min-w-0">
@@ -186,7 +190,7 @@ export default function UserPublicClient() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 hover:text-primary transition-colors"
                   >
-                    <MessageCircle className="w-3.5 h-3.5" />{user.whatsapp}
+                    <MessageCircle className="w-3.5 h-3.5" /><span className="font-mono tabular-nums">{user.whatsapp}</span>
                   </a>
                 )}
               </div>
@@ -196,7 +200,7 @@ export default function UserPublicClient() {
           <div className="flex flex-col items-center bg-yellow-50 dark:bg-yellow-900/20 rounded-panel px-6 py-4 flex-shrink-0">
             <div className="flex items-center gap-1.5 mb-1">
               <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-              <span className="text-2xl font-bold text-ink">
+              <span className="text-2xl font-bold font-mono tabular-nums text-ink">
                 {user.average_rating.toFixed(1)}
               </span>
             </div>
@@ -257,9 +261,13 @@ export default function UserPublicClient() {
                 .map((item) => (
                   <div key={item.id} className="relative">
                     {user.featured_item_ids.includes(item.id) && (
-                      <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-yellow-400 text-yellow-900">
-                        <Star className="w-2.5 h-2.5 fill-yellow-900" /> {t('featured')}
-                      </span>
+                      <Badge
+                        size="sm"
+                        icon={<Star className="w-2.5 h-2.5 fill-yellow-900" />}
+                        className="absolute top-2 left-2 z-10 !bg-yellow-400 !text-yellow-900"
+                      >
+                        {t('featured')}
+                      </Badge>
                     )}
                     <ItemCard item={item} />
                   </div>

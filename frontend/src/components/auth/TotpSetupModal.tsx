@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Tooltip from '@/components/ui/Tooltip'
 import { authService } from '@/services/auth'
 import { User } from '@/types'
 
@@ -79,18 +80,19 @@ export default function TotpSetupModal({ onSuccess, onClose }: Props) {
             <p className="text-xs text-ink-muted mb-1">{t('orEnterManually')}</p>
             <div className="flex items-center gap-2">
               <code className="flex-1 text-xs font-mono text-ink-muted break-all">{secret}</code>
-              <button
-                onClick={copySecret}
-                className="flex-shrink-0 p-1.5 text-ink-subtle hover:text-ink-muted transition-colors"
-                title={t('copy')}
-                aria-label={t('copy')}
-              >
-                {copied ? (
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </button>
+              <Tooltip label={t('copy')}>
+                <button
+                  onClick={copySecret}
+                  className="flex-shrink-0 p-1.5 text-ink-subtle hover:text-ink-muted transition-colors"
+                  aria-label={t('copy')}
+                >
+                  {copied ? (
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </Tooltip>
             </div>
           </div>
 

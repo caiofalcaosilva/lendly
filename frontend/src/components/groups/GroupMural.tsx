@@ -11,6 +11,7 @@ import Textarea from '@/components/ui/Textarea'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/Skeleton'
+import Tooltip from '@/components/ui/Tooltip'
 import { useToast } from '@/contexts/ToastContext'
 
 const LIMIT = 20
@@ -205,14 +206,15 @@ export default function GroupMural({
                       <p className="text-sm text-ink mt-1 whitespace-pre-wrap break-words">{post.body}</p>
                     </div>
                     {canDelete && (
-                      <button
-                        onClick={() => setDeleteTarget(post)}
-                        title={t('deletePost')}
-                        aria-label={t('deletePost')}
-                        className="p-1 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors flex-shrink-0"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                      <Tooltip label={t('deletePost')}>
+                        <button
+                          onClick={() => setDeleteTarget(post)}
+                          aria-label={t('deletePost')}
+                          className="p-1 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors flex-shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
                     )}
                   </div>
                 </div>

@@ -121,15 +121,15 @@ export default function AdminClaimsPage() {
         <div className="grid grid-cols-3 gap-3 mb-8">
           <div className="bg-surface rounded-panel border border-border p-4">
             <p className="text-xs text-ink-subtle mb-1">{t('collected')}</p>
-            <p className="text-lg font-bold text-ink">{formatCurrency(summary.collected, locale)}</p>
+            <p className="text-lg font-bold font-mono tabular-nums text-ink">{formatCurrency(summary.collected, locale)}</p>
           </div>
           <div className="bg-surface rounded-panel border border-border p-4">
             <p className="text-xs text-ink-subtle mb-1">{t('paidOut')}</p>
-            <p className="text-lg font-bold text-ink">{formatCurrency(summary.paid_out, locale)}</p>
+            <p className="text-lg font-bold font-mono tabular-nums text-ink">{formatCurrency(summary.paid_out, locale)}</p>
           </div>
           <div className="bg-surface rounded-panel border border-border p-4">
             <p className="text-xs text-ink-subtle mb-1">{t('balance')}</p>
-            <p className={`text-lg font-bold ${summary.balance < 0 ? 'text-danger' : 'text-primary'}`}>
+            <p className={`text-lg font-bold font-mono tabular-nums ${summary.balance < 0 ? 'text-danger' : 'text-primary'}`}>
               {formatCurrency(summary.balance, locale)}
             </p>
           </div>
@@ -180,7 +180,9 @@ export default function AdminClaimsPage() {
                 <Badge variant={STATUS_COLORS[claim.status]}>{t(`statusBadge.${claim.status}`)}</Badge>
               </div>
 
-              <p className="text-xs text-ink-subtle mb-2">{t('filedBy', { name: claim.owner_name, date: formatDate(claim.created_at, locale) })}</p>
+              <p className="text-xs text-ink-subtle mb-2">
+                {t.rich('filedBy', { name: claim.owner_name, date: formatDate(claim.created_at, locale), d: (chunks) => <span className="font-mono tabular-nums">{chunks}</span> })}
+              </p>
 
               <p className="text-sm text-ink-muted bg-surface-2 rounded-control p-3 mb-3">&ldquo;{claim.description}&rdquo;</p>
 
@@ -195,16 +197,16 @@ export default function AdminClaimsPage() {
 
               <div className="flex items-center gap-4 text-sm mb-3">
                 <span className="text-ink-muted">
-                  {t('requestedAmount')} <strong className="text-ink">{formatCurrency(claim.requested_amount, locale)}</strong>
+                  {t('requestedAmount')} <strong className="text-ink font-mono tabular-nums">{formatCurrency(claim.requested_amount, locale)}</strong>
                 </span>
                 <span className="text-ink-subtle">
-                  {t('ceiling')} {formatCurrency(claim.declared_value, locale)}
+                  {t('ceiling')} <span className="font-mono tabular-nums">{formatCurrency(claim.declared_value, locale)}</span>
                 </span>
               </div>
 
               {claim.approved_amount != null && (
                 <p className="text-sm text-primary mb-2">
-                  {t('approvedAmount')} <strong>{formatCurrency(claim.approved_amount, locale)}</strong>
+                  {t('approvedAmount')} <strong className="font-mono tabular-nums">{formatCurrency(claim.approved_amount, locale)}</strong>
                 </p>
               )}
               {claim.rejection_reason && (
@@ -212,7 +214,7 @@ export default function AdminClaimsPage() {
               )}
               {claim.reviewed_by_name && claim.reviewed_at && (
                 <p className="text-xs text-ink-subtle mb-2">
-                  {t('reviewedBy', { name: claim.reviewed_by_name, date: formatDate(claim.reviewed_at, locale) })}
+                  {t.rich('reviewedBy', { name: claim.reviewed_by_name, date: formatDate(claim.reviewed_at, locale), d: (chunks) => <span className="font-mono tabular-nums">{chunks}</span> })}
                 </p>
               )}
 

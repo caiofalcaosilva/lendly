@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { Camera, Loader2, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Avatar from '@/components/ui/Avatar'
+import Tooltip from '@/components/ui/Tooltip'
 import { usersService } from '@/services/users'
 
 export default function AvatarUploader({
@@ -53,27 +54,33 @@ export default function AvatarUploader({
     <div className="mx-auto mb-3 w-fit">
       <div className="relative">
         <Avatar name={name} avatarUrl={avatarUrl} size="lg" />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={busy}
-          className="absolute -bottom-1 -right-1 w-7 h-7 flex items-center justify-center rounded-full bg-primary text-primary-on shadow-elevated hover:bg-primary-hover disabled:opacity-50"
-          title={t('changePhoto')}
-          aria-label={t('changePhoto')}
-        >
-          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-        </button>
+        <div className="absolute -bottom-1 -right-1">
+          <Tooltip label={t('changePhoto')}>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={busy}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-primary text-primary-on shadow-elevated hover:bg-primary-hover disabled:opacity-50"
+              aria-label={t('changePhoto')}
+            >
+              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+            </button>
+          </Tooltip>
+        </div>
         {avatarUrl && (
-          <button
-            type="button"
-            onClick={handleRemove}
-            disabled={busy}
-            className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full bg-ink text-bg hover:opacity-80 disabled:opacity-50"
-            title={t('removePhoto')}
-            aria-label={t('removePhoto')}
-          >
-            <X className="w-3 h-3" />
-          </button>
+          <div className="absolute -top-1 -right-1">
+            <Tooltip label={t('removePhoto')}>
+              <button
+                type="button"
+                onClick={handleRemove}
+                disabled={busy}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-ink text-bg hover:opacity-80 disabled:opacity-50"
+                aria-label={t('removePhoto')}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Tooltip>
+          </div>
         )}
       </div>
       {error && <p className="text-xs text-danger mt-1.5">{error}</p>}

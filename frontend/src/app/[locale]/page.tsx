@@ -98,7 +98,7 @@ export default function LandingPage() {
       {/* How it works */}
       <section className="py-20 bg-surface">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-ink mb-12">{t('howItWorksTitle')}</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight text-center text-ink mb-12">{t('howItWorksTitle')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {HOW_IT_WORKS_KEYS.map((key, i) => (
               <div key={key} className="text-center">
@@ -117,7 +117,7 @@ export default function LandingPage() {
           section can't silently drift out of sync the way a hardcoded list did. */}
       <section className="py-20 bg-surface-2">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-ink mb-12">{t('categoriesTitle')}</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight text-center text-ink mb-12">{t('categoriesTitle')}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {categories.slice(0, MAX_CATEGORY_TILES).map((category) => {
               const Icon = CATEGORY_ICONS[category.key] ?? Package
@@ -125,7 +125,7 @@ export default function LandingPage() {
                 <Link
                   key={category.key}
                   href={`/items?category=${category.key}`}
-                  className="bg-surface rounded-panel p-6 text-center border border-border hover:shadow-elevated hover:-translate-y-0.5 transition-all group"
+                  className="bg-surface rounded-panel p-6 text-center border border-border shadow-subtle hover:shadow-elevated hover:-translate-y-0.5 transition-all group"
                 >
                   <Icon className="w-8 h-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
                   <span className="font-medium text-ink text-sm">{category.label}</span>
@@ -134,7 +134,7 @@ export default function LandingPage() {
             })}
             <Link
               href="/items"
-              className="bg-surface rounded-panel p-6 text-center border border-border hover:shadow-elevated hover:-translate-y-0.5 transition-all group"
+              className="bg-surface rounded-panel p-6 text-center border border-border shadow-subtle hover:shadow-elevated hover:-translate-y-0.5 transition-all group"
             >
               <Package className="w-8 h-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
               <span className="font-medium text-ink text-sm">{t('categories.viewAll')}</span>
@@ -147,7 +147,7 @@ export default function LandingPage() {
           make lending to someone you just met on the app feel safe. */}
       <section className="py-20 bg-surface">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-ink mb-3">{t('trustTitle')}</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight text-center text-ink mb-3">{t('trustTitle')}</h2>
           <p className="text-center text-ink-muted mb-12 max-w-2xl mx-auto">{t('trustSubtitle')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {TRUST_ITEMS.map(({ icon: Icon, key }) => (
@@ -200,7 +200,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-ink mb-6">
+              <h2 className="text-3xl font-extrabold tracking-tight text-ink mb-6">
                 {t('benefitsTitle')}
               </h2>
               <ul className="space-y-4">

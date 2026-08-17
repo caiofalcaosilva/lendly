@@ -16,12 +16,15 @@ import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Skeleton from '@/components/ui/Skeleton'
+import { TableShell, TableHeadRow, TableRow } from '@/components/ui/Table'
+import Checkbox from '@/components/ui/Checkbox'
+import Tooltip from '@/components/ui/Tooltip'
 
 const LIMIT = 20
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-border last:border-0">
+    <TableRow>
       <td className="px-4 py-3"><Skeleton className="w-4 h-4" /></td>
       <td className="px-4 py-3 space-y-1.5">
         <Skeleton className="h-4 w-32" />
@@ -31,7 +34,7 @@ function SkeletonRow() {
       <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
       <td className="px-4 py-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
       <td className="px-4 py-3"><div className="flex justify-end"><Skeleton className="h-8 w-8" /></div></td>
-    </tr>
+    </TableRow>
   )
 }
 
@@ -242,61 +245,31 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="bg-surface rounded-panel border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-ink-subtle uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium w-8" />
-                  <th className="px-4 py-3 font-medium">{t('columnUser')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnCity')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnSignup')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnStatus')}</th>
-                  <th className="px-4 py-3 font-medium text-right">{t('columnAction')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : users.length === 0 ? (
+      {!loading && users.length === 0 ? (
         <EmptyState icon={Users} title={t('emptyTitle')} description={t('emptyDescription')} />
       ) : (
         <>
-          <div className="bg-surface rounded-panel border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-ink-subtle uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium w-8">
-                    <input
-                      type="checkbox"
-                      checked={allSelectableSelected}
-                      onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded accent-primary"
-                    />
-                  </th>
-                  <th className="px-4 py-3 font-medium">{t('columnUser')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnCity')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnSignup')}</th>
-                  <th className="px-4 py-3 font-medium">{t('columnStatus')}</th>
-                  <th className="px-4 py-3 font-medium text-right">{t('columnAction')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b border-border last:border-0">
+          <TableShell>
+            <TableHeadRow>
+              <th className="px-4 py-3 font-medium w-8">
+                {!loading && (
+                  <Checkbox checked={allSelectableSelected} onChange={toggleSelectAll} />
+                )}
+              </th>
+              <th className="px-4 py-3 font-medium">{t('columnUser')}</th>
+              <th className="px-4 py-3 font-medium">{t('columnCity')}</th>
+              <th className="px-4 py-3 font-medium">{t('columnSignup')}</th>
+              <th className="px-4 py-3 font-medium">{t('columnStatus')}</th>
+              <th className="px-4 py-3 font-medium text-right">{t('columnAction')}</th>
+            </TableHeadRow>
+            <tbody>
+              {loading
+                ? Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
+                : users.map((u) => (
+                  <TableRow key={u.id}>
                     <td className="px-4 py-3">
                       {!u.is_admin && (
-                        <input
-                          type="checkbox"
-                          checked={selected.has(u.id)}
-                          onChange={() => toggleSelected(u.id)}
-                          className="w-4 h-4 rounded accent-primary"
-                        />
+                        <Checkbox checked={selected.has(u.id)} onChange={() => toggleSelected(u.id)} />
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -309,7 +282,7 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-ink-muted">
                       {[u.neighborhood, u.city].filter(Boolean).join(', ') || '—'}
                     </td>
-                    <td className="px-4 py-3 text-ink-muted">{formatDate(u.created_at, locale)}</td>
+                    <td className="px-4 py-3 text-ink-muted font-mono tabular-nums">{formatDate(u.created_at, locale)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1 items-start">
                         <Badge variant={u.is_active ? 'green' : 'red'}>{u.is_active ? t('statusActive') : t('statusInactive')}</Badge>
@@ -319,16 +292,17 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
                         {!u.is_admin && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            loading={busy === u.id}
-                            onClick={() => viewAs(u)}
-                            title={t('viewAs')}
-                            aria-label={t('viewAs')}
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </Button>
+                          <Tooltip label={t('viewAs')}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              loading={busy === u.id}
+                              onClick={() => viewAs(u)}
+                              aria-label={t('viewAs')}
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </Button>
+                          </Tooltip>
                         )}
                         {!u.is_admin && (
                           <Button
@@ -354,14 +328,12 @@ export default function AdminUsersPage() {
                         )}
                       </div>
                     </td>
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-            </div>
-          </div>
+            </tbody>
+          </TableShell>
 
-          {hasMore && (
+          {!loading && hasMore && (
             <div className="flex justify-center mt-4">
               <Button variant="outline" size="sm" loading={loadingMore} onClick={loadMore}>
                 {t('loadMore')}

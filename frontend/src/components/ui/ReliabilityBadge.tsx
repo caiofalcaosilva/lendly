@@ -1,5 +1,7 @@
 import { ShieldCheck } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import Badge from '@/components/ui/Badge'
+import Tooltip from '@/components/ui/Tooltip'
 
 /// Behavioral reliability score (0-100), distinct from the 1-5 star
 /// average_rating — based on on-time returns / late returns / refusals /
@@ -19,23 +21,14 @@ export default function ReliabilityBadge({
 
   if (!count || score == null) return null
 
-  const tone =
-    score >= 80
-      ? 'text-primary bg-primary-subtle border-primary/30'
-      : score >= 50
-        ? 'text-warning bg-warning-subtle border-warning/30'
-        : 'text-danger bg-danger-subtle border-danger/30'
-
-  const sizeClasses = size === 'sm' ? 'text-[10px] px-1.5 py-0.5 gap-0.5' : 'text-xs px-2 py-1 gap-1'
+  const variant = score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red'
   const iconSize = size === 'sm' ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'
 
   return (
-    <span
-      className={`inline-flex items-center rounded-full border font-medium flex-shrink-0 ${tone} ${sizeClasses}`}
-      title={t('tooltip', { score: Math.round(score), count })}
-    >
-      <ShieldCheck className={iconSize} />
-      {Math.round(score)}%
-    </span>
+    <Tooltip label={t('tooltip', { score: Math.round(score), count })}>
+      <Badge variant={variant} bordered size={size} icon={<ShieldCheck className={iconSize} />}>
+        {Math.round(score)}%
+      </Badge>
+    </Tooltip>
   )
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import { notFound } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
@@ -13,6 +13,8 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
+// Numbers only (price, date, phone, counts) — see design_system.md.
+const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
 
 export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'Metadata' })
@@ -62,7 +64,7 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className={`${inter.className} bg-bg text-ink min-h-screen flex flex-col transition-colors`}>
+      <body className={`${inter.className} ${jetbrainsMono.variable} bg-bg text-ink min-h-screen flex flex-col transition-colors`}>
         <a href="#main-content" className="skip-link bg-primary text-primary-on px-4 py-2 rounded-control text-sm font-medium">
           {t('label')}
         </a>

@@ -50,7 +50,7 @@ function VerifyEmailContent() {
         {state === 'success' && (
           <>
             <CheckCircle2 className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-ink mb-2">{t('successTitle')}</h1>
+            <h1 className="text-xl font-extrabold tracking-tight text-ink mb-2">{t('successTitle')}</h1>
             <p className="text-ink-muted text-sm mb-6">
               {t('successMessage')}
             </p>
@@ -66,7 +66,7 @@ function VerifyEmailContent() {
         {state === 'error' && (
           <>
             <XCircle className="w-12 h-12 text-danger mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-ink mb-2">{t('errorTitle')}</h1>
+            <h1 className="text-xl font-extrabold tracking-tight text-ink mb-2">{t('errorTitle')}</h1>
             <p className="text-ink-muted text-sm mb-6">
               {isAuthenticated ? t('errorMessageAuthenticated') : t('errorMessageAnonymous')}
             </p>

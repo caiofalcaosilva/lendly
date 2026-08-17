@@ -13,6 +13,7 @@ interface SearchParams {
   availability_type?: string
   neighborhood?: string
   city?: string
+  sort?: string
 }
 
 async function fetchInitialItems(params: SearchParams): Promise<Item[]> {
@@ -23,6 +24,9 @@ async function fetchInitialItems(params: SearchParams): Promise<Item[]> {
   if (params.availability_type) query.set('availability_type', params.availability_type)
   if (params.neighborhood) query.set('neighborhood', params.neighborhood)
   if (params.city) query.set('city', params.city)
+  // Only two sort values are ever valid — an unrecognized value in a
+  // shared/bookmarked URL is silently dropped rather than sent to the API.
+  if (params.sort === 'price_asc' || params.sort === 'nearest') query.set('sort', params.sort)
 
   try {
     const res = await fetch(`${API_URL}/items/?${query.toString()}`, { next: { revalidate: 60 } })
@@ -88,6 +92,7 @@ export default async function ItemsPage({ searchParams }: { searchParams: Search
         neighborhood: searchParams.neighborhood ?? '',
         city: searchParams.city ?? '',
       }}
+      initialSort={searchParams.sort === 'price_asc' || searchParams.sort === 'nearest' ? searchParams.sort : ''}
     />
   )
 }

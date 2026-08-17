@@ -13,6 +13,7 @@ import ItemCard from '@/components/items/ItemCard'
 import ItemFilters, { Filters } from '@/components/items/ItemFilters'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/Skeleton'
+import Select from '@/components/ui/Select'
 
 function MapLoading() {
   const t = useTranslations('Items')
@@ -118,15 +119,19 @@ function SkeletonCard() {
   )
 }
 
+type Sort = '' | 'nearest' | 'price_asc'
+
 interface Props {
   initialItems: Item[]
   initialFilters: Partial<Filters>
+  initialSort?: Sort
 }
 
-export default function ItemsClient({ initialItems, initialFilters }: Props) {
+export default function ItemsClient({ initialItems, initialFilters, initialSort = '' }: Props) {
   const { user, isAuthenticated } = useAuth()
   const router = useRouter()
   const t = useTranslations('Items')
+  const [sort, setSort] = useState<Sort>(initialSort)
   const [items, setItems] = useState<Item[]>(initialItems)
   const [filters, setFilters] = useState<Filters>({ ...INITIAL_FILTERS, ...initialFilters })
   const [view, setView] = useState<'list' | 'map'>('list')
@@ -199,8 +204,9 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
       }
     }
     if (filters.radius_km > 0) p.radius_km = filters.radius_km
+    if (sort) p.sort = sort
     return p
-  }, [filters, user, userHasLocation, liveLocation])
+  }, [filters, sort, user, userHasLocation, liveLocation])
 
   const loadMore = useCallback(async () => {
     if (isFetchingRef.current || !hasMoreRef.current) return
@@ -286,13 +292,14 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
     if (filters.availability_type) params.set('availability_type', filters.availability_type)
     if (filters.neighborhood) params.set('neighborhood', filters.neighborhood)
     if (filters.city) params.set('city', filters.city)
+    if (sort) params.set('sort', sort)
     const qs = params.toString()
     const timer = setTimeout(() => {
       router.replace(qs ? `/items?${qs}` : '/items', { scroll: false })
     }, filters.search ? 350 : 0)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.search, filters.category, filters.subcategory, filters.availability_type, filters.neighborhood, filters.city])
+  }, [filters.search, filters.category, filters.subcategory, filters.availability_type, filters.neighborhood, filters.city, sort])
 
   // Infinite scroll via IntersectionObserver (list view only)
   // Re-run when loadMore changes (filter change) OR when initialLoading
@@ -392,7 +399,23 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
               </>
             )}
           </p>
-          <div className="inline-flex rounded-control border border-border bg-surface p-0.5 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="items-sort" className="text-xs text-ink-subtle whitespace-nowrap">
+                {t('sortLabel')}
+              </label>
+              <Select
+                id="items-sort"
+                className="w-auto py-1.5 text-xs"
+                value={sort}
+                onChange={(e) => setSort(e.target.value as Sort)}
+              >
+                <option value="">{t('sortNewest')}</option>
+                <option value="price_asc">{t('sortPriceAsc')}</option>
+                {hasAnyLocation && <option value="nearest">{t('sortNearest')}</option>}
+              </Select>
+            </div>
+            <div className="inline-flex rounded-control border border-border bg-surface p-0.5 shrink-0">
             <button
               onClick={() => setView('list')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -409,6 +432,7 @@ export default function ItemsClient({ initialItems, initialFilters }: Props) {
             >
               <MapIcon className="w-4 h-4" /> {t('mapView')}
             </button>
+            </div>
           </div>
         </div>
 

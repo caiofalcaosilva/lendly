@@ -9,6 +9,7 @@ import { Category, Item } from '@/types'
 import { getCategoryLabel, getSubcategoryLabel, formatCurrency, formatDistance } from '@/lib/utils'
 import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
 import BusinessBadge from '@/components/ui/BusinessBadge'
+import Tooltip from '@/components/ui/Tooltip'
 import { useAuth } from '@/contexts/AuthContext'
 import { itemsService } from '@/services/items'
 import { categoriesService } from '@/services/categories'
@@ -78,7 +79,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
 
   return (
     <Link href={`/items/${item.id}`} className="group block h-full">
-      <div className="h-full flex flex-col bg-surface rounded-panel border border-border overflow-hidden motion-safe:hover:shadow-elevated motion-safe:hover:-translate-y-0.5 transition-all duration-200">
+      <div className="h-full flex flex-col bg-surface rounded-panel border border-border overflow-hidden shadow-subtle motion-safe:hover:shadow-elevated motion-safe:hover:-translate-y-0.5 transition-all duration-200">
         {/* Image */}
         <div className="relative aspect-[4/3] bg-surface-2 flex-shrink-0 overflow-hidden">
           {photo ? (
@@ -108,7 +109,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
               </span>
             ) : (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/95 dark:bg-black/70 text-ink shadow-elevated">
-                {formatCurrency(item.daily_rate ?? 0, locale)}<span className="font-normal text-ink-muted">{t('perDay')}</span>
+                <span className="font-mono tabular-nums">{formatCurrency(item.daily_rate ?? 0, locale)}</span><span className="font-normal text-ink-muted">{t('perDay')}</span>
               </span>
             )}
             {item.quantity_total > 1 && (
@@ -134,15 +135,18 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
 
           {/* Locate on map */}
           {onLocate && item.latitude != null && item.longitude != null && (
-            <button
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onLocate() }}
-              aria-label={t('viewOnMap')}
-              title={t('viewOnMap')}
-              className="absolute top-2.5 right-11 w-7 h-7 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-colors"
-            >
-              <LocateFixed className="w-4 h-4 text-white" />
-            </button>
+            <div className="absolute top-2.5 right-11">
+              <Tooltip label={t('viewOnMap')}>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onLocate() }}
+                  aria-label={t('viewOnMap')}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-colors"
+                >
+                  <LocateFixed className="w-4 h-4 text-white" />
+                </button>
+              </Tooltip>
+            </div>
           )}
 
           {/* Distance badge */}
@@ -150,7 +154,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
             <div className="absolute bottom-2.5 right-2.5">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-black/60 text-white backdrop-blur-sm">
                 <Navigation className="w-2.5 h-2.5" />
-                {formatDistance(distanceKm)}
+                <span className="font-mono tabular-nums">{formatDistance(distanceKm)}</span>
               </span>
             </div>
           )}
@@ -184,7 +188,7 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
             <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
               <div className="flex items-center gap-1">
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs font-medium text-ink-muted">
+                <span className="text-xs font-medium text-ink-muted font-mono tabular-nums">
                   {item.owner.average_rating.toFixed(1)}
                 </span>
               </div>

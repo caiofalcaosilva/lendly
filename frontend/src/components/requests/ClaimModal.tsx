@@ -60,7 +60,7 @@ export default function ClaimModal({ requestId, declaredValue, onClose, onSucces
     <Modal open onClose={onClose} title={t('title')}>
       <div className="space-y-4">
         <p className="text-sm text-ink-muted">
-          {t('ceiling', { amount: formatCurrency(declaredValue, locale) })}
+          {t.rich('ceiling', { amount: formatCurrency(declaredValue, locale), d: (chunks) => <span className="font-mono tabular-nums">{chunks}</span> })}
         </p>
 
         <Textarea

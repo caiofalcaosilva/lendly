@@ -19,8 +19,22 @@ import Textarea from '@/components/ui/Textarea'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import LocationFields from '@/components/ui/LocationFields'
+import Stepper from '@/components/ui/Stepper'
+import Checkbox from '@/components/ui/Checkbox'
+import Radio from '@/components/ui/Radio'
 import ItemPhotoUploader from '@/components/items/ItemPhotoUploader'
 import ItemPhotoPicker from '@/components/items/ItemPhotoPicker'
+
+// Fields validated (via RHF's `trigger`) before letting "Continuar" advance
+// past each step — only for steps whose fields are actually RHF-registered.
+// Step 1 (photos) has none: photo count isn't required today, same as the
+// single-page form before this change.
+const STEP_FIELDS = [
+  ['title', 'category'],
+  [],
+  ['availability_type', 'quantity_total', 'daily_rate', 'weekly_rate', 'monthly_rate', 'delivery_fee'],
+  [],
+] as const
 
 type AddressMode = 'default' | 'custom'
 
@@ -67,6 +81,10 @@ export default function ItemForm({ item }: { item?: Item }) {
   const [mpConnected, setMpConnected] = useState(true)
   const [freeLendingOnly, setFreeLendingOnly] = useState(false)
   const hasProfileAddress = !!user?.zip_code
+  // The wizard only applies to creation — editing an existing item stays a
+  // single page (see plan: don't touch a flow item owners already rely on).
+  const [currentStep, setCurrentStep] = useState(0)
+  const showStep = (n: number) => !!item || currentStep === n
 
   useEffect(() => {
     categoriesService.list().then(setCategories)
@@ -159,6 +177,7 @@ export default function ItemForm({ item }: { item?: Item }) {
     watch,
     control,
     setValue,
+    trigger,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -269,9 +288,21 @@ export default function ItemForm({ item }: { item?: Item }) {
     }
   }
 
+  const stepLabels = [t('steps.details'), t('steps.photos'), t('steps.pricing'), t('steps.review')]
+
+  const nextStep = async () => {
+    const fields = STEP_FIELDS[currentStep]
+    const valid = fields.length === 0 || (await trigger(fields as any))
+    if (valid) setCurrentStep((s) => s + 1)
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {!item && <Stepper steps={stepLabels} current={currentStep} />}
+
       {error && <div className="p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">{error}</div>}
+
+      {showStep(0) && <>
 
       <Input label={t('title')} {...register('title')} error={errors.title?.message} placeholder="Ex: Furadeira Bosch 650W" required />
 
@@ -303,20 +334,28 @@ export default function ItemForm({ item }: { item?: Item }) {
         </Select>
       )}
 
-      {item ? (
-        <ItemPhotoUploader itemId={item.id} photos={photos} onChange={setPhotos} />
-      ) : (
-        <ItemPhotoPicker files={stagedFiles} onChange={setStagedFiles} />
+      </>}
+
+      {showStep(1) && (
+        item ? (
+          <ItemPhotoUploader itemId={item.id} photos={photos} onChange={setPhotos} />
+        ) : (
+          <ItemPhotoPicker files={stagedFiles} onChange={setStagedFiles} />
+        )
       )}
+
+      {showStep(2) && <>
 
       <div>
         <label className="block text-sm font-medium text-ink-muted mb-2">{t('availabilityType')}</label>
         <div className="flex gap-6">
           {(freeLendingOnly ? (['free'] as const) : (['free', 'paid'] as const)).map((val) => (
-            <label key={val} className="flex items-center gap-2 cursor-pointer text-ink">
-              <input type="radio" value={val} {...register('availability_type')} className="text-primary" />
-              <span className="text-sm">{val === 'free' ? t('freeLoan') : t('paidRental')}</span>
-            </label>
+            <Radio
+              key={val}
+              checked={availType === val}
+              onChange={() => setValue('availability_type', val, { shouldValidate: true })}
+              label={val === 'free' ? t('freeLoan') : t('paidRental')}
+            />
           ))}
         </div>
         {freeLendingOnly && (
@@ -352,6 +391,8 @@ export default function ItemForm({ item }: { item?: Item }) {
             type="number"
             step="0.01"
             min="0.01"
+            prefix="R$"
+            className="font-mono tabular-nums"
             {...register('daily_rate', { valueAsNumber: true })}
             error={errors.daily_rate?.message}
             placeholder="0,00"
@@ -363,6 +404,8 @@ export default function ItemForm({ item }: { item?: Item }) {
               type="number"
               step="0.01"
               min="0.01"
+              prefix="R$"
+              className="font-mono tabular-nums"
               {...register('weekly_rate', {
                 setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
               })}
@@ -374,6 +417,8 @@ export default function ItemForm({ item }: { item?: Item }) {
               type="number"
               step="0.01"
               min="0.01"
+              prefix="R$"
+              className="font-mono tabular-nums"
               {...register('monthly_rate', {
                 setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
               })}
@@ -390,6 +435,8 @@ export default function ItemForm({ item }: { item?: Item }) {
                 type="number"
                 step="0.01"
                 min="0"
+                prefix="R$"
+                className="font-mono tabular-nums"
                 {...register('delivery_fee', {
                   setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
                 })}
@@ -452,15 +499,7 @@ export default function ItemForm({ item }: { item?: Item }) {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 cursor-pointer text-ink">
-        <input
-          type="checkbox"
-          checked={requiresVerification}
-          onChange={(e) => setRequiresVerification(e.target.checked)}
-          className="text-primary rounded"
-        />
-        <span className="text-sm">{t('requireVerification')}</span>
-      </label>
+      <Checkbox checked={requiresVerification} onChange={setRequiresVerification} label={t('requireVerification')} />
 
       <Textarea
         label={t('usageRules')}
@@ -475,6 +514,8 @@ export default function ItemForm({ item }: { item?: Item }) {
           type="number"
           step="0.01"
           min="0"
+          prefix="R$"
+          className="font-mono tabular-nums"
           {...register('declared_value', {
             setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
           })}
@@ -484,18 +525,16 @@ export default function ItemForm({ item }: { item?: Item }) {
         <p className="text-xs text-ink-subtle mt-1.5">{t('declaredValueHint')}</p>
       </div>
 
+      </>}
+
+      {showStep(3) && <>
+
       {myGroups.length > 0 && (
         <div className="pt-4 border-t border-border">
           <p className="text-sm font-medium text-ink-muted mb-3">{t('visibility')}</p>
-          <label className="flex items-center gap-2 cursor-pointer mb-2 text-ink">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="text-primary rounded"
-            />
-            <span className="text-sm">{t('visibleInPublicSearch')}</span>
-          </label>
+          <div className="mb-2">
+            <Checkbox checked={isPublic} onChange={setIsPublic} label={t('visibleInPublicSearch')} />
+          </div>
           <p className="text-xs text-ink-subtle mb-2">{t('alsoShareInGroups')}</p>
           {myGroups.length > 8 && (
             <input
@@ -510,15 +549,12 @@ export default function ItemForm({ item }: { item?: Item }) {
             {myGroups
               .filter((g) => g.name.toLowerCase().includes(groupSearch.trim().toLowerCase()))
               .map((g) => (
-                <label key={g.id} className="flex items-center gap-2 cursor-pointer text-ink">
-                  <input
-                    type="checkbox"
-                    checked={selectedGroupIds.includes(g.id)}
-                    onChange={() => toggleGroup(g.id)}
-                    className="text-primary rounded"
-                  />
-                  <span className="text-sm">{g.name}</span>
-                </label>
+                <Checkbox
+                  key={g.id}
+                  checked={selectedGroupIds.includes(g.id)}
+                  onChange={() => toggleGroup(g.id)}
+                  label={g.name}
+                />
               ))}
           </div>
         </div>
@@ -562,14 +598,38 @@ export default function ItemForm({ item }: { item?: Item }) {
         )}
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={loading} className="flex-1">
-          {item ? t('saveChanges') : t('createItem')}
-        </Button>
-        <Button type="button" variant="outline" onClick={() => router.back()}>
-          {t('cancel')}
-        </Button>
-      </div>
+      </>}
+
+      {item ? (
+        <div className="flex gap-3 pt-2">
+          <Button type="submit" loading={loading} className="flex-1">
+            {t('saveChanges')}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            {t('cancel')}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex gap-3 pt-2">
+          {currentStep > 0 && (
+            <Button type="button" variant="outline" onClick={() => setCurrentStep((s) => s - 1)}>
+              {t('back')}
+            </Button>
+          )}
+          {currentStep < stepLabels.length - 1 ? (
+            <Button type="button" onClick={nextStep} className="flex-1">
+              {t('continueBtn')}
+            </Button>
+          ) : (
+            <Button type="submit" loading={loading} className="flex-1">
+              {t('createItem')}
+            </Button>
+          )}
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            {t('cancel')}
+          </Button>
+        </div>
+      )}
     </form>
   )
 }

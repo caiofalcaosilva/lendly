@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { usersService } from '@/services/users'
 import { NotificationPreferences, User } from '@/types'
 import { useToast } from '@/contexts/ToastContext'
+import Switch from '@/components/ui/Switch'
 
 const OPTION_KEYS: (keyof NotificationPreferences)[] = [
   'request_status', 'new_message', 'verification_result', 'item_available', 'review_reminder',
@@ -49,16 +50,15 @@ export default function NotificationPreferencesSection({
 
       <div className="mt-3 pt-3 border-t border-border space-y-2.5">
         {OPTION_KEYS.map((key) => (
-          <label key={key} className="flex items-center justify-between gap-3 text-xs text-ink-muted cursor-pointer">
+          <div key={key} className="flex items-center justify-between gap-3 text-xs text-ink-muted">
             {t(`options.${key}`)}
-            <input
-              type="checkbox"
+            <Switch
               checked={user.notification_prefs[key]}
               onChange={() => toggle(key)}
               disabled={saving === key}
-              className="w-4 h-4 rounded accent-primary flex-shrink-0"
+              label={t(`options.${key}`)}
             />
-          </label>
+          </div>
         ))}
       </div>
     </div>

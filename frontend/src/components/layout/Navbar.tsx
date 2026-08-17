@@ -13,6 +13,7 @@ import NotificationBell from '@/components/layout/NotificationBell'
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher'
 import UserMenu from '@/components/layout/UserMenu'
 import { ADMIN_LINKS } from './adminLinks'
+import Tooltip from '@/components/ui/Tooltip'
 
 const ANNOUNCEMENT_DISMISSED_KEY = 'lendly:announcement-dismissed'
 
@@ -138,7 +139,7 @@ export default function Navbar() {
       )}
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/">
-          <Logo />
+          <Logo showBeta />
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
@@ -173,28 +174,30 @@ export default function Navbar() {
               <NotificationBell />
               <div className="flex items-center gap-3 pl-3 ml-1 border-l border-border">
                 <LanguageSwitcher />
-                <button
-                  onClick={toggleTheme}
-                  aria-label={themeToggleLabel}
-                  className="text-ink-muted hover:text-ink transition-colors"
-                  title={themeToggleLabel}
-                >
-                  {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                </button>
+                <Tooltip label={themeToggleLabel}>
+                  <button
+                    onClick={toggleTheme}
+                    aria-label={themeToggleLabel}
+                    className="text-ink-muted hover:text-ink transition-colors"
+                  >
+                    {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  </button>
+                </Tooltip>
                 <UserMenu />
               </div>
             </>
           ) : (
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
-              <button
-                onClick={toggleTheme}
-                aria-label={themeToggleLabel}
-                className="text-ink-muted hover:text-ink transition-colors"
-                title={themeToggleLabel}
-              >
-                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
+              <Tooltip label={themeToggleLabel}>
+                <button
+                  onClick={toggleTheme}
+                  aria-label={themeToggleLabel}
+                  className="text-ink-muted hover:text-ink transition-colors"
+                >
+                  {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </button>
+              </Tooltip>
               <Link href="/login">
                 <Button variant="outline" size="sm">{t('login')}</Button>
               </Link>
@@ -207,14 +210,15 @@ export default function Navbar() {
 
         <div className="flex items-center gap-1 md:hidden">
           <LanguageSwitcher compact />
-          <button
-            onClick={toggleTheme}
-            aria-label={themeToggleLabel}
-            className="p-2 text-ink-muted"
-            title={themeToggleLabel}
-          >
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
+          <Tooltip label={themeToggleLabel}>
+            <button
+              onClick={toggleTheme}
+              aria-label={themeToggleLabel}
+              className="p-2 text-ink-muted"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+          </Tooltip>
           {isAuthenticated && (
             <div className="p-2">
               <NotificationBell />

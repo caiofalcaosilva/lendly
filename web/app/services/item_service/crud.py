@@ -261,6 +261,7 @@ def list_items(
     radius_km: float | None = None,
     current_user: User | None = None,
     subcategory: str | None = None,
+    sort: str | None = None,
 ) -> list[ItemResponse]:
     qs = Item.objects(is_active=True, is_available=True, is_public=True)
 
@@ -290,22 +291,45 @@ def list_items(
     if effective_radius and origins:
         ordered = _search_items(qs, search) if search else qs.order_by("-created_at")
         all_items = [to_response(i, current_user) for i in ordered]
-        filtered = [
-            item
-            for item in all_items
-            if item.latitude is not None
-            and item.longitude is not None
-            and any(
+        # Distance to the nearest of the (up to two) origins is computed
+        # here regardless of `sort` — the radius filter below already needs
+        # it, so keeping it alongside each item costs nothing extra and
+        # lets `sort=nearest` reuse it instead of recomputing.
+        candidates: list[tuple[ItemResponse, float]] = []
+        for item in all_items:
+            if item.latitude is None or item.longitude is None:
+                continue
+            nearest_distance = min(
                 _haversine_km(o_lat, o_lng, item.latitude, item.longitude)
-                <= effective_radius
                 for o_lat, o_lng in origins
             )
-        ]
-        return filtered[skip : skip + limit]
+            if nearest_distance <= effective_radius:
+                candidates.append((item, nearest_distance))
+        if sort == "nearest":
+            candidates.sort(key=lambda pair: pair[1])
+        elif sort == "price_asc":
+            candidates.sort(key=lambda pair: pair[0].daily_rate or 0)
+        return [item for item, _ in candidates][skip : skip + limit]
 
     if search:
+        if sort == "price_asc":
+            # Uncapped, same as the radius branch above — needs every match
+            # in hand before it can be reordered by price, not just the
+            # page currently being requested.
+            items = _search_items(qs, search)
+            responses = sorted(
+                (to_response(i, current_user) for i in items),
+                key=lambda r: r.daily_rate or 0,
+            )
+            return responses[skip : skip + limit]
         items = _search_items(qs, search, cap=skip + limit)
         return [to_response(i, current_user) for i in items[skip : skip + limit]]
+
+    if sort == "price_asc":
+        return [
+            to_response(i, current_user)
+            for i in qs.skip(skip).limit(limit).order_by("daily_rate")
+        ]
 
     return [
         to_response(i, current_user)

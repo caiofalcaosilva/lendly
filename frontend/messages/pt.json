@@ -95,6 +95,14 @@
       "label": "Empresa",
       "tooltip": "Conta de empresa"
     },
+    "BetaBadge": {
+      "label": "Versão beta",
+      "tooltip": "O Lendly ainda está em fase de testes"
+    },
+    "LanguageSwitcher": {
+      "toEnglish": "Switch to English",
+      "toPortuguese": "Mudar para português"
+    },
     "ItemCard": {
       "free": "Gratuito",
       "perDay": "/dia",
@@ -129,6 +137,14 @@
       "filters": "Filtros:",
       "clearAll": "Limpar tudo",
       "removeFilter": "Remover filtro: {label}"
+    },
+    "ItemPhotoField": {
+      "label": "Fotos",
+      "cover": "Capa",
+      "makeCover": "Tornar capa",
+      "removePhoto": "Remover foto",
+      "addPhoto": "Adicionar foto",
+      "uploadError": "Erro ao enviar foto"
     },
     "ItemForm": {
       "errors": {
@@ -186,7 +202,15 @@
       "profileAddress": "Endereço do seu perfil",
       "saveChanges": "Salvar alterações",
       "createItem": "Cadastrar item",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "back": "Voltar",
+      "continueBtn": "Continuar",
+      "steps": {
+        "details": "Detalhes",
+        "photos": "Fotos",
+        "pricing": "Preço",
+        "review": "Revisão"
+      }
     },
     "ItemsMapView": {
       "homeMarker": "Seu endereço cadastrado",
@@ -226,10 +250,10 @@
         "refunded": "Pagamento estornado",
         "failed": "Pagamento falhou"
       },
-      "pickup": "Retirada: {date}",
-      "returnDate": "Devolução: {date}",
-      "extensionRequestedOwner": "Pediu prorrogação até {date}",
-      "extensionRequestedRequester": "Prorrogação pedida até {date} — aguardando resposta",
+      "pickup": "Retirada: <d>{date}</d>",
+      "returnDate": "Devolução: <d>{date}</d>",
+      "extensionRequestedOwner": "Pediu prorrogação até <d>{date}</d>",
+      "extensionRequestedRequester": "Prorrogação pedida até <d>{date}</d> — aguardando resposta",
       "approve": "Aprovar",
       "reject": "Recusar",
       "waitingForPayment": "Aguardando o solicitante pagar pra liberar a retirada",
@@ -268,7 +292,7 @@
       "errorAmountOverCeiling": "O valor não pode passar do valor de reposição do item",
       "errorGeneric": "Erro ao registrar o sinistro",
       "title": "Registrar dano/perda",
-      "ceiling": "Valor de reposição do item: {amount} — esse é o teto do sinistro",
+      "ceiling": "Valor de reposição do item: <d>{amount}</d> — esse é o teto do sinistro",
       "description": "O que aconteceu",
       "descriptionPlaceholder": "Descreva o dano ou o que houve com o item...",
       "requestedAmount": "Valor pedido (R$)",
@@ -570,6 +594,10 @@
     "withinRadius": "a até {km} km de você",
     "listView": "Lista",
     "mapView": "Mapa",
+    "sortLabel": "Ordenar por",
+    "sortNewest": "Recém-anunciado",
+    "sortPriceAsc": "Menor preço",
+    "sortNearest": "Mais perto",
     "loadingItems": "Carregando itens...",
     "emptyTitle": "Nenhum item encontrado",
     "emptyRadius": "Nenhum item a {km} km de você. Tente aumentar o raio.",
@@ -605,6 +633,10 @@
       "free": "Gratuito",
       "rental": "Aluguel",
       "perDay": "/dia",
+      "previousPhoto": "Foto anterior",
+      "nextPhoto": "Próxima foto",
+      "goToPhoto": "Ir para foto {number}",
+      "breadcrumbExplore": "Explorar",
       "description": "Descrição",
       "availableOn": "Disponível: {days}",
       "quantityTotal": "{count, plural, one {# unidade no total} other {# unidades no total}}",
@@ -692,12 +724,12 @@
         "paid": "Pago"
       },
       "empty": "Nenhum sinistro nessa categoria",
-      "filedBy": "Registrado por {name} em {date}",
+      "filedBy": "Registrado por {name} em <d>{date}</d>",
       "requestedAmount": "Valor pedido:",
       "ceiling": "Teto (valor de reposição):",
       "approvedAmount": "Valor aprovado:",
       "rejectionReason": "Motivo da recusa:",
-      "reviewedBy": "Revisado por {name} em {date}",
+      "reviewedBy": "Revisado por {name} em <d>{date}</d>",
       "approvedAmountLabel": "Valor a aprovar (R$)",
       "rejectReasonLabel": "Motivo da recusa",
       "approve": "Aprovar",
@@ -930,7 +962,7 @@
       "metaNotFoundTitle": "Usuário não encontrado | Lendly",
       "metaDescriptionWithLocation": "{name} · {location} · Perfil no Lendly",
       "metaDescriptionNoLocation": "{name} · Perfil no Lendly",
-      "memberSince": "Membro desde {date}",
+      "memberSince": "Membro desde <d>{date}</d>",
       "ratingCount": "{count, plural, one {# avaliação} other {# avaliações}}",
       "favorited": "Favoritado",
       "favorite": "Favoritar",

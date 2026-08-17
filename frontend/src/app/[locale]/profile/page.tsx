@@ -331,7 +331,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-ink">{t('title')}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
         <p className="text-ink-muted text-sm mt-1">
           {t('subtitle')}
         </p>
@@ -356,7 +356,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-2">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium text-ink">{user?.average_rating.toFixed(1)}</span>
+              <span className="text-sm font-medium text-ink font-mono tabular-nums">{user?.average_rating.toFixed(1)}</span>
               <span className="text-xs text-ink-subtle">{t('ratingCount', { count: user?.rating_count ?? 0 })}</span>
             </div>
             {user && (
@@ -391,7 +391,7 @@ export default function ProfilePage() {
                 <Phone className="w-4 h-4 text-ink-subtle mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-ink-subtle">{t('phone')}</p>
-                  <p className="text-sm text-ink-muted">{user.phone}</p>
+                  <p className="text-sm text-ink-muted font-mono tabular-nums">{user.phone}</p>
                 </div>
               </div>
             )}

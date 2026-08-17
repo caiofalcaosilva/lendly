@@ -29,7 +29,7 @@ function SkeletonRow() {
 // A handful of events carry metadata worth a second line — the same
 // restraint the backend applied when deciding what goes in `metadata` at
 // all (see docs/historico-de-atividades.md).
-function activityDetail(a: Activity, locale: 'pt' | 'en'): string | null {
+function activityDetail(a: Activity, locale: 'pt' | 'en'): React.ReactNode {
   if (a.event === 'account.new_login') {
     const ua = a.metadata.user_agent as string | undefined
     const ip = a.metadata.ip_address as string | undefined
@@ -42,7 +42,7 @@ function activityDetail(a: Activity, locale: 'pt' | 'en'): string | null {
     return String(a.metadata.new_email)
   }
   if (a.event.startsWith('payment.') && typeof a.metadata.gross_amount === 'number') {
-    return formatCurrency(a.metadata.gross_amount, locale)
+    return <span className="font-mono tabular-nums">{formatCurrency(a.metadata.gross_amount, locale)}</span>
   }
   if (a.event === 'group.item_shared' && a.metadata.item_title) {
     return String(a.metadata.item_title)
@@ -120,7 +120,7 @@ export default function ActivitiesPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-ink">{text}</p>
                     {detail && <p className="text-xs text-ink-subtle mt-0.5">{detail}</p>}
-                    <p className="text-xs text-ink-subtle mt-1.5">
+                    <p className="text-xs text-ink-subtle mt-1.5 font-mono tabular-nums">
                       {formatDate(a.created_at, locale)}
                     </p>
                   </div>

@@ -212,7 +212,7 @@ export default function NotificationsPage() {
                       {n.body && (
                         <p className="text-sm text-ink-muted mt-0.5">{n.body}</p>
                       )}
-                      <p className="text-xs text-ink-subtle mt-1.5">
+                      <p className="text-xs text-ink-subtle mt-1.5 font-mono tabular-nums">
                         {formatDate(n.created_at, locale)}
                       </p>
                     </div>

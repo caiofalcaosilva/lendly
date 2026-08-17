@@ -1,5 +1,7 @@
 import { HeartHandshake, Timer, Award, Sparkles, Zap } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import Badge from '@/components/ui/Badge'
+import Tooltip from '@/components/ui/Tooltip'
 
 /// Qualitative reputation badges, distinct from the numeric ReliabilityBadge —
 /// each one recognizes a specific pattern of good behavior. Renders nothing
@@ -27,16 +29,13 @@ export default function ReputationBadges({
   size?: 'sm' | 'md'
 }) {
   const t = useTranslations('Common.ReputationBadges')
-  const badges: { key: string; label: string; title: string; icon: typeof HeartHandshake; tone: string }[] = []
+  const badges: { key: string; label: string; title: string; icon: typeof HeartHandshake; variant: 'gray' | 'clay' }[] = []
 
   // Every achievement below means the same thing — "this neighbor is good at
-  // this" — so they share one tone and are told apart by icon and label
-  // instead of by color. A different hue per badge would just be confetti;
-  // color is reserved for the one badge that IS a distinct signal (below).
-  const ACHIEVEMENT_TONE = 'text-clay bg-clay-subtle border-clay/30'
-  // Informational, not an achievement — a new account hasn't earned
-  // anything yet, so it gets a neutral tone rather than the achievement gold.
-  const NEW_TONE = 'text-ink-muted bg-surface-2 border-border-strong'
+  // this" — so they share one tone (clay) and are told apart by icon and
+  // label instead of by color. A different hue per badge would just be
+  // confetti; color is reserved for the one badge that IS a distinct signal
+  // (below). "new" isn't an achievement, so it gets the neutral gray tone.
 
   // Makes newness visible instead of leaving it to be inferred from empty
   // stats — an empty rating is indistinguishable from "just never reviewed"
@@ -48,7 +47,7 @@ export default function ReputationBadges({
       label: t('new.label'),
       title: t('new.title'),
       icon: Sparkles,
-      tone: NEW_TONE,
+      variant: 'gray',
     })
   }
 
@@ -58,7 +57,7 @@ export default function ReputationBadges({
       label: t('trusted.label'),
       title: t('trusted.title', { score: Math.round(reliabilityScore), count: reliabilityCount }),
       icon: HeartHandshake,
-      tone: ACHIEVEMENT_TONE,
+      variant: 'clay',
     })
   }
 
@@ -68,7 +67,7 @@ export default function ReputationBadges({
       label: t('punctual.label'),
       title: t('punctual.title', { count: finishedLoansCount }),
       icon: Timer,
-      tone: ACHIEVEMENT_TONE,
+      variant: 'clay',
     })
   }
 
@@ -78,7 +77,7 @@ export default function ReputationBadges({
       label: t('rated.label'),
       title: t('rated.title', { rating: averageRating.toFixed(1), count: ratingCount }),
       icon: Award,
-      tone: ACHIEVEMENT_TONE,
+      variant: 'clay',
     })
   }
 
@@ -90,26 +89,22 @@ export default function ReputationBadges({
       label: t('responsive.label'),
       title: t('responsive.title', { response: responseLabel, count: responseCount }),
       icon: Zap,
-      tone: ACHIEVEMENT_TONE,
+      variant: 'clay',
     })
   }
 
   if (badges.length === 0) return null
 
-  const sizeClasses = size === 'sm' ? 'text-[10px] px-1.5 py-0.5 gap-0.5' : 'text-xs px-2 py-1 gap-1'
   const iconSize = size === 'sm' ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {badges.map(({ key, label, title, icon: Icon, tone }) => (
-        <span
-          key={key}
-          className={`inline-flex items-center rounded-full border font-medium flex-shrink-0 ${tone} ${sizeClasses}`}
-          title={title}
-        >
-          <Icon className={iconSize} />
-          {label}
-        </span>
+      {badges.map(({ key, label, title, icon: Icon, variant }) => (
+        <Tooltip key={key} label={title}>
+          <Badge variant={variant} bordered size={size} icon={<Icon className={iconSize} />}>
+            {label}
+          </Badge>
+        </Tooltip>
       ))}
     </div>
   )

@@ -115,7 +115,7 @@ export default function AdminGroupsPage() {
                   </p>
                 </div>
                 <span className="flex items-center gap-1.5 text-sm text-ink-muted flex-shrink-0">
-                  <Users className="w-3.5 h-3.5" /> {g.member_count}
+                  <Users className="w-3.5 h-3.5" /> <span className="font-mono tabular-nums">{g.member_count}</span>
                 </span>
               </Link>
             ))}

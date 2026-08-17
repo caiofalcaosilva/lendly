@@ -89,7 +89,7 @@ export default function NotificationBell() {
                       {n.body}
                     </p>
                   )}
-                  <p className="text-[11px] text-ink-subtle mt-1">
+                  <p className="text-[11px] font-mono tabular-nums text-ink-subtle mt-1">
                     {formatDate(n.created_at, locale)}
                   </p>
                 </Link>

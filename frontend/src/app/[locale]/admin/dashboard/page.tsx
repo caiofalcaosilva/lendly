@@ -13,6 +13,7 @@ import { categoriesService } from '@/services/categories'
 import { useAuth } from '@/contexts/AuthContext'
 import { getCategoryLabel } from '@/lib/utils'
 import Spinner from '@/components/ui/Spinner'
+import Tooltip from '@/components/ui/Tooltip'
 
 function StatCard({ icon: Icon, label, value, valueClassName }: { icon: any; label: string; value: string | number; valueClassName?: string }) {
   return (
@@ -21,7 +22,7 @@ function StatCard({ icon: Icon, label, value, valueClassName }: { icon: any; lab
         <Icon className="w-3.5 h-3.5" />
         <span className="text-xs">{label}</span>
       </div>
-      <div className={valueClassName ?? 'text-xl font-bold text-ink'}>{value}</div>
+      <div className={valueClassName ?? 'text-xl font-bold font-mono tabular-nums text-ink'}>{value}</div>
     </div>
   )
 }
@@ -79,7 +80,7 @@ export default function AdminDashboardPage() {
             <StatCard icon={Package} label={t('activeItems')} value={data.total_items} />
             <StatCard icon={Clock} label={t('pendingLoans')} value={data.loans_pending} />
             <StatCard icon={PackageCheck} label={t('inProgress')} value={data.loans_in_progress} />
-            <StatCard icon={CheckCircle2} label={t('finished')} value={data.loans_finished} valueClassName="text-xl font-bold text-primary" />
+            <StatCard icon={CheckCircle2} label={t('finished')} value={data.loans_finished} valueClassName="text-xl font-bold font-mono tabular-nums text-primary" />
             <StatCard icon={XCircle} label={t('cancelledOrRefused')} value={data.loans_cancelled_or_refused} />
           </div>
 
@@ -93,7 +94,7 @@ export default function AdminDashboardPage() {
                 <Flag className="w-4 h-4 text-danger" />
                 <span className="text-sm font-medium text-ink">{t('pendingReports')}</span>
               </div>
-              <span className={`text-lg font-bold ${data.pending_reports > 0 ? 'text-danger' : 'text-ink-subtle'}`}>
+              <span className={`text-lg font-bold font-mono tabular-nums ${data.pending_reports > 0 ? 'text-danger' : 'text-ink-subtle'}`}>
                 {data.pending_reports}
               </span>
             </Link>
@@ -105,7 +106,7 @@ export default function AdminDashboardPage() {
                 <ShieldCheck className="w-4 h-4 text-accent" />
                 <span className="text-sm font-medium text-ink">{t('pendingVerifications')}</span>
               </div>
-              <span className={`text-lg font-bold ${data.pending_verifications > 0 ? 'text-accent' : 'text-ink-subtle'}`}>
+              <span className={`text-lg font-bold font-mono tabular-nums ${data.pending_verifications > 0 ? 'text-accent' : 'text-ink-subtle'}`}>
                 {data.pending_verifications}
               </span>
             </Link>
@@ -119,12 +120,13 @@ export default function AdminDashboardPage() {
             <div className="flex items-end gap-2 h-24">
               {data.signups_last_8_weeks.map((w) => (
                 <div key={w.week_start} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
-                  <span className="text-[10px] text-ink-subtle">{w.count}</span>
-                  <div
-                    className="w-full bg-primary rounded-t-sm min-h-[2px]"
-                    style={{ height: `${(w.count / maxWeekly) * 100}%` }}
-                    title={t('weekOf', { week: w.week_start, count: w.count })}
-                  />
+                  <span className="text-[10px] text-ink-subtle font-mono tabular-nums">{w.count}</span>
+                  <Tooltip label={t('weekOf', { week: w.week_start, count: w.count })} className="w-full h-full">
+                    <div
+                      className="w-full bg-primary rounded-t-sm min-h-[2px]"
+                      style={{ height: `${(w.count / maxWeekly) * 100}%` }}
+                    />
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -143,7 +145,7 @@ export default function AdminDashboardPage() {
                     <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden">
                       <div className="h-full bg-primary rounded-full" style={{ width: `${(c.count / maxCategory) * 100}%` }} />
                     </div>
-                    <span className="w-6 text-right text-ink-subtle">{c.count}</span>
+                    <span className="w-6 text-right text-ink-subtle font-mono tabular-nums">{c.count}</span>
                   </div>
                 ))}
               </div>
@@ -161,7 +163,7 @@ export default function AdminDashboardPage() {
                     <div className="flex-1 h-2 bg-surface-2 rounded-full overflow-hidden">
                       <div className="h-full bg-primary rounded-full" style={{ width: `${(c.count / maxCity) * 100}%` }} />
                     </div>
-                    <span className="w-6 text-right text-ink-subtle">{c.count}</span>
+                    <span className="w-6 text-right text-ink-subtle font-mono tabular-nums">{c.count}</span>
                   </div>
                 ))}
               </div>

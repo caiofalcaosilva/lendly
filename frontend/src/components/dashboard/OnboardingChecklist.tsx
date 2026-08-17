@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
 import { CircleCheck, Circle, ListChecks, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import Tooltip from '@/components/ui/Tooltip'
 
 const DISMISS_KEY = 'onboarding_dismissed'
 
@@ -53,14 +54,15 @@ export default function OnboardingChecklist({
           <ListChecks className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-semibold text-ink">{t('title')}</h2>
         </div>
-        <button
-          onClick={dismiss}
-          className="text-ink-subtle hover:text-ink-muted transition-colors"
-          title={t('dismiss')}
-          aria-label={t('dismiss')}
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <Tooltip label={t('dismiss')}>
+          <button
+            onClick={dismiss}
+            className="text-ink-subtle hover:text-ink-muted transition-colors"
+            aria-label={t('dismiss')}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
       <div className="space-y-2">
         {steps.map((step) => (

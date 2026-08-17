@@ -37,7 +37,7 @@ export default function AboutPage() {
       {/* Pillars */}
       <section className="py-20 bg-surface">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-ink mb-3">{t('pillarsTitle')}</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight text-center text-ink mb-3">{t('pillarsTitle')}</h2>
           <p className="text-center text-ink-muted mb-12 max-w-xl mx-auto">{t('pillarsSubtitle')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {PILLAR_KEYS.map((key) => {
@@ -59,7 +59,7 @@ export default function AboutPage() {
       {/* Closing CTA */}
       <section className="py-20 bg-primary-subtle">
         <div className="max-w-2xl mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold text-ink mb-3">{t('ctaTitle')}</h2>
+          <h2 className="text-2xl font-extrabold tracking-tight text-ink mb-3">{t('ctaTitle')}</h2>
           <p className="text-ink-muted mb-8">{t('ctaSubtitle')}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {isAuthenticated ? (

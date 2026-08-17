@@ -6,6 +6,7 @@ import { usersService } from '@/services/users'
 import { SessionSummary } from '@/types'
 import { formatDate } from '@/lib/utils'
 import Spinner from '@/components/ui/Spinner'
+import Tooltip from '@/components/ui/Tooltip'
 import { useToast } from '@/contexts/ToastContext'
 
 export default function SessionsSection() {
@@ -56,15 +57,16 @@ export default function SessionsSection() {
                 {s.ip_address ? `${s.ip_address} · ` : ''}
                 {t('sessionInfo', { created: formatDate(s.created_at, locale), expires: formatDate(s.expires_at, locale) })}
               </span>
-              <button
-                onClick={() => revoke(s.id)}
-                disabled={revoking === s.id}
-                title={t('revoke')}
-                aria-label={t('revoke')}
-                className="flex-shrink-0 text-ink-subtle hover:text-danger transition-colors disabled:opacity-50"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip label={t('revoke')}>
+                <button
+                  onClick={() => revoke(s.id)}
+                  disabled={revoking === s.id}
+                  aria-label={t('revoke')}
+                  className="flex-shrink-0 text-ink-subtle hover:text-danger transition-colors disabled:opacity-50"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
             </div>
           ))}
         </div>

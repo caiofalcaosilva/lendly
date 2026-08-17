@@ -13,6 +13,7 @@ export interface ItemFilters {
   lat2?: number
   lng2?: number
   radius_km?: number
+  sort?: 'nearest' | 'price_asc'
   skip?: number
   limit?: number
 }

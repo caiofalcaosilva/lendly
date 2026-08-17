@@ -60,7 +60,7 @@ export default function BusinessesPage() {
             <Link
               key={biz.id}
               href={`/users/${biz.id}`}
-              className="bg-surface rounded-panel border border-border p-5 hover:border-business/40 hover:shadow-elevated transition-all"
+              className="bg-surface rounded-panel border border-border p-5 shadow-subtle hover:border-business/40 hover:shadow-elevated transition-all"
             >
               <div className="flex items-start gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-business-subtle flex items-center justify-center flex-shrink-0">
@@ -84,7 +84,7 @@ export default function BusinessesPage() {
               <div className="flex items-center gap-2 pt-2 border-t border-border">
                 <div className="flex items-center gap-1">
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-medium text-ink-muted">{biz.average_rating.toFixed(1)}</span>
+                  <span className="text-xs font-medium text-ink-muted font-mono tabular-nums">{biz.average_rating.toFixed(1)}</span>
                 </div>
                 <ReliabilityBadge score={biz.reliability_score} count={biz.reliability_count} />
               </div>

@@ -94,7 +94,7 @@ export default function GroupActivityFeed({ groupId }: { groupId: string }) {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-ink">{text}</p>
                     {detail && <p className="text-xs text-ink-subtle mt-0.5">{detail}</p>}
-                    <p className="text-xs text-ink-subtle mt-1">{formatDate(a.created_at, locale)}</p>
+                    <p className="text-xs text-ink-subtle mt-1 font-mono tabular-nums">{formatDate(a.created_at, locale)}</p>
                   </div>
                 </div>
               )

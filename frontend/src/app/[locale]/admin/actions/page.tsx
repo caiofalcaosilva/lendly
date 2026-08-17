@@ -79,7 +79,7 @@ export default function AdminActionsPage() {
                   </p>
                   {e.detail && <p className="text-xs text-ink-subtle mt-0.5">{e.detail}</p>}
                 </div>
-                <span className="text-xs text-ink-subtle flex-shrink-0">{formatDate(e.occurred_at, locale)}</span>
+                <span className="text-xs text-ink-subtle flex-shrink-0 font-mono tabular-nums">{formatDate(e.occurred_at, locale)}</span>
               </div>
             )
           })}

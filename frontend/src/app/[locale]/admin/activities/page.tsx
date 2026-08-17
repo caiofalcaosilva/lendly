@@ -273,10 +273,11 @@ export default function AdminActivitiesPage() {
                     <p className="text-xs text-ink-subtle mt-0.5">
                       {t('recipientLabel', { name: a.recipient.name })}
                       {a.event.startsWith('payment.') &&
-                        typeof a.metadata.gross_amount === 'number' &&
-                        ` · ${formatCurrency(a.metadata.gross_amount as number, locale)}`}
+                        typeof a.metadata.gross_amount === 'number' && (
+                          <> · <span className="font-mono tabular-nums">{formatCurrency(a.metadata.gross_amount as number, locale)}</span></>
+                        )}
                     </p>
-                    <p className="text-xs text-ink-subtle mt-1.5">
+                    <p className="text-xs text-ink-subtle mt-1.5 font-mono tabular-nums">
                       {formatDate(a.created_at, locale)}
                     </p>
                   </div>

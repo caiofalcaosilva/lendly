@@ -1,22 +1,12 @@
 import { Link } from '@/i18n/navigation'
-import { Star, HandHelping, PackageCheck, Trash2 } from 'lucide-react'
+import { HandHelping, PackageCheck, Trash2 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Review } from '@/types'
 import { formatDate } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
-
-function Stars({ rating }: { rating: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <Star
-          key={s}
-          className={`w-3.5 h-3.5 ${s <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-ink-subtle'}`}
-        />
-      ))}
-    </div>
-  )
-}
+import StarRating from '@/components/ui/StarRating'
+import Badge from '@/components/ui/Badge'
+import Tooltip from '@/components/ui/Tooltip'
 
 interface Props {
   review: Review
@@ -34,33 +24,24 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
   const t = useTranslations('Common.ReviewCard')
 
   return (
-    <div className="bg-surface rounded-panel border border-border p-4 space-y-3">
+    <div className="bg-surface rounded-panel border border-border shadow-subtle p-4 space-y-3">
       {/* Role badge + item */}
       <div className="flex items-start justify-between gap-2">
-        <span
-          className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-            isLender
-              ? 'bg-primary-subtle text-primary'
-              : 'bg-info-subtle text-info'
-          }`}
-        >
-          {isLender ? (
-            <><HandHelping className="w-3 h-3" /> {t('lent')}</>
-          ) : (
-            <><PackageCheck className="w-3 h-3" /> {t('borrowed')}</>
-          )}
-        </span>
+        <Badge variant={isLender ? 'green' : 'blue'} icon={isLender ? <HandHelping className="w-3 h-3" /> : <PackageCheck className="w-3 h-3" />}>
+          {isLender ? t('lent') : t('borrowed')}
+        </Badge>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs text-ink-subtle">{formatDate(review.created_at, locale)}</span>
+          <span className="text-xs text-ink-subtle font-mono tabular-nums">{formatDate(review.created_at, locale)}</span>
           {onDelete && (
-            <button
-              onClick={onDelete}
-              title={t('removeReview')}
-              aria-label={t('removeReview')}
-              className="text-ink-subtle hover:text-danger transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            <Tooltip label={t('removeReview')}>
+              <button
+                onClick={onDelete}
+                aria-label={t('removeReview')}
+                className="text-ink-subtle hover:text-danger transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -81,7 +62,7 @@ export default function ReviewCard({ review, linkItem = true, onDelete, perspect
       </div>
 
       {/* Stars */}
-      <Stars rating={review.rating} />
+      <StarRating rating={review.rating} />
 
       {/* Comment */}
       {review.comment && (

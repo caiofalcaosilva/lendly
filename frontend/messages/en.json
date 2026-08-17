@@ -95,6 +95,14 @@
       "label": "Business",
       "tooltip": "Business account"
     },
+    "BetaBadge": {
+      "label": "Beta version",
+      "tooltip": "Lendly is still in testing"
+    },
+    "LanguageSwitcher": {
+      "toEnglish": "Switch to English",
+      "toPortuguese": "Mudar para português"
+    },
     "ItemCard": {
       "free": "Free",
       "perDay": "/day",
@@ -129,6 +137,14 @@
       "filters": "Filters:",
       "clearAll": "Clear all",
       "removeFilter": "Remove filter: {label}"
+    },
+    "ItemPhotoField": {
+      "label": "Photos",
+      "cover": "Cover",
+      "makeCover": "Make cover",
+      "removePhoto": "Remove photo",
+      "addPhoto": "Add photo",
+      "uploadError": "Error uploading photo"
     },
     "ItemForm": {
       "errors": {
@@ -186,7 +202,15 @@
       "profileAddress": "Your profile's address",
       "saveChanges": "Save changes",
       "createItem": "List item",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "back": "Back",
+      "continueBtn": "Continue",
+      "steps": {
+        "details": "Details",
+        "photos": "Photos",
+        "pricing": "Pricing",
+        "review": "Review"
+      }
     },
     "ItemsMapView": {
       "homeMarker": "Your registered address",
@@ -226,10 +250,10 @@
         "refunded": "Payment refunded",
         "failed": "Payment failed"
       },
-      "pickup": "Pickup: {date}",
-      "returnDate": "Return: {date}",
-      "extensionRequestedOwner": "Requested an extension until {date}",
-      "extensionRequestedRequester": "Extension requested until {date} — awaiting response",
+      "pickup": "Pickup: <d>{date}</d>",
+      "returnDate": "Return: <d>{date}</d>",
+      "extensionRequestedOwner": "Requested an extension until <d>{date}</d>",
+      "extensionRequestedRequester": "Extension requested until <d>{date}</d> — awaiting response",
       "approve": "Approve",
       "reject": "Reject",
       "waitingForPayment": "Waiting for the requester to pay before pickup can be released",
@@ -268,7 +292,7 @@
       "errorAmountOverCeiling": "The amount can't exceed the item's replacement value",
       "errorGeneric": "Error filing the claim",
       "title": "Report damage/loss",
-      "ceiling": "Item's replacement value: {amount} — that's the claim's ceiling",
+      "ceiling": "Item's replacement value: <d>{amount}</d> — that's the claim's ceiling",
       "description": "What happened",
       "descriptionPlaceholder": "Describe the damage or what happened to the item...",
       "requestedAmount": "Requested amount (R$)",
@@ -570,6 +594,10 @@
     "withinRadius": "within {km} km of you",
     "listView": "List",
     "mapView": "Map",
+    "sortLabel": "Sort by",
+    "sortNewest": "Newest",
+    "sortPriceAsc": "Lowest price",
+    "sortNearest": "Nearest",
     "loadingItems": "Loading items...",
     "emptyTitle": "No items found",
     "emptyRadius": "No items within {km} km of you. Try increasing the radius.",
@@ -605,6 +633,10 @@
       "free": "Free",
       "rental": "Rental",
       "perDay": "/day",
+      "previousPhoto": "Previous photo",
+      "nextPhoto": "Next photo",
+      "goToPhoto": "Go to photo {number}",
+      "breadcrumbExplore": "Explore",
       "description": "Description",
       "availableOn": "Available: {days}",
       "quantityTotal": "{count, plural, one {# unit in total} other {# units in total}}",
@@ -692,12 +724,12 @@
         "paid": "Paid"
       },
       "empty": "No claims in this category",
-      "filedBy": "Filed by {name} on {date}",
+      "filedBy": "Filed by {name} on <d>{date}</d>",
       "requestedAmount": "Requested amount:",
       "ceiling": "Ceiling (replacement value):",
       "approvedAmount": "Approved amount:",
       "rejectionReason": "Rejection reason:",
-      "reviewedBy": "Reviewed by {name} on {date}",
+      "reviewedBy": "Reviewed by {name} on <d>{date}</d>",
       "approvedAmountLabel": "Amount to approve (R$)",
       "rejectReasonLabel": "Rejection reason",
       "approve": "Approve",
@@ -930,7 +962,7 @@
       "metaNotFoundTitle": "User not found | Lendly",
       "metaDescriptionWithLocation": "{name} · {location} · Profile on Lendly",
       "metaDescriptionNoLocation": "{name} · Profile on Lendly",
-      "memberSince": "Member since {date}",
+      "memberSince": "Member since <d>{date}</d>",
       "ratingCount": "{count, plural, one {# review} other {# reviews}}",
       "favorited": "Favorited",
       "favorite": "Favorite",

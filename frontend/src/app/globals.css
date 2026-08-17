@@ -37,6 +37,7 @@
   --color-text-muted: 95 95 95;
   --color-text-subtle: 114 114 114;
 
+  --shadow-subtle: 0 1px 3px -1px rgb(22 22 22 / 0.08), 0 1px 2px -1px rgb(22 22 22 / 0.06);
   --shadow-elevated: 0 8px 20px -4px rgb(22 22 22 / 0.14), 0 2px 6px -2px rgb(22 22 22 / 0.10);
   --shadow-overlay: 0 24px 48px -12px rgb(22 22 22 / 0.30), 0 8px 16px -8px rgb(22 22 22 / 0.16);
 }
@@ -73,6 +74,7 @@
   --color-text-muted: 157 157 157;
   --color-text-subtle: 141 141 141;
 
+  --shadow-subtle: 0 1px 3px -1px rgb(0 0 0 / 0.35), 0 1px 2px -1px rgb(0 0 0 / 0.25);
   --shadow-elevated: 0 8px 20px -4px rgb(0 0 0 / 0.45), 0 2px 6px -2px rgb(0 0 0 / 0.3);
   --shadow-overlay: 0 24px 48px -12px rgb(0 0 0 / 0.6), 0 8px 16px -8px rgb(0 0 0 / 0.4);
 }
@@ -115,4 +117,26 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .toast-enter { animation: none; }
+}
+
+/* Temporary "beta" badge — see BetaBadge.tsx and design_system.md for the
+   removal criteria. Deliberately magenta, outside the semantic token
+   system: it's a lifecycle notice, not a product state, so it must never
+   read as danger/warning/info. Every gradient stop stays >=4.5:1 against
+   the white label text (checked with WCAG contrast math before picking
+   these hexes) — a lighter mid-stop was tried first and dropped ~2:1 mid
+   cycle, which made the "eye-catching" badge unreadable for part of its
+   own shine animation. */
+@keyframes beta-shine {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.beta-badge {
+  background: linear-gradient(115deg, #d6127e 0%, #a10f70 25%, #7a0e63 50%, #a10f70 75%, #d6127e 100%);
+  background-size: 220% 220%;
+  animation: beta-shine 5s ease-in-out infinite;
+  box-shadow: 0 3px 10px -2px rgb(199 20 168 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .beta-badge { animation: none; }
 }

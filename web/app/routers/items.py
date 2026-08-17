@@ -34,6 +34,7 @@ def list_items(
     ),
     lng2: float | None = Query(None),
     radius_km: float | None = Query(None, ge=0.1),
+    sort: str | None = Query(None, pattern="^(nearest|price_asc)$"),
     current_user: User | None = Depends(get_current_user_optional),
 ):
     """Browses the public item catalog with optional search, filters, and
@@ -54,6 +55,7 @@ def list_items(
         lat2=lat2,
         lng2=lng2,
         radius_km=radius_km,
+        sort=sort,
         current_user=current_user,
     )
 

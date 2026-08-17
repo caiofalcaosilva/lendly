@@ -14,6 +14,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
+import Radio from '@/components/ui/Radio'
 
 const WEEKDAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
 
@@ -80,6 +81,7 @@ export default function RequestModal({ item, onClose }: Props) {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { quantity: 1 } })
 
@@ -168,10 +170,12 @@ export default function RequestModal({ item, onClose }: Props) {
             <label className="block text-sm font-medium text-ink-muted mb-2">{t('fulfillmentMethod')}</label>
             <div className="flex gap-6">
               {(['pickup', 'delivery'] as const).map((val) => (
-                <label key={val} className="flex items-center gap-2 cursor-pointer text-ink">
-                  <input type="radio" value={val} {...register('fulfillment_method')} className="text-primary" />
-                  <span className="text-sm">{val === 'pickup' ? t('fulfillmentPickup') : t('fulfillmentDelivery')}</span>
-                </label>
+                <Radio
+                  key={val}
+                  checked={selectedFulfillment === val}
+                  onChange={() => setValue('fulfillment_method', val, { shouldValidate: true })}
+                  label={val === 'pickup' ? t('fulfillmentPickup') : t('fulfillmentDelivery')}
+                />
               ))}
             </div>
             {errors.fulfillment_method && (
@@ -225,23 +229,23 @@ export default function RequestModal({ item, onClose }: Props) {
           <div className="p-3 bg-primary-subtle rounded-control space-y-1.5">
             <div className="flex items-center justify-between text-sm text-ink-muted">
               <span>{t('rentalSubtotal')}</span>
-              <span>{formatCurrency(priceBreakdown.rental, locale)}</span>
+              <span className="font-mono tabular-nums">{formatCurrency(priceBreakdown.rental, locale)}</span>
             </div>
             {priceBreakdown.delivery > 0 && (
               <div className="flex items-center justify-between text-sm text-ink-muted">
                 <span>{t('deliveryFeeLine')}</span>
-                <span>{formatCurrency(priceBreakdown.delivery, locale)}</span>
+                <span className="font-mono tabular-nums">{formatCurrency(priceBreakdown.delivery, locale)}</span>
               </div>
             )}
             {priceBreakdown.guarantee > 0 && (
               <div className="flex items-center justify-between text-sm text-ink-muted">
                 <span>{t('guaranteeFeeLine')}</span>
-                <span>{formatCurrency(priceBreakdown.guarantee, locale)}</span>
+                <span className="font-mono tabular-nums">{formatCurrency(priceBreakdown.guarantee, locale)}</span>
               </div>
             )}
             <div className="flex items-center justify-between pt-1.5 border-t border-primary/20">
               <span className="text-sm text-ink-muted">{t('estimatedTotal')}</span>
-              <span className="text-lg font-bold text-primary">{formatCurrency(priceBreakdown.total, locale)}</span>
+              <span className="text-lg font-bold font-mono tabular-nums text-primary">{formatCurrency(priceBreakdown.total, locale)}</span>
             </div>
           </div>
         )}

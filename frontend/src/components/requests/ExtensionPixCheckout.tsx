@@ -60,7 +60,7 @@ export default function ExtensionPixCheckout({ requestId, onConfirmed }: Props) 
         <QrCode className="w-4 h-4 text-primary" />
         {t('payToConfirm')}
       </div>
-      <p className="text-2xl font-extrabold tracking-tight text-ink">{formatCurrency(payment.gross_amount, locale)}</p>
+      <p className="text-2xl font-extrabold tracking-tight font-mono tabular-nums text-ink">{formatCurrency(payment.gross_amount, locale)}</p>
 
       {payment.pix_qr_code_base64 && (
         // eslint-disable-next-line @next/next/no-img-element

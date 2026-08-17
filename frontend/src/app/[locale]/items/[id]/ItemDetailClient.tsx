@@ -4,7 +4,8 @@ import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import { Link, useRouter } from '@/i18n/navigation'
 import {
-  MapPin, Star, Tag, Package, AlertTriangle, ArrowLeft, Edit, Trash2, Flag, BellRing, BellOff, CalendarDays, ShieldCheck, Users,
+  MapPin, Star, Tag, Package, AlertTriangle, Edit, Trash2, Flag, BellRing, BellOff, CalendarDays, ShieldCheck, Users,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Category, Item } from '@/types'
@@ -13,6 +14,7 @@ import { categoriesService } from '@/services/categories'
 import { getCategoryLabel, getSubcategoryLabel, formatCurrency, formatDate, haversineKm } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import Badge from '@/components/ui/Badge'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import ReliabilityBadge from '@/components/ui/ReliabilityBadge'
@@ -140,9 +142,13 @@ export default function ItemDetailClient() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <Link href="/items" className="inline-flex items-center gap-2 text-ink-muted hover:text-ink text-sm mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> {t('backToItems')}
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: t('breadcrumbExplore'), href: '/items' },
+          { label: getCategoryLabel(categories, item.category), href: `/items?category=${item.category}` },
+          { label: item.title },
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Photos */}
@@ -160,6 +166,37 @@ export default function ItemDetailClient() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <Package className="w-16 h-16 text-ink-subtle" />
               </div>
+            )}
+            {photos.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActivePhoto((activePhoto - 1 + photos.length) % photos.length)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                  aria-label={t('previousPhoto')}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePhoto((activePhoto + 1) % photos.length)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                  aria-label={t('nextPhoto')}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {photos.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActivePhoto(i)}
+                      className={`w-1.5 h-1.5 rounded-full transition-colors ${i === activePhoto ? 'bg-white' : 'bg-white/50'}`}
+                      aria-label={t('goToPhoto', { number: i + 1 })}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
           {photos.length > 1 && (
@@ -194,7 +231,7 @@ export default function ItemDetailClient() {
                   <Badge variant="blue">{t('rental')}</Badge>
                 )}
               </div>
-              <h1 className="text-2xl font-bold text-ink">{item.title}</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-ink">{item.title}</h1>
             </div>
             {isOwner && (
               <div className="flex gap-2 flex-shrink-0">
@@ -209,8 +246,8 @@ export default function ItemDetailClient() {
           </div>
 
           {item.availability_type === 'paid' && item.daily_rate && (
-            <div className="text-2xl font-bold text-primary mb-4">
-              {formatCurrency(item.daily_rate, locale)}<span className="text-base font-normal text-ink-muted">{t('perDay')}</span>
+            <div className="text-3xl font-extrabold tracking-tight text-primary mb-4">
+              <span className="font-mono tabular-nums">{formatCurrency(item.daily_rate, locale)}</span><span className="text-base font-normal text-ink-muted">{t('perDay')}</span>
             </div>
           )}
 
@@ -290,7 +327,7 @@ export default function ItemDetailClient() {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-semibold text-ink">{item.owner.average_rating.toFixed(1)}</span>
+                  <span className="text-sm font-semibold text-ink font-mono tabular-nums">{item.owner.average_rating.toFixed(1)}</span>
                 </div>
                 <ReliabilityBadge score={item.owner.reliability_score} count={item.owner.reliability_count} size="md" />
               </div>

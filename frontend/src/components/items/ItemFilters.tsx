@@ -3,6 +3,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Search, X, SlidersHorizontal, MapPin, ChevronDown, ChevronUp, CornerDownRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Category } from '@/types'
+import Chip from '@/components/ui/Chip'
+import Tooltip from '@/components/ui/Tooltip'
 
 export interface Filters {
   search: string
@@ -119,29 +121,18 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
         <FilterLabel>{t('category')}</FilterLabel>
         <div className="relative">
           <div className="flex gap-2 overflow-x-auto pb-0.5 pr-6 scrollbar-hide">
-            <button
-              onClick={() => updateCategory('')}
-              className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                !filters.category
-                  ? 'bg-primary text-primary-on border-primary'
-                  : 'bg-surface text-ink-muted border-border hover:border-primary/50 hover:text-primary'
-              }`}
-            >
+            <Chip selected={!filters.category} onClick={() => updateCategory('')}>
               {t('allCategories')}
-            </button>
+            </Chip>
             {categories.map((c) => (
-              <button
+              <Chip
                 key={c.key}
+                selected={filters.category === c.key}
+                icon={<span className="text-sm leading-none">{CATEGORY_ICONS[c.key] ?? DEFAULT_CATEGORY_ICON}</span>}
                 onClick={() => updateCategory(filters.category === c.key ? '' : c.key)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                  filters.category === c.key
-                    ? 'bg-primary text-primary-on border-primary'
-                    : 'bg-surface text-ink-muted border-border hover:border-primary/50 hover:text-primary'
-                }`}
               >
-                <span className="text-sm leading-none">{CATEGORY_ICONS[c.key] ?? DEFAULT_CATEGORY_ICON}</span>
                 {c.label}
-              </button>
+              </Chip>
             ))}
           </div>
           {/* Scroll hint */}
@@ -154,17 +145,15 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
             <CornerDownRight className="w-3.5 h-3.5 text-ink-subtle flex-shrink-0" />
             <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
               {subcategoryOptions.map((s) => (
-                <button
+                <Chip
                   key={s.key}
+                  selected={filters.subcategory === s.key}
+                  tone="subtle"
+                  size="xs"
                   onClick={() => update('subcategory', filters.subcategory === s.key ? '' : s.key)}
-                  className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
-                    filters.subcategory === s.key
-                      ? 'bg-primary-subtle text-primary border-primary/40'
-                      : 'bg-surface text-ink-muted border-border hover:border-primary/50 hover:text-primary'
-                  }`}
                 >
                   {s.label}
-                </button>
+                </Chip>
               ))}
             </div>
           </div>
@@ -224,15 +213,16 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
               />
               <span className="text-[10px] text-ink-subtle flex-shrink-0">50 km</span>
               {filters.radius_km > 0 && (
-                <button
-                  type="button"
-                  onClick={() => update('radius_km', 0)}
-                  className="flex-shrink-0 text-ink-subtle hover:text-danger transition-colors"
-                  title={t('clearDistance')}
-                  aria-label={t('clearDistance')}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <Tooltip label={t('clearDistance')}>
+                  <button
+                    type="button"
+                    onClick={() => update('radius_km', 0)}
+                    className="flex-shrink-0 text-ink-subtle hover:text-danger transition-colors"
+                    aria-label={t('clearDistance')}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -300,51 +290,53 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
       {(filters.category || filters.subcategory || filters.availability_type || filters.neighborhood || filters.city || filters.radius_km > 0) && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-ink-subtle">{t('filters')}</span>
-          {filters.category && (
-            <Chip
-              label={`${CATEGORY_ICONS[filters.category] ?? DEFAULT_CATEGORY_ICON} ${categories.find((c) => c.key === filters.category)?.label ?? filters.category}`}
-              onRemove={() => updateCategory('')}
-            />
-          )}
-          {filters.subcategory && (
-            <Chip
-              label={subcategoryOptions.find((s) => s.key === filters.subcategory)?.label ?? filters.subcategory}
-              onRemove={() => update('subcategory', '')}
-            />
-          )}
-          {filters.availability_type && (
-            <Chip label={filters.availability_type === 'free' ? t('free') : t('paid')} onRemove={() => update('availability_type', '')} />
-          )}
+          {filters.category && (() => {
+            const label = `${CATEGORY_ICONS[filters.category] ?? DEFAULT_CATEGORY_ICON} ${categories.find((c) => c.key === filters.category)?.label ?? filters.category}`
+            return (
+              <Chip tone="subtle" size="xs" onRemove={() => updateCategory('')} removeLabel={t('removeFilter', { label })}>
+                {label}
+              </Chip>
+            )
+          })()}
+          {filters.subcategory && (() => {
+            const label = subcategoryOptions.find((s) => s.key === filters.subcategory)?.label ?? filters.subcategory
+            return (
+              <Chip tone="subtle" size="xs" onRemove={() => update('subcategory', '')} removeLabel={t('removeFilter', { label })}>
+                {label}
+              </Chip>
+            )
+          })()}
+          {filters.availability_type && (() => {
+            const label = filters.availability_type === 'free' ? t('free') : t('paid')
+            return (
+              <Chip tone="subtle" size="xs" onRemove={() => update('availability_type', '')} removeLabel={t('removeFilter', { label })}>
+                {label}
+              </Chip>
+            )
+          })()}
           {filters.neighborhood && (
-            <Chip label={filters.neighborhood} onRemove={() => update('neighborhood', '')} />
+            <Chip tone="subtle" size="xs" onRemove={() => update('neighborhood', '')} removeLabel={t('removeFilter', { label: filters.neighborhood })}>
+              {filters.neighborhood}
+            </Chip>
           )}
           {filters.city && (
-            <Chip label={filters.city} onRemove={() => update('city', '')} />
+            <Chip tone="subtle" size="xs" onRemove={() => update('city', '')} removeLabel={t('removeFilter', { label: filters.city })}>
+              {filters.city}
+            </Chip>
           )}
-          {filters.radius_km > 0 && (
-            <Chip label={t('upTo', { distance: formatDistanceLabel(filters.radius_km) })} onRemove={() => update('radius_km', 0)} />
-          )}
+          {filters.radius_km > 0 && (() => {
+            const label = t('upTo', { distance: formatDistanceLabel(filters.radius_km) })
+            return (
+              <Chip tone="subtle" size="xs" onRemove={() => update('radius_km', 0)} removeLabel={t('removeFilter', { label })}>
+                {label}
+              </Chip>
+            )
+          })()}
           <button onClick={reset} className="text-xs text-danger hover:text-danger ml-1 transition-colors">
             {t('clearAll')}
           </button>
         </div>
       )}
     </div>
-  )
-}
-
-function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
-  const t = useTranslations('Common.ItemFilters')
-  return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-subtle text-primary border border-primary/30 rounded-full text-xs font-medium">
-      {label}
-      <button
-        onClick={onRemove}
-        aria-label={t('removeFilter', { label })}
-        className="hover:text-primary-hover transition-colors ml-0.5"
-      >
-        <X className="w-3 h-3" />
-      </button>
-    </span>
   )
 }

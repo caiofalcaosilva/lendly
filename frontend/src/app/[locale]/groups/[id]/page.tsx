@@ -20,6 +20,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
+import Checkbox from '@/components/ui/Checkbox'
+import Tooltip from '@/components/ui/Tooltip'
 import Select from '@/components/ui/Select'
 import GroupMural from '@/components/groups/GroupMural'
 import GroupActivityFeed from '@/components/groups/GroupActivityFeed'
@@ -427,28 +429,34 @@ export default function GroupDetailPage() {
                 </div>
               )}
               {canManageMembers && (
-                <button
-                  type="button"
-                  onClick={() => photoInputRef.current?.click()}
-                  disabled={photoBusy}
-                  className="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full bg-primary text-primary-on shadow-elevated hover:bg-primary-hover disabled:opacity-50"
-                  title={t('changePhoto')}
-                  aria-label={t('changePhoto')}
-                >
-                  {photoBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
-                </button>
+                <div className="absolute -bottom-1 -right-1">
+                  <Tooltip label={t('changePhoto')}>
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={photoBusy}
+                      className="w-5 h-5 flex items-center justify-center rounded-full bg-primary text-primary-on shadow-elevated hover:bg-primary-hover disabled:opacity-50"
+                      aria-label={t('changePhoto')}
+                    >
+                      {photoBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+                    </button>
+                  </Tooltip>
+                </div>
               )}
               {canManageMembers && group.photo_url && (
-                <button
-                  type="button"
-                  onClick={handlePhotoRemove}
-                  disabled={photoBusy}
-                  className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-ink text-bg hover:opacity-80 disabled:opacity-50"
-                  title={t('removePhoto')}
-                  aria-label={t('removePhoto')}
-                >
-                  <X className="w-2.5 h-2.5" />
-                </button>
+                <div className="absolute -top-1 -right-1">
+                  <Tooltip label={t('removePhoto')}>
+                    <button
+                      type="button"
+                      onClick={handlePhotoRemove}
+                      disabled={photoBusy}
+                      className="w-4 h-4 flex items-center justify-center rounded-full bg-ink text-bg hover:opacity-80 disabled:opacity-50"
+                      aria-label={t('removePhoto')}
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </Tooltip>
+                </div>
               )}
               {canManageMembers && (
                 <input
@@ -464,14 +472,15 @@ export default function GroupDetailPage() {
               <div className="flex items-center gap-1.5">
                 <h1 className="text-xl font-extrabold tracking-tight text-ink">{group.name}</h1>
                 {canManageMembers && (
-                  <button
-                    onClick={openEdit}
-                    aria-label={t('editGroup')}
-                    title={t('editGroup')}
-                    className="p-1 rounded-control text-ink-subtle hover:text-primary hover:bg-surface-2 transition-colors"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
+                  <Tooltip label={t('editGroup')}>
+                    <button
+                      onClick={openEdit}
+                      aria-label={t('editGroup')}
+                      className="p-1 rounded-control text-ink-subtle hover:text-primary hover:bg-surface-2 transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
               {group.description && <p className="text-sm text-ink-muted">{group.description}</p>}
@@ -479,24 +488,26 @@ export default function GroupDetailPage() {
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             {isMember && !isCreator && (
-              <button
-                onClick={() => setShowReport(true)}
-                title={t('report')}
-                aria-label={t('report')}
-                className="flex items-center gap-1 text-xs text-ink-subtle hover:text-danger transition-colors"
-              >
-                <Flag className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip label={t('report')}>
+                <button
+                  onClick={() => setShowReport(true)}
+                  aria-label={t('report')}
+                  className="flex items-center gap-1 text-xs text-ink-subtle hover:text-danger transition-colors"
+                >
+                  <Flag className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
             )}
             {isCreator && group.member_count > 1 && (
-              <button
-                onClick={() => { setTransferTargetId(''); setTransferOpen(true) }}
-                title={t('transferOwnership')}
-                aria-label={t('transferOwnership')}
-                className="flex items-center gap-1 text-xs text-ink-subtle hover:text-primary transition-colors"
-              >
-                <UserCog className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip label={t('transferOwnership')}>
+                <button
+                  onClick={() => { setTransferTargetId(''); setTransferOpen(true) }}
+                  aria-label={t('transferOwnership')}
+                  className="flex items-center gap-1 text-xs text-ink-subtle hover:text-primary transition-colors"
+                >
+                  <UserCog className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
             )}
             {isMember && (
               <Button
@@ -520,24 +531,26 @@ export default function GroupDetailPage() {
         <div className="flex items-center gap-2 p-3 bg-surface-2 rounded-control mb-4">
           <span className="text-xs text-ink-muted flex-1 truncate font-mono">{inviteUrl}</span>
           {canManageMembers && (
+            <Tooltip label={t('regenerateInvite')}>
+              <button
+                onClick={() => setPendingAction({ kind: 'regenerateInvite' })}
+                disabled={busy}
+                aria-label={t('regenerateInvite')}
+                className="flex items-center gap-1 text-xs font-medium text-ink-subtle hover:text-primary flex-shrink-0"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+          )}
+          <Tooltip label={t('showQrCode')}>
             <button
-              onClick={() => setPendingAction({ kind: 'regenerateInvite' })}
-              disabled={busy}
-              title={t('regenerateInvite')}
-              aria-label={t('regenerateInvite')}
+              onClick={() => setQrOpen(true)}
+              aria-label={t('showQrCode')}
               className="flex items-center gap-1 text-xs font-medium text-ink-subtle hover:text-primary flex-shrink-0"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <QrCode className="w-3.5 h-3.5" />
             </button>
-          )}
-          <button
-            onClick={() => setQrOpen(true)}
-            title={t('showQrCode')}
-            aria-label={t('showQrCode')}
-            className="flex items-center gap-1 text-xs font-medium text-ink-subtle hover:text-primary flex-shrink-0"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-          </button>
+          </Tooltip>
           <button
             onClick={copyInvite}
             className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover flex-shrink-0"
@@ -633,15 +646,7 @@ export default function GroupDetailPage() {
             rows={3}
           />
           <div>
-            <label className="flex items-center gap-2 cursor-pointer text-ink">
-              <input
-                type="checkbox"
-                checked={editDiscoverable}
-                onChange={(e) => setEditDiscoverable(e.target.checked)}
-                className="text-primary rounded"
-              />
-              <span className="text-sm">{t('discoverableLabel')}</span>
-            </label>
+            <Checkbox checked={editDiscoverable} onChange={setEditDiscoverable} label={t('discoverableLabel')} />
             <p className="text-xs text-ink-subtle mt-1 ml-6">{t('discoverableHelp')}</p>
             <button
               type="button"
@@ -716,80 +721,85 @@ export default function GroupDetailPage() {
                       {m.name}
                     </span>
                     {!isCreator && m.is_moderator && (
-                      <span title={t('moderatorBadge')} className="flex-shrink-0 text-accent">
+                      <Tooltip label={t('moderatorBadge')} className="flex-shrink-0 text-accent">
                         <Crown className="w-3.5 h-3.5 fill-accent-subtle" />
-                      </span>
+                      </Tooltip>
                     )}
                   </Link>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {isMember && user && m.id !== user.id && (
-                      <button
-                        onClick={() => handleToggleVouch(m)}
-                        title={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
-                        aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
-                        className={`flex items-center gap-1 px-2 py-1.5 rounded-control text-xs font-medium transition-colors ${
-                          m.vouched_by_me
-                            ? 'bg-primary-subtle text-primary'
-                            : 'text-ink-subtle hover:text-primary hover:bg-surface-2'
-                        }`}
-                      >
-                        <ShieldCheck className={`w-4 h-4 ${m.vouched_by_me ? 'fill-primary-subtle' : ''}`} />
-                        {m.vouch_count > 0 && m.vouch_count}
-                      </button>
+                      <Tooltip label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}>
+                        <button
+                          onClick={() => handleToggleVouch(m)}
+                          aria-label={m.vouched_by_me ? t('vouchedTooltip') : t('vouchTooltip')}
+                          className={`flex items-center gap-1 px-2 py-1.5 rounded-control text-xs font-medium transition-colors ${
+                            m.vouched_by_me
+                              ? 'bg-primary-subtle text-primary'
+                              : 'text-ink-subtle hover:text-primary hover:bg-surface-2'
+                          }`}
+                        >
+                          <ShieldCheck className={`w-4 h-4 ${m.vouched_by_me ? 'fill-primary-subtle' : ''}`} />
+                          {m.vouch_count > 0 && <span className="font-mono tabular-nums">{m.vouch_count}</span>}
+                        </button>
+                      </Tooltip>
                     )}
                     {m.vouchers.length > 0 && (
-                      <button
-                        onClick={() => toggleVouchersExpanded(m.id)}
-                        title={t('showVouchers')}
-                        aria-label={t('showVouchers')}
-                        aria-expanded={expandedVouchers.has(m.id)}
-                        className="p-1.5 rounded-control text-ink-subtle hover:text-primary hover:bg-surface-2 transition-colors"
-                      >
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform ${expandedVouchers.has(m.id) ? 'rotate-180' : ''}`}
-                        />
-                      </button>
+                      <Tooltip label={t('showVouchers')}>
+                        <button
+                          onClick={() => toggleVouchersExpanded(m.id)}
+                          aria-label={t('showVouchers')}
+                          aria-expanded={expandedVouchers.has(m.id)}
+                          className="p-1.5 rounded-control text-ink-subtle hover:text-primary hover:bg-surface-2 transition-colors"
+                        >
+                          <ChevronDown
+                            className={`w-4 h-4 transition-transform ${expandedVouchers.has(m.id) ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                      </Tooltip>
                     )}
                     {isCreator && m.id !== group.created_by && (
-                      <button
-                        onClick={() => handleToggleModerator(m)}
-                        disabled={busy}
-                        title={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
-                        aria-label={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
-                        className={`p-1.5 rounded-control transition-colors ${
-                          m.is_moderator
-                            ? 'bg-accent-subtle text-accent'
-                            : 'text-ink-subtle hover:text-accent hover:bg-surface-2'
-                        }`}
-                      >
-                        <Crown className={`w-4 h-4 ${m.is_moderator ? 'fill-accent-subtle' : ''}`} />
-                      </button>
+                      <Tooltip label={m.is_moderator ? t('revokeModerator') : t('makeModerator')}>
+                        <button
+                          onClick={() => handleToggleModerator(m)}
+                          disabled={busy}
+                          aria-label={m.is_moderator ? t('revokeModerator') : t('makeModerator')}
+                          className={`p-1.5 rounded-control transition-colors ${
+                            m.is_moderator
+                              ? 'bg-accent-subtle text-accent'
+                              : 'text-ink-subtle hover:text-accent hover:bg-surface-2'
+                          }`}
+                        >
+                          <Crown className={`w-4 h-4 ${m.is_moderator ? 'fill-accent-subtle' : ''}`} />
+                        </button>
+                      </Tooltip>
                     )}
                     {canManageMembers &&
                       m.id !== group.created_by &&
                       !(m.is_moderator && !isCreator) && (
+                        <Tooltip label={t('removeFromGroup')}>
+                          <button
+                            onClick={() =>
+                              setPendingAction({ kind: 'removeMemberGroup', memberId: m.id, memberName: m.name })
+                            }
+                            disabled={busy}
+                            aria-label={t('removeFromGroup')}
+                            className="p-1.5 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
+                      )}
+                    {!isMember && user?.is_admin && m.id !== group.created_by && (
+                      <Tooltip label={t('removeFromGroup')}>
                         <button
-                          onClick={() =>
-                            setPendingAction({ kind: 'removeMemberGroup', memberId: m.id, memberName: m.name })
-                          }
+                          onClick={() => setPendingAction({ kind: 'removeMember', memberId: m.id, memberName: m.name })}
                           disabled={busy}
-                          title={t('removeFromGroup')}
                           aria-label={t('removeFromGroup')}
                           className="p-1.5 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>
-                      )}
-                    {!isMember && user?.is_admin && m.id !== group.created_by && (
-                      <button
-                        onClick={() => setPendingAction({ kind: 'removeMember', memberId: m.id, memberName: m.name })}
-                        disabled={busy}
-                        title={t('removeFromGroup')}
-                        aria-label={t('removeFromGroup')}
-                        className="p-1.5 rounded-control text-ink-subtle hover:text-danger hover:bg-danger-subtle transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      </Tooltip>
                     )}
                   </div>
                 </div>

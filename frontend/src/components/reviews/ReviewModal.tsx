@@ -1,11 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { Star } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { reviewsService } from '@/services/reviews'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
+import StarRating from '@/components/ui/StarRating'
 
 interface Props {
   requestId: string
@@ -18,7 +18,6 @@ const RATING_KEYS = ['', 'veryBad', 'bad', 'regular', 'good', 'excellent']
 
 export default function ReviewModal({ requestId, reviewedName, onClose, onSuccess }: Props) {
   const [rating, setRating] = useState(0)
-  const [hovered, setHovered] = useState(0)
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -43,22 +42,7 @@ export default function ReviewModal({ requestId, reviewedName, onClose, onSucces
       <div className="space-y-5">
         <div>
           <p className="text-sm text-ink-muted mb-3">{t('subtitle', { name: reviewedName })}</p>
-          <div className="flex gap-2 justify-center">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setRating(n)}
-                onMouseEnter={() => setHovered(n)}
-                onMouseLeave={() => setHovered(0)}
-                className="transition-transform hover:scale-110"
-              >
-                <Star
-                  className={`w-8 h-8 ${n <= (hovered || rating) ? 'fill-yellow-400 text-yellow-400' : 'text-ink-subtle'}`}
-                />
-              </button>
-            ))}
-          </div>
+          <StarRating rating={rating} onChange={setRating} size="lg" className="justify-center" />
           {rating > 0 && (
             <p className="text-center text-sm text-ink-muted mt-2">
               {t(`ratings.${RATING_KEYS[rating]}`)}

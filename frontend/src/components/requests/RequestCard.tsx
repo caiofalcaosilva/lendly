@@ -71,7 +71,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
   }
 
   return (
-    <div className="bg-surface rounded-panel border border-border p-5">
+    <div className="bg-surface rounded-panel border border-border shadow-subtle p-5">
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -86,7 +86,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
             return phone ? (
               <a
                 href={`tel:${phone}`}
-                className="flex items-center gap-1 text-xs text-primary hover:text-primary-hover mt-0.5"
+                className="flex items-center gap-1 text-xs font-mono tabular-nums text-primary hover:text-primary-hover mt-0.5"
               >
                 <Phone className="w-3 h-3" /> {phone}
               </a>
@@ -108,9 +108,9 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
       <div className="flex items-center gap-4 text-xs text-ink-muted mb-4">
         <span className="flex items-center gap-1">
           <Calendar className="w-3 h-3" />
-          {t('pickup', { date: formatDate(req.pickup_date, locale) })}
+          {t.rich('pickup', { date: formatDate(req.pickup_date, locale), d: (chunks) => <span className="font-mono tabular-nums">{chunks}</span> })}
         </span>
-        <span>{t('returnDate', { date: formatDate(req.expected_return_date, locale) })}</span>
+        <span>{t.rich('returnDate', { date: formatDate(req.expected_return_date, locale), d: (chunks) => <span className="font-mono tabular-nums">{chunks}</span> })}</span>
       </div>
 
       {req.notes && (
@@ -123,8 +123,8 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           <div className="flex-1 min-w-0">
             <p className="text-sm text-info">
               {role === 'owner'
-                ? t('extensionRequestedOwner', { date: formatDate(req.requested_extension_date, locale) })
-                : t('extensionRequestedRequester', { date: formatDate(req.requested_extension_date, locale) })}
+                ? t.rich('extensionRequestedOwner', { date: formatDate(req.requested_extension_date, locale), d: (chunks) => <span className="font-mono tabular-nums">{chunks}</span> })
+                : t.rich('extensionRequestedRequester', { date: formatDate(req.requested_extension_date, locale), d: (chunks) => <span className="font-mono tabular-nums">{chunks}</span> })}
             </p>
             {role === 'owner' && (
               <div className="flex gap-2 mt-2">
