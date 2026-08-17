@@ -16,6 +16,7 @@ import Spinner from '@/components/ui/Spinner'
 import AddressFields from '@/components/ui/AddressFields'
 import { LogoMark } from '@/components/ui/Logo'
 import Checkbox from '@/components/ui/Checkbox'
+import GoogleButton from '@/components/auth/GoogleButton'
 
 const opt = z.string().optional().or(z.literal(''))
 
@@ -23,6 +24,7 @@ export default function RegisterPage() {
   const { register: registerUser, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const t = useTranslations('Register')
+  const tGoogle = useTranslations('Common.GoogleButton')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
@@ -163,6 +165,27 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* Step 1: personal info */}
             <div className={step === 1 ? 'block space-y-4' : 'hidden'}>
+              <GoogleButton />
+              <p className="text-xs text-ink-subtle text-center -mt-1">
+                {tGoogle.rich('termsNotice', {
+                  terms: (chunks) => (
+                    <Link href="/termos" target="_blank" className="text-primary hover:text-primary-hover underline">
+                      {chunks}
+                    </Link>
+                  ),
+                  privacy: (chunks) => (
+                    <Link href="/privacidade" target="_blank" className="text-primary hover:text-primary-hover underline">
+                      {chunks}
+                    </Link>
+                  ),
+                })}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-ink-subtle uppercase tracking-wide">{tGoogle('orDivider')}</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
               <div>
                 <label className="text-sm font-medium text-ink-muted block mb-1.5">{t('accountType')}</label>
                 <div className="grid grid-cols-2 gap-2">

@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ requires_2fa: boolean; temp_token?: string }>
   register: (data: RegisterData) => Promise<void>
   completeTwoFactor: (tempToken: string, code: string, trustDevice?: boolean) => Promise<void>
+  loginWithTokens: (accessToken: string, refreshToken: string, user: User, deviceToken: string) => void
   updateUser: (user: User) => void
   logout: () => void
 }
@@ -122,6 +123,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
   }
 
+  // Used by the /auth/google/callback page, whose POST already returns
+  // finished tokens (no separate "login" call to wrap) — same persist +
+  // setUser pairing login/register/completeTwoFactor each do themselves.
+  const loginWithTokens = (
+    accessToken: string,
+    refreshToken: string,
+    freshUser: User,
+    deviceToken: string,
+  ) => {
+    persist(accessToken, refreshToken, freshUser, deviceToken)
+    setUser(freshUser)
+  }
+
   const updateUser = (updated: User) => {
     localStorage.setItem('lendly_user', JSON.stringify(updated))
     setUser(updated)
@@ -146,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         completeTwoFactor,
+        loginWithTokens,
         updateUser,
         logout,
       }}

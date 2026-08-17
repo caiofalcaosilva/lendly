@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     MP_CLIENT_SECRET: str = ""
     MP_ACCESS_TOKEN: str = ""
     MP_WEBHOOK_SECRET: str = ""
+    # Google Sign-In (see app/services/google_oauth_gateway.py) — same
+    # "blank until configured" pattern as Mercado Pago above. The redirect
+    # URI is the frontend's own callback page, not this API — it must be
+    # registered exactly as-is in the Google Cloud OAuth client (both the
+    # local-dev and production values, one each per environment's .env).
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:3000/auth/google/callback"
     # Lendly's cut of every paid loan, taken from the seller's payout.
     PLATFORM_FEE_PERCENT: float = 0.05
     # Guarantee pool fee — charged on top of gross_amount (paid by the

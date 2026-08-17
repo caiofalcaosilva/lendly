@@ -27,3 +27,9 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str = Field(..., min_length=6)
+
+
+class GoogleCallbackRequest(BaseModel):
+    code: str
+    state: str
+    device_token: str | None = None

@@ -65,4 +65,18 @@ export const authService = {
 
   logout: (refreshToken: string | null) =>
     api.post('/auth/logout', { refresh_token: refreshToken }).then((r) => r.data),
+
+  // Plain navigation target (window.location.href), not a fetch — the
+  // browser needs to actually follow the 302 to Google's consent screen.
+  googleLoginUrl: () =>
+    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/google/login`,
+
+  googleCallback: (code: string, state: string, deviceToken?: string | null) =>
+    api
+      .post<LoginResponse>('/auth/google/callback', {
+        code,
+        state,
+        device_token: deviceToken ?? undefined,
+      })
+      .then((r) => r.data),
 }

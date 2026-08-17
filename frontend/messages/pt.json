@@ -102,6 +102,11 @@
     "AdSlot": {
       "placeholder": "Espaço para anúncio"
     },
+    "GoogleButton": {
+      "label": "Continuar com Google",
+      "orDivider": "ou",
+      "termsNotice": "Ao continuar com o Google, você concorda com nossos <terms>Termos de uso</terms> e <privacy>Política de privacidade</privacy>."
+    },
     "ItemsPageCarousel": {
       "previousSlide": "Slide anterior",
       "nextSlide": "Próximo slide",
@@ -1608,6 +1613,16 @@
       "successDescription": "Agora você já pode anunciar itens pagos.",
       "errorTitle": "Não foi possível conectar",
       "backToProfile": "Voltar ao perfil"
+    }
+  },
+  "Auth": {
+    "GoogleCallback": {
+      "incompleteLink": "Link de retorno da Google incompleto.",
+      "connecting": "Entrando com sua conta Google...",
+      "successTitle": "Login realizado com sucesso!",
+      "errorConnecting": "Não foi possível entrar com sua conta Google.",
+      "errorTitle": "Não foi possível entrar",
+      "backToLogin": "Voltar ao login"
     }
   }
 }

@@ -72,7 +72,12 @@ class User(Document):
     neighborhood = StringField(max_length=100)
     city = StringField(max_length=100)
     state = StringField(max_length=2)
-    password_hash = StringField(required=True)
+    # Optional — absent for accounts created via "Continuar com Google"
+    # (see auth_service/google.py), which have no password to check against.
+    password_hash = StringField()
+    # Google's own stable user id ("sub" claim) — set only for accounts
+    # that signed up or linked via Google (google_oauth_gateway.py).
+    google_id = StringField(sparse=True, unique=True)
     is_active = BooleanField(default=True)
     # Self-service, reversible — unlike is_active=False, which is only ever
     # reached via account deletion. Hides items and blocks new requests

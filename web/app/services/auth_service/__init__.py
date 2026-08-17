@@ -11,6 +11,7 @@ from app.services.auth_service.account import (
     pause_account,
     resume_account,
 )
+from app.services.auth_service.google import google_login
 from app.services.auth_service.password_reset import (
     request_password_reset,
     reset_password,
@@ -40,6 +41,7 @@ __all__ = [
     "enable_totp",
     "get_login_history",
     "get_sessions",
+    "google_login",
     "login_user",
     "pause_account",
     "refresh_tokens",

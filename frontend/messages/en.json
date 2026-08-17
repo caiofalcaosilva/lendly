@@ -102,6 +102,11 @@
     "AdSlot": {
       "placeholder": "Ad space"
     },
+    "GoogleButton": {
+      "label": "Continue with Google",
+      "orDivider": "or",
+      "termsNotice": "By continuing with Google, you agree to our <terms>Terms of use</terms> and <privacy>Privacy policy</privacy>."
+    },
     "ItemsPageCarousel": {
       "previousSlide": "Previous slide",
       "nextSlide": "Next slide",
@@ -1608,6 +1613,16 @@
       "successDescription": "You can now list paid items.",
       "errorTitle": "Couldn't connect",
       "backToProfile": "Back to profile"
+    }
+  },
+  "Auth": {
+    "GoogleCallback": {
+      "incompleteLink": "Incomplete Google return link.",
+      "connecting": "Signing in with your Google account...",
+      "successTitle": "Signed in successfully!",
+      "errorConnecting": "Couldn't sign in with your Google account.",
+      "errorTitle": "Couldn't sign in",
+      "backToLogin": "Back to login"
     }
   }
 }

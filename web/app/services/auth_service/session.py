@@ -36,7 +36,14 @@ def login_user(
     background_tasks: BackgroundTasks | None = None,
 ) -> LoginResponse:
     user = User.objects(email=data.email, is_active=True).first()
-    if not user or not verify_password(data.password, user.password_hash):
+    # password_hash is absent for Google-only accounts (see auth_service/
+    # google.py) — same generic error as a wrong password, not a hint that
+    # this account has no password to check.
+    if (
+        not user
+        or not user.password_hash
+        or not verify_password(data.password, user.password_hash)
+    ):
         raise errors.unauthorized("Invalid credentials")
 
     if not user.is_verified:

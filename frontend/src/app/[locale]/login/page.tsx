@@ -13,6 +13,7 @@ import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { LogoMark } from '@/components/ui/Logo'
 import TwoFactorModal from '@/components/auth/TwoFactorModal'
+import GoogleButton from '@/components/auth/GoogleButton'
 import { isSafeRedirect } from '@/lib/utils'
 
 function LoginForm() {
@@ -25,6 +26,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [tempToken, setTempToken] = useState<string | null>(null)
   const t = useTranslations('Login')
+  const tGoogle = useTranslations('Common.GoogleButton')
 
   const schema = z.object({
     email: z.string().email(t('errors.invalidEmail')),
@@ -77,6 +79,13 @@ function LoginForm() {
         </div>
 
         <div className="bg-surface rounded-panel shadow-elevated border border-border p-8">
+          <GoogleButton />
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-ink-subtle uppercase tracking-wide">{tGoogle('orDivider')}</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
           {error && (
             <div className="mb-5 p-3 bg-danger-subtle border border-danger/30 text-danger rounded-control text-sm">
               {error}

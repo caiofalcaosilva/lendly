@@ -1,10 +1,14 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+import secrets
+
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
+from fastapi.responses import RedirectResponse
 
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.rate_limit import limiter
 from app.schemas.auth import (
     ForgotPasswordRequest,
+    GoogleCallbackRequest,
     ResetPasswordRequest,
     TotpConfirm,
     TotpDisable,
@@ -20,10 +24,12 @@ from app.schemas.user import (
     UserLogin,
     UserResponse,
 )
+from app.services import google_oauth_gateway
 from app.services.auth_service import (
     complete_2fa,
     disable_totp,
     enable_totp,
+    google_login,
     login_user,
     refresh_tokens,
     register_user,
@@ -36,6 +42,9 @@ from app.services.auth_service import (
     verify_email_token,
 )
 from app.services.platform_settings_service import get_settings as get_platform_settings
+from app.utils import errors
+
+GOOGLE_STATE_COOKIE = "google_oauth_state"
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -70,6 +79,47 @@ def login_complete_2fa(
     return complete_2fa(
         data.temp_token, data.code, data.trust_device, request, background_tasks
     )
+
+
+@router.get("/google/login")
+@limiter.limit(lambda: f"{get_platform_settings().login_rate_limit_per_minute}/minute")
+def google_login_redirect(request: Request):
+    """Sends the browser to Google's consent screen. Not a fetch call —
+    the frontend navigates here directly (window.location.href), same as
+    it would follow any other 302. The state value both goes to Google
+    and comes back as a short-lived cookie, so /google/callback can
+    confirm this exact browser is the one that started the flow, without
+    needing a logged-in user to store it on (there isn't one yet)."""
+    state = secrets.token_urlsafe(24)
+    response = RedirectResponse(google_oauth_gateway.get_authorization_url(state))
+    response.set_cookie(
+        GOOGLE_STATE_COOKIE,
+        state,
+        max_age=600,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+    )
+    return response
+
+
+@router.post("/google/callback", response_model=LoginResponse)
+@limiter.limit(lambda: f"{get_platform_settings().login_rate_limit_per_minute}/minute")
+def google_callback(
+    request: Request,
+    response: Response,
+    data: GoogleCallbackRequest,
+    background_tasks: BackgroundTasks,
+):
+    """Finishes Google sign-in: the frontend's own callback page reads
+    `code`/`state` off its URL and posts them here as JSON (never as a
+    query string, so the code never sits in browser history). Creates the
+    account on first use — see auth_service/google.py."""
+    cookie_state = request.cookies.get(GOOGLE_STATE_COOKIE)
+    response.delete_cookie(GOOGLE_STATE_COOKIE)
+    if not cookie_state or cookie_state != data.state:
+        raise errors.bad_request("Sessão de login expirada — tente novamente")
+    return google_login(data.code, data.device_token, request, background_tasks)
 
 
 @router.post("/refresh", response_model=RefreshResponse)
