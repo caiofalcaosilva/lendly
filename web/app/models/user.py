@@ -78,6 +78,8 @@ class User(Document):
     # Google's own stable user id ("sub" claim) — set only for accounts
     # that signed up or linked via Google (google_oauth_gateway.py).
     google_id = StringField(sparse=True, unique=True)
+    google_connected_at = DateTimeField()
+    google_oauth_state = StringField()
     is_active = BooleanField(default=True)
     # Self-service, reversible — unlike is_active=False, which is only ever
     # reached via account deletion. Hides items and blocks new requests

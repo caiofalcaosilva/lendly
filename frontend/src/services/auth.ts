@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import { LoginResponse, TokenResponse, User } from '@/types'
+import { GoogleConnectStatus, LoginResponse, TokenResponse, User } from '@/types'
 
 export interface RegisterData {
   name: string
@@ -79,4 +79,19 @@ export const authService = {
         device_token: deviceToken ?? undefined,
       })
       .then((r) => r.data),
+
+  // Connects a Google account to the already-logged-in user (profile
+  // settings), separate from the login/register flow above — same
+  // authenticated GET-URL-then-redirect pattern as the Mercado Pago
+  // connect flow in services/payments.ts.
+  getGoogleConnectUrl: () =>
+    api.get<{ authorization_url: string }>('/users/me/google/connect').then((r) => r.data),
+
+  googleConnectCallback: (code: string, state: string) =>
+    api
+      .post<GoogleConnectStatus>('/users/me/google/callback', { code, state })
+      .then((r) => r.data),
+
+  getGoogleConnectStatus: () =>
+    api.get<GoogleConnectStatus>('/users/me/google/status').then((r) => r.data),
 }

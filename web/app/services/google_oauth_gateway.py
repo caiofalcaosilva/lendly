@@ -25,10 +25,10 @@ class GoogleOAuthError(Exception):
     pass
 
 
-def get_authorization_url(state: str) -> str:
+def get_authorization_url(redirect_uri: str, state: str) -> str:
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "openid email profile",
         "state": state,
@@ -37,15 +37,17 @@ def get_authorization_url(state: str) -> str:
     return f"{AUTHORIZE_URL}?{urlencode(params)}"
 
 
-def exchange_code(code: str) -> str:
-    """Returns the Google access_token for the just-authorized user."""
+def exchange_code(code: str, redirect_uri: str) -> str:
+    """Returns the Google access_token for the just-authorized user.
+    redirect_uri must match exactly what get_authorization_url used for
+    this same code — Google rejects the exchange otherwise."""
     response = httpx.post(
         TOKEN_URL,
         data={
             "client_id": settings.GOOGLE_CLIENT_ID,
             "client_secret": settings.GOOGLE_CLIENT_SECRET,
             "code": code,
-            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+            "redirect_uri": redirect_uri,
             "grant_type": "authorization_code",
         },
         timeout=10,

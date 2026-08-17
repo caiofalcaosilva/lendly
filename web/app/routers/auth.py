@@ -3,6 +3,7 @@ import secrets
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 
+from app.config import settings
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.rate_limit import limiter
@@ -91,7 +92,9 @@ def google_login_redirect(request: Request):
     confirm this exact browser is the one that started the flow, without
     needing a logged-in user to store it on (there isn't one yet)."""
     state = secrets.token_urlsafe(24)
-    response = RedirectResponse(google_oauth_gateway.get_authorization_url(state))
+    response = RedirectResponse(
+        google_oauth_gateway.get_authorization_url(settings.GOOGLE_REDIRECT_URI, state)
+    )
     response.set_cookie(
         GOOGLE_STATE_COOKIE,
         state,

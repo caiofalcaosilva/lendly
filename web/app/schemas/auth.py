@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -33,3 +35,17 @@ class GoogleCallbackRequest(BaseModel):
     code: str
     state: str
     device_token: str | None = None
+
+
+class GoogleConnectResponse(BaseModel):
+    authorization_url: str
+
+
+class GoogleConnectStatus(BaseModel):
+    connected: bool
+    connected_at: datetime | None = None
+
+
+class GoogleConnectCallback(BaseModel):
+    code: str
+    state: str

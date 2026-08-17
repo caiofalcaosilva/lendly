@@ -484,6 +484,14 @@
       "connectButton": "Connect Mercado Pago",
       "error": "Couldn't connect to Mercado Pago."
     },
+    "GoogleConnectSection": {
+      "title": "Google account",
+      "connectedOn": "Connected on {date} — you can now sign in with \"Continue with Google\".",
+      "connected": "Connected — you can now sign in with \"Continue with Google\".",
+      "notConnected": "Connect your Google account to sign in without typing a password.",
+      "connectButton": "Connect Google",
+      "error": "Couldn't connect to Google."
+    },
     "SessionsSection": {
       "title": "Connected devices",
       "description": "Sessions that keep renewing your login automatically. Revoke any you don't recognize.",
@@ -1356,6 +1364,7 @@
         "password_reset": "Your password was reset",
         "session_revoked": "You disconnected a device",
         "mercadopago_connected": "You connected your Mercado Pago account",
+        "google_connected": "You connected your Google account",
         "data_exported": "You downloaded your data"
       },
       "admin": {
@@ -1611,6 +1620,17 @@
       "connecting": "Connecting your Mercado Pago account...",
       "successTitle": "Account connected successfully!",
       "successDescription": "You can now list paid items.",
+      "errorTitle": "Couldn't connect",
+      "backToProfile": "Back to profile"
+    }
+  },
+  "GoogleConnect": {
+    "Callback": {
+      "incompleteLink": "Incomplete Google return link.",
+      "errorConnecting": "Error connecting your Google account.",
+      "connecting": "Connecting your Google account...",
+      "successTitle": "Account connected successfully!",
+      "successDescription": "You can now sign in with \"Continue with Google\".",
       "errorTitle": "Couldn't connect",
       "backToProfile": "Back to profile"
     }

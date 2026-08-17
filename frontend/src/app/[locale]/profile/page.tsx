@@ -26,6 +26,7 @@ import BusinessBadge from '@/components/ui/BusinessBadge'
 import ReputationBadges from '@/components/ui/ReputationBadges'
 import IdentityVerificationSection from '@/components/profile/IdentityVerificationSection'
 import MercadoPagoConnectSection from '@/components/profile/MercadoPagoConnectSection'
+import GoogleConnectSection from '@/components/profile/GoogleConnectSection'
 import SessionsSection from '@/components/profile/SessionsSection'
 import LoginHistorySection from '@/components/profile/LoginHistorySection'
 import NotificationPreferencesSection from '@/components/profile/NotificationPreferencesSection'
@@ -635,6 +636,10 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
+
+                {/* Google account connection — adds "Continuar com Google"
+                    as a login option for accounts that started with a password */}
+                <GoogleConnectSection />
 
                 {/* Mercado Pago connection — required to sell paid items */}
                 <MercadoPagoConnectSection />

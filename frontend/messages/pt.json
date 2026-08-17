@@ -484,6 +484,14 @@
       "connectButton": "Conectar Mercado Pago",
       "error": "Não foi possível conectar ao Mercado Pago."
     },
+    "GoogleConnectSection": {
+      "title": "Conta Google",
+      "connectedOn": "Conectada em {date} — você já pode entrar com \"Continuar com Google\".",
+      "connected": "Conectada — você já pode entrar com \"Continuar com Google\".",
+      "notConnected": "Conecte sua conta Google pra poder entrar sem digitar senha.",
+      "connectButton": "Conectar Google",
+      "error": "Não foi possível conectar à Google."
+    },
     "SessionsSection": {
       "title": "Dispositivos conectados",
       "description": "Sessões que continuam renovando seu login automaticamente. Revogue as que você não reconhece.",
@@ -1356,6 +1364,7 @@
         "password_reset": "Sua senha foi redefinida",
         "session_revoked": "Você desconectou um dispositivo",
         "mercadopago_connected": "Você conectou sua conta Mercado Pago",
+        "google_connected": "Você conectou sua conta Google",
         "data_exported": "Você baixou seus dados"
       },
       "admin": {
@@ -1611,6 +1620,17 @@
       "connecting": "Conectando sua conta Mercado Pago...",
       "successTitle": "Conta conectada com sucesso!",
       "successDescription": "Agora você já pode anunciar itens pagos.",
+      "errorTitle": "Não foi possível conectar",
+      "backToProfile": "Voltar ao perfil"
+    }
+  },
+  "GoogleConnect": {
+    "Callback": {
+      "incompleteLink": "Link de retorno da Google incompleto.",
+      "errorConnecting": "Erro ao conectar sua conta Google.",
+      "connecting": "Conectando sua conta Google...",
+      "successTitle": "Conta conectada com sucesso!",
+      "successDescription": "Agora você já pode entrar com \"Continuar com Google\".",
       "errorTitle": "Não foi possível conectar",
       "backToProfile": "Voltar ao perfil"
     }

@@ -3,6 +3,11 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Response, UploadFile
 from app.dependencies import get_current_user, get_current_user_optional
 from app.models.user import User
 from app.schemas.analytics import OwnerAnalyticsSummary, RequesterSpendingSummary
+from app.schemas.auth import (
+    GoogleConnectCallback,
+    GoogleConnectResponse,
+    GoogleConnectStatus,
+)
 from app.schemas.item import ItemResponse
 from app.schemas.loan_request import LoanRequestResponse
 from app.schemas.payment import (
@@ -29,6 +34,7 @@ from app.services import (
     avatar_service,
     export_service,
     featured_items_service,
+    google_connect_service,
     item_service,
     loan_request_service,
     mp_connect_service,
@@ -248,6 +254,29 @@ def mercadopago_callback(
 def mercadopago_status(current_user: User = Depends(get_current_user)):
     """Whether the logged-in user has a Mercado Pago account connected."""
     return mp_connect_service.get_connect_status(current_user)
+
+
+@router.get("/me/google/connect", response_model=GoogleConnectResponse)
+def google_connect(current_user: User = Depends(get_current_user)):
+    """Starts the OAuth flow to link the logged-in user's own Google
+    account — for someone who already has a password-based account and
+    wants to add "Continuar com Google" as a login option."""
+    return google_connect_service.get_connect_url(current_user)
+
+
+@router.post("/me/google/callback", response_model=GoogleConnectStatus)
+def google_connect_callback(
+    data: GoogleConnectCallback, current_user: User = Depends(get_current_user)
+):
+    """Completes the Google OAuth flow — exchanges the redirect's code +
+    state for the account's google_id."""
+    return google_connect_service.handle_callback(data.code, data.state, current_user)
+
+
+@router.get("/me/google/status", response_model=GoogleConnectStatus)
+def google_status(current_user: User = Depends(get_current_user)):
+    """Whether the logged-in user has a Google account connected."""
+    return google_connect_service.get_connect_status(current_user)
 
 
 @router.get("/me/favorite-users", response_model=list[FavoriteUserSummary])

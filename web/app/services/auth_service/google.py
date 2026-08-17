@@ -1,5 +1,6 @@
 from fastapi import BackgroundTasks, Request
 
+from app.config import settings
 from app.models.user import User
 from app.schemas.user import LoginResponse
 from app.services import (
@@ -40,7 +41,9 @@ def google_login(
     does: signing in via Google must not become a way around 2FA someone
     already turned on."""
     try:
-        access_token = google_oauth_gateway.exchange_code(code)
+        access_token = google_oauth_gateway.exchange_code(
+            code, settings.GOOGLE_REDIRECT_URI
+        )
         info = google_oauth_gateway.get_userinfo(access_token)
     except GoogleOAuthError as e:
         raise errors.bad_gateway(str(e)) from e
