@@ -396,6 +396,10 @@ export interface PlatformSettings {
   handoff_confirmation_grace_hours: number
   announcement_message?: string | null
   announcement_active: boolean
+  items_banner_message?: string | null
+  items_banner_active: boolean
+  items_banner_link_url?: string | null
+  items_banner_link_label?: string | null
   updated_by_name?: string | null
   updated_at?: string | null
 }
@@ -403,6 +407,13 @@ export interface PlatformSettings {
 export interface Announcement {
   message?: string | null
   active: boolean
+}
+
+export interface ItemsBanner {
+  message?: string | null
+  active: boolean
+  link_url?: string | null
+  link_label?: string | null
 }
 
 export interface BusinessSummary {

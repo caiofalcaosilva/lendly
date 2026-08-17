@@ -50,15 +50,22 @@ function categoryIcon(category: string) {
 // reads as just another item marker, whatever the zoom level. The rounded-
 // square-rotated-45° trick is what most modern map UIs (Apple Maps, most
 // web map kits) use for a soft "balloon" pin instead of the sharper classic
-// teardrop — plain white dot inside, no glyph.
+// teardrop. Gradient fill + house glyph inside the white disc — same
+// "icon inside the pin" polish as LocationMapPicker's editable green pin
+// (this one's the fixed/registered-address counterpart, blue instead).
 const HOME_COLOR = '#1d4ed8'
+const HOME_COLOR_DARK = '#1e40af'
 function homeIcon() {
   return L.divIcon({
     className: '',
     html: `
       <div style="position:relative;width:30px;height:30px">
-        <div style="position:absolute;inset:0;background:${HOME_COLOR};border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 6px rgba(0,0,0,0.35)"></div>
-        <div style="position:absolute;top:8px;left:8px;width:14px;height:14px;background:white;border-radius:9999px"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg, ${HOME_COLOR} 0%, ${HOME_COLOR_DARK} 100%);border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 4px 10px rgba(0,0,0,0.3)"></div>
+        <div style="position:absolute;top:8px;left:8px;width:14px;height:14px;background:white;border-radius:9999px;display:flex;align-items:center;justify-content:center">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${HOME_COLOR_DARK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
       </div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 30],

@@ -99,6 +99,12 @@
       "label": "Versão beta",
       "tooltip": "O Lendly ainda está em fase de testes"
     },
+    "AdSlot": {
+      "placeholder": "Espaço para anúncio"
+    },
+    "ImageLightbox": {
+      "close": "Fechar"
+    },
     "LanguageSwitcher": {
       "toEnglish": "Switch to English",
       "toPortuguese": "Mudar para português"
@@ -515,7 +521,8 @@
       "errorUpload": "Erro ao enviar foto",
       "errorRemove": "Erro ao remover foto",
       "changePhoto": "Trocar foto",
-      "removePhoto": "Remover foto"
+      "removePhoto": "Remover foto",
+      "expandPhoto": "Ver foto ampliada"
     },
     "TotpSetupModal": {
       "errorSetup": "Erro ao iniciar configuração",
@@ -582,6 +589,7 @@
   },
   "Items": {
     "loadingMap": "Carregando mapa...",
+    "bannerLinkDefault": "Saiba mais",
     "title": "Explorar itens",
     "subtitleWithCity": "Encontre objetos disponíveis perto de você em {city}",
     "subtitle": "Encontre objetos disponíveis para empréstimo na sua região",
@@ -762,6 +770,12 @@
       "announcementHint": "Banner visível a todos os visitantes, logados ou não (ex: manutenção programada).",
       "announcementPlaceholder": "Ex: Manutenção programada hoje às 22h — o site pode ficar instável.",
       "announcementActive": "Aviso ativo",
+      "itemsBanner": "Banner da página de itens",
+      "itemsBannerHint": "Aparece só em \"Explorar itens\" — pra informações e links úteis da plataforma (não é o espaço reservado pra anúncios de terceiros).",
+      "itemsBannerPlaceholder": "Ex: Confira nossas dicas de segurança antes de emprestar.",
+      "itemsBannerLinkUrl": "Link (opcional)",
+      "itemsBannerLinkLabel": "Texto do link",
+      "itemsBannerActive": "Banner ativo",
       "lastUpdated": "Última alteração por {name} em {date}",
       "saveChanges": "Salvar alterações",
       "saved": "Salvo"
@@ -1163,7 +1177,10 @@
     "email": "E-mail",
     "phone": "Telefone",
     "address": "Endereço",
+    "language": "Idioma",
+    "languageDescription": "Escolha o idioma da interface.",
     "downloadData": "Baixar meus dados",
+    "downloadDataDescription": "Baixe uma cópia de todos os seus dados armazenados no Lendly, em formato JSON.",
     "changeEmail": "Trocar e-mail",
     "changePassword": "Trocar senha",
     "emailUpdated": "E-mail atualizado — verifique a caixa de entrada do novo endereço.",
@@ -1249,6 +1266,21 @@
     "emptyDescription": "O que acontecer com seus pedidos, itens e conta vai aparecer aqui.",
     "loadMore": "Carregar mais",
     "viewAll": "Ver histórico completo de atividades",
+    "filters": {
+      "event": "Tipo de evento",
+      "allEvents": "Todos os eventos"
+    },
+    "domains": {
+      "item": "Item",
+      "rental": "Empréstimo",
+      "payment": "Pagamento",
+      "review": "Avaliação",
+      "verification": "Verificação",
+      "group": "Grupo",
+      "report": "Denúncia",
+      "account": "Conta",
+      "admin": "Admin"
+    },
     "events": {
       "item": {
         "created": "{actor} anunciou {resource}",

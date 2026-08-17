@@ -99,6 +99,12 @@
       "label": "Beta version",
       "tooltip": "Lendly is still in testing"
     },
+    "AdSlot": {
+      "placeholder": "Ad space"
+    },
+    "ImageLightbox": {
+      "close": "Close"
+    },
     "LanguageSwitcher": {
       "toEnglish": "Switch to English",
       "toPortuguese": "Mudar para português"
@@ -515,7 +521,8 @@
       "errorUpload": "Error uploading photo",
       "errorRemove": "Error removing photo",
       "changePhoto": "Change photo",
-      "removePhoto": "Remove photo"
+      "removePhoto": "Remove photo",
+      "expandPhoto": "View larger photo"
     },
     "TotpSetupModal": {
       "errorSetup": "Error starting setup",
@@ -582,6 +589,7 @@
   },
   "Items": {
     "loadingMap": "Loading map...",
+    "bannerLinkDefault": "Learn more",
     "title": "Browse items",
     "subtitleWithCity": "Find available items near you in {city}",
     "subtitle": "Find items available for loan in your area",
@@ -762,6 +770,12 @@
       "announcementHint": "Banner visible to all visitors, logged in or not (e.g. scheduled maintenance).",
       "announcementPlaceholder": "E.g.: Scheduled maintenance today at 10 PM — the site may be unstable.",
       "announcementActive": "Announcement active",
+      "itemsBanner": "Items page banner",
+      "itemsBannerHint": "Only shows on \"Browse items\" — for useful platform info and links (not the placeholder reserved for third-party ads).",
+      "itemsBannerPlaceholder": "E.g.: Check out our safety tips before lending an item.",
+      "itemsBannerLinkUrl": "Link (optional)",
+      "itemsBannerLinkLabel": "Link text",
+      "itemsBannerActive": "Banner active",
       "lastUpdated": "Last changed by {name} on {date}",
       "saveChanges": "Save changes",
       "saved": "Saved"
@@ -1163,7 +1177,10 @@
     "email": "Email",
     "phone": "Phone",
     "address": "Address",
+    "language": "Language",
+    "languageDescription": "Choose the interface language.",
     "downloadData": "Download my data",
+    "downloadDataDescription": "Get a copy of everything Lendly stores about you, as a JSON file.",
     "changeEmail": "Change email",
     "changePassword": "Change password",
     "emailUpdated": "Email updated — check the inbox of your new address.",
@@ -1249,6 +1266,21 @@
     "emptyDescription": "Whatever happens with your requests, items and account shows up here.",
     "loadMore": "Load more",
     "viewAll": "View full activity history",
+    "filters": {
+      "event": "Event type",
+      "allEvents": "All events"
+    },
+    "domains": {
+      "item": "Item",
+      "rental": "Rental",
+      "payment": "Payment",
+      "review": "Review",
+      "verification": "Verification",
+      "group": "Group",
+      "report": "Report",
+      "account": "Account",
+      "admin": "Admin"
+    },
     "events": {
       "item": {
         "created": "{actor} listed {resource}",

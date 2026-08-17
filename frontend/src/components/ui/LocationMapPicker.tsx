@@ -15,15 +15,23 @@ const TILE_URLS = {
 
 // Same balloon-pin shape as the "home" marker on the browse map, but in the
 // brand green (draggable/editable) instead of that marker's blue (fixed) —
-// the color difference itself signals "you can move this one".
+// the color difference itself signals "you can move this one". A subtle
+// gradient (rather than flat fill), a softer/larger shadow, and a small
+// house glyph inside the white disc — same "icon inside the pin" polish
+// most consumer map UIs (Uber, iFood, Airbnb) use instead of a blank dot.
 const PIN_COLOR = '#16a34a'
+const PIN_COLOR_DARK = '#15803d'
 function pinIcon() {
   return L.divIcon({
     className: '',
     html: `
       <div style="position:relative;width:34px;height:34px">
-        <div style="position:absolute;inset:0;background:${PIN_COLOR};border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 6px rgba(0,0,0,0.35)"></div>
-        <div style="position:absolute;top:9px;left:9px;width:16px;height:16px;background:white;border-radius:9999px"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg, ${PIN_COLOR} 0%, ${PIN_COLOR_DARK} 100%);border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 4px 10px rgba(0,0,0,0.3)"></div>
+        <div style="position:absolute;top:9px;left:9px;width:16px;height:16px;background:white;border-radius:9999px;display:flex;align-items:center;justify-content:center">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${PIN_COLOR_DARK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
       </div>`,
     iconSize: [34, 34],
     iconAnchor: [17, 34],

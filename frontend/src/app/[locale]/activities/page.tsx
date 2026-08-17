@@ -3,14 +3,15 @@ import { useEffect, useState } from 'react'
 import { Link } from '@/i18n/navigation'
 import { History } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Activity } from '@/types'
+import { Activity, ActivityEventType } from '@/types'
 import { activitiesService } from '@/services/activities'
 import { useAuth } from '@/contexts/AuthContext'
-import { ACTIVITY_DOMAIN_ICONS, activityResourceHref } from '@/lib/activityDisplay'
+import { ACTIVITY_DOMAIN_ICONS, EVENTS_BY_DOMAIN, humanizeEventAction, activityResourceHref } from '@/lib/activityDisplay'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/Skeleton'
+import Select from '@/components/ui/Select'
 
 const LIMIT = 20
 
@@ -56,24 +57,26 @@ export default function ActivitiesPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [event, setEvent] = useState<ActivityEventType | ''>('')
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Activities')
 
   useEffect(() => {
+    setLoading(true)
     activitiesService
-      .list(undefined, LIMIT)
+      .list(undefined, LIMIT, event || undefined)
       .then((data) => {
         setActivities(data)
         setHasMore(data.length === LIMIT)
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [event])
 
   const loadMore = async () => {
     setLoadingMore(true)
     try {
       const lastId = activities[activities.length - 1]?.id
-      const data = await activitiesService.list(lastId, LIMIT)
+      const data = await activitiesService.list(lastId, LIMIT, event || undefined)
       setActivities((prev) => [...prev, ...data])
       setHasMore(data.length === LIMIT)
     } finally {
@@ -87,7 +90,26 @@ export default function ActivitiesPage() {
         <History className="w-6 h-6 text-info" />
         <h1 className="text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
       </div>
-      <p className="text-ink-muted text-sm mb-8">{t('subtitle')}</p>
+      <p className="text-ink-muted text-sm mb-6">{t('subtitle')}</p>
+
+      <div className="mb-6 max-w-xs">
+        <Select
+          label={t('filters.event')}
+          value={event}
+          onChange={(e) => setEvent(e.target.value as ActivityEventType | '')}
+        >
+          <option value="">{t('filters.allEvents')}</option>
+          {Object.entries(EVENTS_BY_DOMAIN).map(([domain, events]) => (
+            <optgroup key={domain} label={t(`domains.${domain}`)}>
+              {events.map((ev) => (
+                <option key={ev} value={ev}>
+                  {humanizeEventAction(ev)}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </Select>
+      </div>
 
       {loading ? (
         <div className="space-y-2.5">

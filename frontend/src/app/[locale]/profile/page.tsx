@@ -4,7 +4,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Star, Mail, Phone, MapPin, CheckCircle2, ShieldCheck, ShieldOff, MailCheck, MailWarning, Loader2, Building2, Download, PauseCircle, ChevronDown, ChevronUp, Languages } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/contexts/AuthContext'
 import { usersService } from '@/services/users'
@@ -29,6 +29,7 @@ import MercadoPagoConnectSection from '@/components/profile/MercadoPagoConnectSe
 import SessionsSection from '@/components/profile/SessionsSection'
 import LoginHistorySection from '@/components/profile/LoginHistorySection'
 import NotificationPreferencesSection from '@/components/profile/NotificationPreferencesSection'
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher'
 import InAppNotificationPreferencesSection from '@/components/profile/InAppNotificationPreferencesSection'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/contexts/ToastContext'
@@ -406,13 +407,7 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <div className="pt-3 border-t border-border">
-              <Button size="sm" variant="outline" loading={exportingData} onClick={exportData} className="w-full">
-                <Download className="w-3.5 h-3.5" /> {t('downloadData')}
-              </Button>
-            </div>
-
-            <div className="flex flex-col gap-2 pt-1">
+            <div className="flex flex-col gap-2 pt-3 border-t border-border">
               <Button size="sm" variant="outline" onClick={() => setShowChangeEmail(true)}>
                 {t('changeEmail')}
               </Button>
@@ -667,6 +662,32 @@ export default function ProfilePage() {
 
           {activeTab === 'conta' && user && (
             <div className="space-y-6">
+              {/* Language */}
+              <div className="bg-surface rounded-panel border border-border p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Languages className="w-5 h-5 text-ink-subtle" />
+                  <h2 className="font-semibold text-ink">{t('language')}</h2>
+                </div>
+                <p className="text-sm text-ink-muted mb-4">
+                  {t('languageDescription')}
+                </p>
+                <LanguageSwitcher />
+              </div>
+
+              {/* Export data */}
+              <div className="bg-surface rounded-panel border border-border p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Download className="w-5 h-5 text-ink-subtle" />
+                  <h2 className="font-semibold text-ink">{t('downloadData')}</h2>
+                </div>
+                <p className="text-sm text-ink-muted mb-4">
+                  {t('downloadDataDescription')}
+                </p>
+                <Button size="sm" variant="outline" loading={exportingData} onClick={exportData}>
+                  <Download className="w-3.5 h-3.5" /> {t('downloadData')}
+                </Button>
+              </div>
+
               {/* Pause account — reversible, unlike deletion below */}
               <div className="bg-surface rounded-panel border border-warning/30 p-6">
                 <div className="flex items-center gap-2 mb-2">

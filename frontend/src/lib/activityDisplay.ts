@@ -10,7 +10,7 @@ import {
   Lock,
   Shield,
 } from 'lucide-react'
-import { ActivityResourceType } from '@/types'
+import { ACTIVITY_EVENTS, ActivityEventType, ActivityResourceType } from '@/types'
 
 // One icon per domain (the event's prefix before the dot) rather than per
 // exact event — 56 distinct events is too many to give each a unique icon
@@ -25,6 +25,24 @@ export const ACTIVITY_DOMAIN_ICONS: Record<string, typeof History> = {
   report: Flag,
   account: Lock,
   admin: Shield,
+}
+
+// All 56-ish events, grouped by domain (the prefix before the dot) — same
+// shape an event-type filter <select> needs, whether it's the admin's
+// cross-user view or a user's own activity history.
+export const EVENTS_BY_DOMAIN = ACTIVITY_EVENTS.reduce<Record<string, ActivityEventType[]>>(
+  (acc, event) => {
+    const domain = event.split('.')[0]
+    ;(acc[domain] ??= []).push(event)
+    return acc
+  },
+  {},
+)
+
+export function humanizeEventAction(event: string): string {
+  const action = event.split('.')[1] ?? event
+  const spaced = action.replace(/_/g, ' ')
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
 export function activityResourceHref(

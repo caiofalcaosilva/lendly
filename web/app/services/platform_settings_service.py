@@ -3,6 +3,7 @@ from app.models.platform_settings import PlatformSettings
 from app.models.user import User
 from app.schemas.platform_settings import (
     AnnouncementResponse,
+    ItemsBannerResponse,
     PlatformSettingsResponse,
     PlatformSettingsUpdate,
 )
@@ -28,6 +29,10 @@ def _to_response(doc: PlatformSettings) -> PlatformSettingsResponse:
         handoff_confirmation_grace_hours=doc.handoff_confirmation_grace_hours,
         announcement_message=doc.announcement_message,
         announcement_active=doc.announcement_active or False,
+        items_banner_message=doc.items_banner_message,
+        items_banner_active=doc.items_banner_active or False,
+        items_banner_link_url=doc.items_banner_link_url,
+        items_banner_link_label=doc.items_banner_link_label,
         updated_by_name=doc.updated_by.name if doc.updated_by else None,
         updated_at=doc.updated_at,
     )
@@ -69,4 +74,16 @@ def get_announcement() -> AnnouncementResponse:
     doc = get_settings()
     return AnnouncementResponse(
         message=doc.announcement_message, active=doc.announcement_active or False
+    )
+
+
+def get_items_banner() -> ItemsBannerResponse:
+    """Public, unauthenticated — shown on the items/browse page only,
+    separate from the site-wide navbar announcement above."""
+    doc = get_settings()
+    return ItemsBannerResponse(
+        message=doc.items_banner_message,
+        active=doc.items_banner_active or False,
+        link_url=doc.items_banner_link_url,
+        link_label=doc.items_banner_link_label,
     )

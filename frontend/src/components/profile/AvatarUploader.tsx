@@ -4,6 +4,7 @@ import { Camera, Loader2, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Avatar from '@/components/ui/Avatar'
 import Tooltip from '@/components/ui/Tooltip'
+import ImageLightbox from '@/components/ui/ImageLightbox'
 import { usersService } from '@/services/users'
 
 export default function AvatarUploader({
@@ -18,6 +19,7 @@ export default function AvatarUploader({
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [expanded, setExpanded] = useState(false)
   const t = useTranslations('Common.AvatarUploader')
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +55,18 @@ export default function AvatarUploader({
   return (
     <div className="mx-auto mb-3 w-fit">
       <div className="relative">
-        <Avatar name={name} avatarUrl={avatarUrl} size="lg" />
+        {avatarUrl ? (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            aria-label={t('expandPhoto')}
+            className="cursor-zoom-in rounded-full"
+          >
+            <Avatar name={name} avatarUrl={avatarUrl} size="lg" />
+          </button>
+        ) : (
+          <Avatar name={name} avatarUrl={avatarUrl} size="lg" />
+        )}
         <div className="absolute -bottom-1 -right-1">
           <Tooltip label={t('changePhoto')}>
             <button
@@ -91,6 +104,9 @@ export default function AvatarUploader({
         onChange={handleFile}
         className="hidden"
       />
+      {avatarUrl && (
+        <ImageLightbox src={avatarUrl} alt={name} open={expanded} onClose={() => setExpanded(false)} />
+      )}
     </div>
   )
 }

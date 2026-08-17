@@ -5,7 +5,6 @@ import { Link } from '@/i18n/navigation'
 import { Download, History, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
-  ACTIVITY_EVENTS,
   ActivityEventType,
   ActivityResourceType,
   AdminActivity,
@@ -16,7 +15,7 @@ import { adminActivitiesService } from '@/services/adminActivities'
 import { adminExportService } from '@/services/adminExport'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
-import { ACTIVITY_DOMAIN_ICONS, activityResourceHref } from '@/lib/activityDisplay'
+import { ACTIVITY_DOMAIN_ICONS, EVENTS_BY_DOMAIN, humanizeEventAction, activityResourceHref } from '@/lib/activityDisplay'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import Select from '@/components/ui/Select'
@@ -31,21 +30,6 @@ const LIMIT = 25
 const RESOURCE_TYPES: ActivityResourceType[] = [
   'item', 'loan_request', 'payment', 'review', 'verification', 'group', 'report', 'user',
 ]
-
-const EVENTS_BY_DOMAIN = ACTIVITY_EVENTS.reduce<Record<string, ActivityEventType[]>>(
-  (acc, event) => {
-    const domain = event.split('.')[0]
-    ;(acc[domain] ??= []).push(event)
-    return acc
-  },
-  {},
-)
-
-function humanizeEventAction(event: string): string {
-  const action = event.split('.')[1] ?? event
-  const spaced = action.replace(/_/g, ' ')
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
-}
 
 function SkeletonRow() {
   return (

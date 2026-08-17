@@ -10,7 +10,6 @@ import { getViewAsTargetId, exitViewAs, clearViewAsMarkers } from '@/lib/tokenSt
 import Button from '@/components/ui/Button'
 import { Logo } from '@/components/ui/Logo'
 import NotificationBell from '@/components/layout/NotificationBell'
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher'
 import UserMenu from '@/components/layout/UserMenu'
 import { ADMIN_LINKS } from './adminLinks'
 import Tooltip from '@/components/ui/Tooltip'
@@ -173,7 +172,6 @@ export default function Navbar() {
               )}
               <NotificationBell />
               <div className="flex items-center gap-3 pl-3 ml-1 border-l border-border">
-                <LanguageSwitcher />
                 <Tooltip label={themeToggleLabel}>
                   <button
                     onClick={toggleTheme}
@@ -188,7 +186,6 @@ export default function Navbar() {
             </>
           ) : (
             <div className="flex items-center gap-3">
-              <LanguageSwitcher />
               <Tooltip label={themeToggleLabel}>
                 <button
                   onClick={toggleTheme}
@@ -209,7 +206,6 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-1 md:hidden">
-          <LanguageSwitcher compact />
           <Tooltip label={themeToggleLabel}>
             <button
               onClick={toggleTheme}
@@ -219,11 +215,7 @@ export default function Navbar() {
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
           </Tooltip>
-          {isAuthenticated && (
-            <div className="p-2">
-              <NotificationBell />
-            </div>
-          )}
+          {isAuthenticated && <NotificationBell className="p-2" />}
           <button
             className="p-2 text-ink"
             aria-label={mobileOpen ? t('closeMenu') : t('openMenu')}

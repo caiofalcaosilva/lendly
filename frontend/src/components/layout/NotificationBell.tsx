@@ -6,8 +6,9 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useNotifications } from '@/contexts/NotificationsContext'
 import { formatDate } from '@/lib/utils'
 import { useEscapeKey } from '@/lib/useEscapeKey'
+import { cn } from '@/lib/utils'
 
-export default function NotificationBell() {
+export default function NotificationBell({ className }: { className?: string }) {
   const { notifications, unreadCount, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -39,7 +40,7 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={toggle}
-        className="relative text-ink-muted hover:text-ink transition-colors"
+        className={cn('relative flex items-center justify-center text-ink-muted hover:text-ink transition-colors', className)}
         aria-label={unreadCount > 0 ? t('ariaLabelUnread', { count: unreadCount }) : t('ariaLabel')}
         aria-expanded={open}
         aria-haspopup="true"

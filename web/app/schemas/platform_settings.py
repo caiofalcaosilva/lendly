@@ -19,6 +19,10 @@ class PlatformSettingsUpdate(BaseModel):
     handoff_confirmation_grace_hours: int | None = Field(None, ge=1)
     announcement_message: str | None = Field(None, max_length=280)
     announcement_active: bool | None = None
+    items_banner_message: str | None = Field(None, max_length=280)
+    items_banner_active: bool | None = None
+    items_banner_link_url: str | None = Field(None, max_length=500)
+    items_banner_link_label: str | None = Field(None, max_length=40)
 
 
 class PlatformSettingsResponse(BaseModel):
@@ -37,6 +41,10 @@ class PlatformSettingsResponse(BaseModel):
     handoff_confirmation_grace_hours: int
     announcement_message: str | None = None
     announcement_active: bool = False
+    items_banner_message: str | None = None
+    items_banner_active: bool = False
+    items_banner_link_url: str | None = None
+    items_banner_link_label: str | None = None
     updated_by_name: str | None = None
     updated_at: datetime | None = None
 
@@ -44,3 +52,10 @@ class PlatformSettingsResponse(BaseModel):
 class AnnouncementResponse(BaseModel):
     message: str | None = None
     active: bool = False
+
+
+class ItemsBannerResponse(BaseModel):
+    message: str | None = None
+    active: bool = False
+    link_url: str | None = None
+    link_label: str | None = None

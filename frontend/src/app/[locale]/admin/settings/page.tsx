@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
-import { Settings as SettingsIcon, CheckCircle2, Megaphone } from 'lucide-react'
+import { Settings as SettingsIcon, CheckCircle2, Megaphone, PanelTop } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { PlatformSettings } from '@/types'
 import { platformSettingsService } from '@/services/platformSettings'
@@ -71,6 +71,10 @@ export default function AdminSettingsPage() {
         handoff_confirmation_grace_hours: settings.handoff_confirmation_grace_hours,
         announcement_message: settings.announcement_message ?? '',
         announcement_active: settings.announcement_active,
+        items_banner_message: settings.items_banner_message ?? '',
+        items_banner_active: settings.items_banner_active,
+        items_banner_link_url: settings.items_banner_link_url ?? '',
+        items_banner_link_label: settings.items_banner_link_label ?? '',
       })
       setSettings(updated)
       setSaved(true)
@@ -138,6 +142,43 @@ export default function AdminSettingsPage() {
               checked={settings.announcement_active}
               onChange={(checked) => setSettings((prev) => (prev ? { ...prev, announcement_active: checked } : prev))}
               label={t('announcementActive')}
+            />
+          </div>
+
+          <div className="pt-2 border-t border-border space-y-3">
+            <div className="flex items-center gap-2">
+              <PanelTop className="w-4 h-4 text-info" />
+              <span className="text-sm font-medium text-ink-muted">{t('itemsBanner')}</span>
+            </div>
+            <p className="text-xs text-ink-muted -mt-2">
+              {t('itemsBannerHint')}
+            </p>
+            <Textarea
+              value={settings.items_banner_message ?? ''}
+              onChange={(e) => setSettings((prev) => (prev ? { ...prev, items_banner_message: e.target.value.slice(0, 280) } : prev))}
+              rows={2}
+              maxLength={280}
+              placeholder={t('itemsBannerPlaceholder')}
+              className="resize-none"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label={t('itemsBannerLinkUrl')}
+                value={settings.items_banner_link_url ?? ''}
+                onChange={(e) => setSettings((prev) => (prev ? { ...prev, items_banner_link_url: e.target.value } : prev))}
+                placeholder="https://..."
+              />
+              <Input
+                label={t('itemsBannerLinkLabel')}
+                value={settings.items_banner_link_label ?? ''}
+                onChange={(e) => setSettings((prev) => (prev ? { ...prev, items_banner_link_label: e.target.value.slice(0, 40) } : prev))}
+                maxLength={40}
+              />
+            </div>
+            <Checkbox
+              checked={settings.items_banner_active}
+              onChange={(checked) => setSettings((prev) => (prev ? { ...prev, items_banner_active: checked } : prev))}
+              label={t('itemsBannerActive')}
             />
           </div>
 

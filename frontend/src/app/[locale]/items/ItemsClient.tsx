@@ -2,11 +2,12 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from '@/i18n/navigation'
-import { Package, List, Map as MapIcon, MapPin, LocateFixed, AlertTriangle, RotateCw } from 'lucide-react'
+import { Package, List, Map as MapIcon, MapPin, LocateFixed, AlertTriangle, RotateCw, Megaphone, ArrowRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { Category, Item } from '@/types'
+import { Category, Item, ItemsBanner } from '@/types'
 import { itemsService } from '@/services/items'
 import { categoriesService } from '@/services/categories'
+import { platformSettingsService } from '@/services/platformSettings'
 import { useAuth } from '@/contexts/AuthContext'
 import { haversineKm } from '@/lib/utils'
 import ItemCard from '@/components/items/ItemCard'
@@ -14,6 +15,7 @@ import ItemFilters, { Filters } from '@/components/items/ItemFilters'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/Skeleton'
 import Select from '@/components/ui/Select'
+import AdSlot from '@/components/ui/AdSlot'
 
 function MapLoading() {
   const t = useTranslations('Items')
@@ -142,6 +144,7 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
   const [retryTick, setRetryTick] = useState(0)
   const [nearbyItems, setNearbyItems] = useState<Item[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [itemsBanner, setItemsBanner] = useState<ItemsBanner | null>(null)
   const loaderRef = useRef<HTMLDivElement>(null)
   const skipRef = useRef(initialItems.length)
   const isFetchingRef = useRef(false)
@@ -161,6 +164,12 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
 
   useEffect(() => {
     categoriesService.list().then(setCategories)
+  }, [])
+
+  useEffect(() => {
+    platformSettingsService.itemsBanner().then((b) => {
+      if (b.active && b.message) setItemsBanner(b)
+    })
   }, [])
 
   useEffect(() => {
@@ -384,6 +393,25 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
             categories={categories}
           />
         </div>
+
+        {itemsBanner && (
+          <div className="flex items-center gap-3 mb-6 p-4 rounded-panel bg-info-subtle border border-info/30">
+            <Megaphone className="w-4 h-4 text-info flex-shrink-0" />
+            <p className="text-sm text-ink flex-1">{itemsBanner.message}</p>
+            {itemsBanner.link_url && (
+              <a
+                href={itemsBanner.link_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-sm font-medium text-info hover:underline flex-shrink-0"
+              >
+                {itemsBanner.link_label || t('bannerLinkDefault')} <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+        )}
+
+        <AdSlot />
 
         {/* Results header + view toggle */}
         <h2 className="sr-only">{t('resultsHeading')}</h2>

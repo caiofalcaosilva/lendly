@@ -31,7 +31,7 @@ from app.routers import (
     webhooks,
 )
 from app.schemas.category import CategoryResponse
-from app.schemas.platform_settings import AnnouncementResponse
+from app.schemas.platform_settings import AnnouncementResponse, ItemsBannerResponse
 from app.services import category_service, platform_settings_service
 from app.services.review_reminder_service import send_pending_review_reminders
 from app.utils.security import decode_token
@@ -159,6 +159,13 @@ def get_public_config():
 def get_announcement():
     """The platform-wide banner shown to every visitor, logged in or not."""
     return platform_settings_service.get_announcement()
+
+
+@app.get("/items-banner", response_model=ItemsBannerResponse, tags=["public"])
+def get_items_banner():
+    """Info/link banner shown only on the items/browse page — distinct from
+    the site-wide /announcement above, editable in /admin/settings."""
+    return platform_settings_service.get_items_banner()
 
 
 @app.get("/categories", response_model=list[CategoryResponse], tags=["public"])
