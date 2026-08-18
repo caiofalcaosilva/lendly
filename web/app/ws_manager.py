@@ -1,6 +1,10 @@
+import asyncio
+import logging
 from collections import defaultdict
 
 from fastapi import WebSocket
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
@@ -45,3 +49,32 @@ manager = ConnectionManager()
 notification_manager = ConnectionManager()
 # Group mural (/groups/{id}/posts/ws) — keyed by group_id.
 group_post_manager = ConnectionManager()
+# Personal activity history (/activities/ws) — keyed by recipient (user) id.
+activity_manager = ConnectionManager()
+
+
+_main_loop: asyncio.AbstractEventLoop | None = None
+
+
+def set_main_loop(loop: asyncio.AbstractEventLoop) -> None:
+    """Called once from main.py's lifespan (itself running on the main
+    event loop) — lets broadcast_threadsafe schedule a broadcast onto that
+    loop from any thread, including the worker threads FastAPI runs sync
+    route/service code on."""
+    global _main_loop
+    _main_loop = loop
+
+
+def broadcast_threadsafe(manager: ConnectionManager, key: str, payload: dict) -> None:
+    """Fire-and-forget broadcast, callable from sync code on any thread —
+    for callers with no event loop of their own to `await` a broadcast on
+    (activity_service.record() is synchronous, unlike the async call sites
+    that use `manager.broadcast(...)`/`background_tasks.add_task(...)`
+    directly). Never raises: a dead socket, or the loop not being set yet,
+    must not break the caller's actual business action."""
+    if _main_loop is None:
+        return
+    try:
+        asyncio.run_coroutine_threadsafe(manager.broadcast(key, payload), _main_loop)
+    except Exception:
+        logger.exception("failed to schedule websocket broadcast")

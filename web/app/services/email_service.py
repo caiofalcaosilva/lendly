@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from app.config import settings
+from app.utils.urls import frontend_origin
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ async def send_email(to: str, subject: str, html: str) -> None:
 
 
 async def send_verification_email(to: str, name: str, token: str) -> None:
-    url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
+    url = f"{frontend_origin()}/verify-email?token={token}"
     html = f"""
     <div style="background:#f3f4f6;padding:40px 16px;font-family:-apple-system,
                 BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
@@ -135,7 +136,7 @@ async def send_verification_email(to: str, name: str, token: str) -> None:
 
 
 async def send_password_reset_email(to: str, name: str, token: str) -> None:
-    url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+    url = f"{frontend_origin()}/reset-password?token={token}"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">Redefinir senha</h2>
@@ -182,7 +183,7 @@ async def send_new_login_email(
 async def send_review_reminder_email(
     to: str, name: str, item_title: str, request_id: str
 ) -> None:
-    url = f"{settings.FRONTEND_URL}/requests/{request_id}"
+    url = f"{frontend_origin()}/requests/{request_id}"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">Que tal avaliar esse empréstimo?</h2>
@@ -221,7 +222,7 @@ _STATUS_COPY = {
 async def send_new_request_email(
     to: str, name: str, requester_name: str, item_title: str, request_id: str
 ) -> None:
-    url = f"{settings.FRONTEND_URL}/requests/{request_id}"
+    url = f"{frontend_origin()}/requests/{request_id}"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">Nova solicitação recebida</h2>
@@ -244,7 +245,7 @@ async def send_request_status_email(
     if not copy:
         return
     title, body_template = copy
-    url = f"{settings.FRONTEND_URL}/requests/{request_id}"
+    url = f"{frontend_origin()}/requests/{request_id}"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">{title}</h2>
@@ -262,7 +263,7 @@ async def send_request_status_email(
 async def send_new_message_email(
     to: str, name: str, sender_name: str, item_title: str, request_id: str
 ) -> None:
-    url = f"{settings.FRONTEND_URL}/requests/{request_id}"
+    url = f"{frontend_origin()}/requests/{request_id}"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">Nova mensagem de {sender_name}</h2>
@@ -279,7 +280,7 @@ async def send_new_message_email(
 
 
 async def send_verification_approved_email(to: str, name: str) -> None:
-    url = f"{settings.FRONTEND_URL}/profile#identity-verification"
+    url = f"{frontend_origin()}/profile#identity-verification"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">Sua identidade foi verificada!</h2>
@@ -298,7 +299,7 @@ async def send_verification_approved_email(to: str, name: str) -> None:
 async def send_verification_rejected_email(
     to: str, name: str, reason: str = ""
 ) -> None:
-    url = f"{settings.FRONTEND_URL}/profile#identity-verification"
+    url = f"{frontend_origin()}/profile#identity-verification"
     reason_html = f"<p><strong>Motivo:</strong> {reason}</p>" if reason else ""
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
@@ -319,7 +320,7 @@ async def send_verification_rejected_email(
 async def send_item_available_email(
     to: str, name: str, item_title: str, item_id: str
 ) -> None:
-    url = f"{settings.FRONTEND_URL}/items/{item_id}"
+    url = f"{frontend_origin()}/items/{item_id}"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <h2 style="color:#16a34a">{item_title} está disponível de novo!</h2>

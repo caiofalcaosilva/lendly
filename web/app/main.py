@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -8,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
+from mongoengine.errors import ValidationError as MongoValidationError
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
@@ -36,6 +38,7 @@ from app.schemas.platform_settings import AnnouncementResponse
 from app.services import category_service, platform_settings_service
 from app.services.review_reminder_service import send_pending_review_reminders
 from app.utils.security import decode_token
+from app.ws_manager import set_main_loop
 
 configure_logging()
 
@@ -46,6 +49,10 @@ _SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 async def lifespan(app: FastAPI):
     assert_secrets_configured()
     connect_db()
+    # Lets sync code on any thread (e.g. activity_service.record(), called
+    # from FastAPI's threadpool for sync route handlers) schedule a
+    # WebSocket broadcast onto this loop — see ws_manager.broadcast_threadsafe.
+    set_main_loop(asyncio.get_running_loop())
 
     # In-process scheduler — fine for the current single-worker deployment.
     # Would need to move to a dedicated worker (or add a distributed lock)
@@ -118,6 +125,15 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         status_code=429,
         content={"detail": "Muitas tentativas. Tente novamente em instantes."},
     )
+
+
+@app.exception_handler(MongoValidationError)
+def mongo_validation_handler(request: Request, exc: MongoValidationError):
+    # Only reached on Document.save() — the app's dominant write path is
+    # queryset .update(), which mongoengine never validates, so this is a
+    # last-resort net (e.g. Report.clean()'s invariant), not the primary
+    # guard against bad data — that's still the Pydantic request schemas.
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
 os.makedirs("uploads/items", exist_ok=True)

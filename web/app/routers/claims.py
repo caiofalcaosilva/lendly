@@ -43,9 +43,14 @@ def fund_summary(admin: User = Depends(get_current_admin)):
 
 
 @router.get("/claims", response_model=list[ClaimResponse])
-def list_claims(status: str | None = None, admin: User = Depends(get_current_admin)):
+def list_claims(
+    status: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    admin: User = Depends(get_current_admin),
+):
     """Admin — every claim, optionally filtered by status."""
-    return claim_service.list_claims(status)
+    return claim_service.list_claims(status, skip, limit)
 
 
 @router.get("/claims/{claim_id}", response_model=ClaimResponse)

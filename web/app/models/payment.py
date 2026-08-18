@@ -1,9 +1,29 @@
-from mongoengine import DateTimeField, Document, FloatField, ReferenceField, StringField
+from mongoengine import (
+    DateTimeField,
+    Document,
+    EmbeddedDocument,
+    EmbeddedDocumentField,
+    FloatField,
+    ReferenceField,
+    StringField,
+)
 
 from app.utils.time import utcnow
 
 PAYMENT_STATUSES = ["pending", "held", "released", "refunded", "failed"]
 PAYMENT_KINDS = ["rental", "extension"]
+
+
+class PixCharge(EmbeddedDocument):
+    """Cached so the checkout screen can re-render on refresh without
+    re-hitting Mercado Pago; expires_at flags when to ask for a fresh one
+    (currently always None — Mercado Pago's create-order response never
+    includes an expiry, kept for when/if that changes)."""
+
+    mp_payment_id = StringField()
+    qr_code = StringField()
+    qr_code_base64 = StringField()
+    expires_at = DateTimeField()
 
 
 class Payment(Document):
@@ -30,18 +50,19 @@ class Payment(Document):
     # any item without a declared_value. See claim_service.get_fund_summary.
     guarantee_fee_amount = FloatField(default=0.0, min_value=0)
     status = StringField(default="pending", choices=PAYMENT_STATUSES)
-    mp_payment_id = StringField()
-    # Cached so the checkout screen can re-render on refresh without
-    # re-hitting Mercado Pago; expires_at flags when to ask for a fresh one.
-    pix_qr_code = StringField()
-    pix_qr_code_base64 = StringField()
-    expires_at = DateTimeField()
+    pix_charge = EmbeddedDocumentField(PixCharge)
     created_at = DateTimeField(default=utcnow)
     held_at = DateTimeField()
     released_at = DateTimeField()
     refunded_at = DateTimeField()
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "payments",
-        "indexes": ["mp_payment_id", {"fields": ["loan_request", "kind"]}],
+        "indexes": [
+            "pix_charge.mp_payment_id",
+            "status",
+            "payer",
+            {"fields": ["loan_request", "kind"]},
+        ],
     }

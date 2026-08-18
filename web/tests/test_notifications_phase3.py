@@ -159,7 +159,7 @@ def test_favorited_item_price_change_notifies_fan(client, register_user):
     owner_id, owner_token = register_user("dono.itemmudou@example.com")
     _, fan_token = register_user("fa.itemmudou@example.com")
     # Making an item paid requires a connected Mercado Pago account.
-    User.objects(id=owner_id).update(mp_user_id="mp-test-user-id")
+    User.objects(id=owner_id).update(set__mp_connection__mp_user_id="mp-test-user-id")
 
     item = _create_item(
         client, owner_token, title="Bicicleta", availability_type="free"

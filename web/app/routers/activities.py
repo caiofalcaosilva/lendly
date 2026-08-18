@@ -1,4 +1,11 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from jose import JWTError
 
 from app.dependencies import get_current_user
 from app.models.activity import ACTIVITY_EVENTS
@@ -6,6 +13,8 @@ from app.models.user import User
 from app.schemas.activity import ActivityResponse
 from app.services import activity_service
 from app.utils import errors
+from app.utils.security import decode_token
+from app.ws_manager import activity_manager
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -33,3 +42,29 @@ def list_activities(
     return activity_service.list_activities(
         current_user, before_id, limit, event, resource_type, resource_id
     )
+
+
+@router.websocket("/ws")
+async def activities_ws(websocket: WebSocket, token: str):
+    """Live push for the personal activity-history page — one connection
+    per logged-in user. Auth via `?token=` query param (browsers can't set
+    headers on a WS handshake, same as chat/notifications/group-mural) —
+    closes with 4401 if the token doesn't resolve to an active user."""
+    user = None
+    try:
+        payload = decode_token(token)
+        user_id = payload.get("sub")
+        user = User.objects(id=user_id, is_active=True).first() if user_id else None
+    except JWTError:
+        user = None
+
+    if not user:
+        await websocket.close(code=4401)
+        return
+
+    await activity_manager.connect(str(user.id), websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        activity_manager.disconnect(str(user.id), websocket)

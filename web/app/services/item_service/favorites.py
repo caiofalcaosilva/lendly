@@ -44,9 +44,8 @@ def set_waitlist(item_id: str, current_user: User, join: bool) -> ItemResponse:
     return response
 
 
-def get_favorite_items(current_user: User) -> list[ItemResponse]:
-    return [
-        to_response(item, current_user)
-        for item in (current_user.favorites or [])
-        if item.is_active
-    ]
+def get_favorite_items(
+    current_user: User, skip: int = 0, limit: int = 50
+) -> list[ItemResponse]:
+    active = [item for item in (current_user.favorites or []) if item.is_active]
+    return [to_response(item, current_user) for item in active[skip : skip + limit]]

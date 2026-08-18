@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.payment import Payment
-from app.models.user import User
+from app.models.user import MercadoPagoConnection, User
 from app.services import payment_service
 from app.services.mercadopago_gateway import MercadoPagoError
 
@@ -25,7 +25,7 @@ def _make_paid_loan_request(quantity=1, declared_value=None):
         email="dono.pagamento@example.com",
         password_hash="x",
         is_verified=True,
-        mp_user_id="MP-OWNER-123",
+        mp_connection=MercadoPagoConnection(mp_user_id="MP-OWNER-123"),
     ).save()
     requester = User(
         name="Solicitante", email="solicitante.pagamento@example.com", password_hash="x"
@@ -230,7 +230,7 @@ def _make_delivery_request(delivery_fee=20.0):
         email="dono.entrega@example.com",
         password_hash="x",
         is_verified=True,
-        mp_user_id="MP-OWNER-123",
+        mp_connection=MercadoPagoConnection(mp_user_id="MP-OWNER-123"),
     ).save()
     requester = User(
         name="Solicitante", email="solicitante.entrega@example.com", password_hash="x"

@@ -10,6 +10,9 @@ class Review(Document):
     rating = IntField(required=True, min_value=1, max_value=5)
     comment = StringField(max_length=500)
     created_at = DateTimeField(default=utcnow)
+    # Never actually changes — no review-editing feature; kept only for
+    # consistency with every other collection.
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "reviews",

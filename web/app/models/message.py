@@ -8,6 +8,9 @@ class Message(Document):
     sender = ReferenceField("User", required=True)
     text = StringField(required=True, max_length=2000)
     created_at = DateTimeField(default=utcnow)
+    # Never actually changes — no message editing feature; kept only for
+    # consistency with every other collection.
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "messages",

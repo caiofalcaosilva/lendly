@@ -26,5 +26,6 @@ class Category(Document):
     is_active = BooleanField(default=True)
     subcategories = ListField(EmbeddedDocumentField(Subcategory), default=list)
     created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {"collection": "categories", "indexes": ["is_active"]}

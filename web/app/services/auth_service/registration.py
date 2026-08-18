@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from fastapi import BackgroundTasks, Request
 
-from app.models.user import User
+from app.models.user import BusinessProfile, TermsAcceptance, User
 from app.schemas.user import TokenResponse, UserCreate, UserResponse
 from app.services import email_service
 from app.services.auth_service._common import (
@@ -17,6 +17,7 @@ from app.services.platform_settings_service import get_settings as get_platform_
 from app.utils import errors
 from app.utils.security import hash_password
 from app.utils.time import utcnow
+from app.utils.validators import normalize_digits
 
 # Bumped whenever the terms of use / privacy policy text changes materially —
 # stamped on the user at registration as consent evidence (see
@@ -34,7 +35,7 @@ def register_user(
     if data.account_type == "business":
         assert data.cnpj is not None  # enforced by UserCreate's model_validator
         cnpj_digits = "".join(c for c in data.cnpj if c.isdigit())
-        if User.objects(cnpj=cnpj_digits).first():
+        if User.objects(business_profile__cnpj=cnpj_digits).first():
             raise errors.conflict("CNPJ already registered")
 
     verification_token = secrets.token_urlsafe(32)
@@ -44,7 +45,7 @@ def register_user(
     user = User(
         name=data.name,
         email=data.email,
-        phone=data.phone,
+        phone=normalize_digits(data.phone) if data.phone else None,
         zip_code=data.zip_code,
         street=data.street,
         number=data.number,
@@ -56,21 +57,31 @@ def register_user(
         longitude=data.longitude,
         password_hash=hash_password(data.password),
         is_verified=False,
-        terms_accepted_version=CURRENT_TERMS_VERSION,
-        terms_accepted_at=utcnow(),
-        terms_accepted_ip=ip,
+        terms_acceptance=TermsAcceptance(
+            version=CURRENT_TERMS_VERSION, accepted_at=utcnow(), ip_address=ip
+        ),
         email_verification_token=verification_token,
         email_verification_expires=utcnow()
         + timedelta(hours=get_platform_settings().email_verification_expire_hours),
         trusted_devices=[device_token],
         account_type=data.account_type,
-        company_name=data.company_name,
-        trade_name=data.trade_name,
-        cnpj=cnpj_digits,
-        business_category=data.business_category,
-        business_phone=data.business_phone,
-        business_hours=data.business_hours,
-        website=data.website,
+        business_profile=BusinessProfile(
+            company_name=data.company_name,
+            trade_name=data.trade_name,
+            cnpj=cnpj_digits,
+            business_category=data.business_category,
+            business_phone=normalize_digits(data.business_phone)
+            if data.business_phone
+            else None,
+            business_hours=data.business_hours,
+            website=data.website,
+            # Previously never set at registration despite being accepted
+            # by UserCreate — only reachable via /users/me afterward.
+            instagram=data.instagram,
+            whatsapp=normalize_digits(data.whatsapp) if data.whatsapp else None,
+        )
+        if data.account_type == "business"
+        else None,
     )
     user.save()
 

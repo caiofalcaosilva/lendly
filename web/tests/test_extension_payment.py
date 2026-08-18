@@ -11,7 +11,7 @@ _MOCK_CHARGE_RESULT = {
 
 
 def _create_paid_item(client, owner_id, token, **overrides):
-    User.objects(id=owner_id).update(mp_user_id="mp-test-user-id")
+    User.objects(id=owner_id).update(set__mp_connection__mp_user_id="mp-test-user-id")
     payload = {
         "title": "Furadeira",
         "category": "toys",

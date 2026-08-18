@@ -23,21 +23,27 @@ def set_favorite_user(
     return user_to_public_response(target, viewer=current_user)
 
 
-def get_favorite_users(current_user: User) -> list[FavoriteUserSummary]:
+def get_favorite_users(
+    current_user: User, skip: int = 0, limit: int = 50
+) -> list[FavoriteUserSummary]:
+    active = [
+        u for u in (current_user.favorite_users or []) if u.is_active and not u.is_admin
+    ]
     return [
         FavoriteUserSummary(
             id=str(u.id),
             name=u.name,
             avatar_url=u.avatar_url,
-            trade_name=u.trade_name,
+            trade_name=u.business_profile.trade_name if u.business_profile else None,
             account_type=u.account_type or "individual",
-            business_category=u.business_category,
+            business_category=(
+                u.business_profile.business_category if u.business_profile else None
+            ),
             city=u.city,
             neighborhood=u.neighborhood,
-            average_rating=u.average_rating,
-            reliability_score=u.reliability_score,
-            reliability_count=u.reliability_count or 0,
+            average_rating=u.reputation.average_rating,
+            reliability_score=u.reputation.reliability_score,
+            reliability_count=u.reputation.reliability_count or 0,
         )
-        for u in (current_user.favorite_users or [])
-        if u.is_active and not u.is_admin
+        for u in active[skip : skip + limit]
     ]

@@ -34,13 +34,30 @@ def recalculate_rating(user: User) -> None:
     """Also called from admin_review_service after a moderation deletion —
     unlike the only previous caller (create_review), that path can bring
     the review count down to zero, so it's handled explicitly here rather
-    than left at whatever average_rating happened to be before."""
-    reviews = list(Review.objects(reviewed=user))
-    if not reviews:
-        user.update(average_rating=0.0, rating_count=0)
+    than left at whatever average_rating happened to be before. Averaged
+    server-side via $group instead of pulling every Review into Python —
+    matters for a long-lived account with hundreds of reviews, recomputed
+    on every single new one."""
+    pipeline = [
+        {"$match": {"reviewed": user.id}},
+        {
+            "$group": {
+                "_id": None,
+                "avg_rating": {"$avg": "$rating"},
+                "count": {"$sum": 1},
+            }
+        },
+    ]
+    result = list(Review.objects.aggregate(pipeline))
+    if not result:
+        user.update(
+            set__reputation__average_rating=0.0, set__reputation__rating_count=0
+        )
         return
-    avg = sum(r.rating for r in reviews) / len(reviews)
-    user.update(average_rating=round(avg, 2), rating_count=len(reviews))
+    user.update(
+        set__reputation__average_rating=round(result[0]["avg_rating"], 2),
+        set__reputation__rating_count=result[0]["count"],
+    )
 
 
 def create_review(

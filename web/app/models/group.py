@@ -6,10 +6,12 @@ from mongoengine import (
     EmbeddedDocumentField,
     FloatField,
     ListField,
+    PointField,
     ReferenceField,
     StringField,
 )
 
+from app.models._choices import BRAZIL_STATES
 from app.utils.time import utcnow
 
 
@@ -41,17 +43,20 @@ class Group(Document):
     moderators = ListField(ReferenceField("User"), default=list)
     vouches = ListField(EmbeddedDocumentField(Vouch), default=list)
     # Denormalized from the creator's address at creation time (same idea as
-    # Item.latitude/longitude) — lets "grupos perto de você" reuse the same
-    # haversine-in-Python approach as the neighborhood item feed, with no
-    # geospatial index. Opt-in: a group only shows up there once its
-    # creator/moderator flips is_discoverable, so private groups stay private.
+    # Item.latitude/longitude). Opt-in: a group only shows up in "grupos
+    # perto de você" once its creator/moderator flips is_discoverable, so
+    # private groups stay private.
     is_discoverable = BooleanField(default=False)
     neighborhood = StringField(max_length=100)
     city = StringField(max_length=100)
-    state = StringField(max_length=2)
+    state = StringField(max_length=2, choices=BRAZIL_STATES)
     latitude = FloatField()
     longitude = FloatField()
+    # See Item.location — same GeoJSON mirror, same reason (2dsphere index
+    # for list_nearby_groups instead of Haversine over every group).
+    location = PointField()
     created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "groups",

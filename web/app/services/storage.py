@@ -1,9 +1,12 @@
 import io
+import logging
 import os
 
 from PIL import Image
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _r2_configured() -> bool:
@@ -54,6 +57,35 @@ def save_public_image(image: Image.Image, key: str) -> str:
     with open(path, "wb") as f:
         f.write(data)
     return f"{settings.API_PUBLIC_URL}/uploads/{key}"
+
+
+def delete_public_image(url: str | None) -> None:
+    """Best-effort delete of a file previously saved via save_public_image,
+    given the public URL that was returned for it — reverses the URL back
+    into a storage key/path, R2 or local disk (whichever is configured
+    now — if that switched since the file was saved, the reversal below
+    just won't match the prefix and this quietly no-ops). Never raises: a
+    missing/already-deleted file isn't worth failing the caller's actual
+    business action over."""
+    if not url:
+        return
+    try:
+        if _r2_configured():
+            prefix = f"{settings.R2_PUBLIC_URL.rstrip('/')}/"
+            if not url.startswith(prefix):
+                return
+            _r2_client().delete_object(
+                Bucket=settings.R2_BUCKET_NAME, Key=url[len(prefix) :]
+            )
+        else:
+            prefix = f"{settings.API_PUBLIC_URL}/uploads/"
+            if not url.startswith(prefix):
+                return
+            path = os.path.join("uploads", url[len(prefix) :])
+            if os.path.exists(path):
+                os.remove(path)
+    except Exception:
+        logger.exception("failed to delete old public image", extra={"url": url})
 
 
 def save_private_image(image: Image.Image, key: str) -> str:

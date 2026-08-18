@@ -18,12 +18,16 @@ async def upload_avatar(file: UploadFile, current_user: User) -> UserResponse:
 
     key = f"avatars/{current_user.id}/{uuid.uuid4().hex}.jpg"
     url = storage.save_public_image(img, key)
+    old_avatar_url = current_user.avatar_url
     current_user.update(avatar_url=url, updated_at=utcnow())
     current_user.reload()
+    storage.delete_public_image(old_avatar_url)
     return user_to_response(current_user)
 
 
 def remove_avatar(current_user: User) -> UserResponse:
+    old_avatar_url = current_user.avatar_url
     current_user.update(unset__avatar_url=1, updated_at=utcnow())
     current_user.reload()
+    storage.delete_public_image(old_avatar_url)
     return user_to_response(current_user)

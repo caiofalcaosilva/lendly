@@ -43,11 +43,13 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
             name=owner.name,
             neighborhood=owner.neighborhood,
             city=owner.city,
-            average_rating=owner.average_rating,
-            reliability_score=owner.reliability_score,
-            reliability_count=owner.reliability_count or 0,
+            average_rating=owner.reputation.average_rating,
+            reliability_score=owner.reputation.reliability_score,
+            reliability_count=owner.reputation.reliability_count or 0,
             account_type=owner.account_type or "individual",
-            trade_name=owner.trade_name,
+            trade_name=owner.business_profile.trade_name
+            if owner.business_profile
+            else None,
         ),
         title=item.title,
         description=item.description,

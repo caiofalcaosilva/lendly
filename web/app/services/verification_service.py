@@ -10,7 +10,7 @@ from app.utils import errors
 from app.utils.images import load_and_resize
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
-from app.utils.validators import is_valid_cpf
+from app.utils.validators import is_valid_cpf, normalize_digits
 
 
 def _to_response(sub: VerificationSubmission) -> VerificationResponse:
@@ -36,6 +36,7 @@ async def _save_photo(file: UploadFile, user_id: str, kind: str) -> str:
 async def submit_verification(
     cpf: str, selfie: UploadFile, document: UploadFile, current_user: User
 ) -> VerificationResponse:
+    cpf = normalize_digits(cpf)
     if not is_valid_cpf(cpf):
         raise errors.bad_request("CPF inválido")
 
@@ -75,11 +76,13 @@ def get_my_status(current_user: User) -> VerificationSubmission | None:
     )
 
 
-def list_submissions(status_filter: str | None) -> list[VerificationResponse]:
+def list_submissions(
+    status_filter: str | None, skip: int = 0, limit: int = 100
+) -> list[VerificationResponse]:
     qs = VerificationSubmission.objects()
     if status_filter:
         qs = qs.filter(status=status_filter)
-    return [_to_response(s) for s in qs.order_by("-created_at")]
+    return [_to_response(s) for s in qs.order_by("-created_at").skip(skip).limit(limit)]
 
 
 def _get_submission_in_status(
@@ -106,7 +109,9 @@ def approve_submission(
     submission_id: str, admin: User, background_tasks: BackgroundTasks
 ) -> VerificationResponse:
     sub = _get_submission_in_status(submission_id, ("pending",))
-    sub.update(status="approved", reviewed_by=admin, reviewed_at=utcnow())
+    sub.update(
+        status="approved", reviewed_by=admin, reviewed_at=utcnow(), updated_at=utcnow()
+    )
     sub.reload()
     sub.user.update(identity_status="approved")
     activity_service.record(
@@ -149,6 +154,7 @@ def reject_submission(
         reviewed_by=admin,
         reviewed_at=utcnow(),
         rejection_reason=reason,
+        updated_at=utcnow(),
     )
     sub.reload()
     sub.user.update(identity_status="rejected")

@@ -67,15 +67,9 @@ def delete_account(data: AccountDeleteRequest, current_user: User) -> None:
         state=None,
         latitude=None,
         longitude=None,
-        company_name=None,
-        trade_name=None,
-        # $unset, not $set null — cnpj's sparse unique index still tracks
-        # (and can collide on) an explicit null.
-        unset__cnpj=1,
-        business_category=None,
-        business_phone=None,
-        business_hours=None,
-        website=None,
+        # $unset, not $set null — business_profile.cnpj's sparse unique
+        # index still tracks (and can collide on) an explicit null.
+        unset__business_profile=1,
         totp_secret=None,
         totp_enabled=False,
         trusted_devices=[],

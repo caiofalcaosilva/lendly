@@ -2,6 +2,8 @@ from mongoengine import (
     BooleanField,
     DateTimeField,
     Document,
+    EmbeddedDocument,
+    EmbeddedDocumentField,
     IntField,
     ReferenceField,
     StringField,
@@ -18,8 +20,51 @@ REQUEST_STATUSES = [
     "cancelled",
 ]
 # Payment side of a paid loan, kept separate from `status` — see
-# docs/pagamento-online.md for the full state machine.
-PAYMENT_STATUSES = ["unpaid", "processing", "held", "released", "refunded", "failed"]
+# docs/pagamento-online.md for the full state machine. Deliberately its own
+# name, not PAYMENT_STATUSES (that's Payment.status, in models/payment.py) —
+# the two track different things from different angles (this request-level
+# field has "unpaid"/"processing" states that exist before any Payment
+# document is even created) and used to share the same name by accident,
+# which invited comparing a LoanRequest against the wrong value set.
+LOAN_PAYMENT_STATUSES = [
+    "unpaid",
+    "processing",
+    "held",
+    "released",
+    "refunded",
+    "failed",
+]
+
+
+class PickupConfirmation(EmbeddedDocument):
+    """Both sides must confirm before the request actually advances to
+    in_progress — see loan_request_service.lifecycle.confirm_pickup.
+    forced marks the owner-only escape hatch used when the requester
+    never confirms."""
+
+    confirmed_by_owner_at = DateTimeField()
+    confirmed_by_requester_at = DateTimeField()
+    forced = BooleanField(default=False)
+
+
+class ReturnConfirmation(EmbeddedDocument):
+    """Same dual-confirmation shape as PickupConfirmation, for the return
+    side — see loan_request_service.lifecycle.confirm_return."""
+
+    confirmed_by_owner_at = DateTimeField()
+    confirmed_by_requester_at = DateTimeField()
+    forced = BooleanField(default=False)
+
+
+class DeliveryCode(EmbeddedDocument):
+    """Only present for delivery-fulfilled requests — the requester is
+    shown this code once accepted, hands it to the owner at the door, and
+    the owner typing it in sets both PickupConfirmation *_at fields at
+    once (see lifecycle.confirm_pickup_by_code)."""
+
+    code = StringField(max_length=6)
+    attempts = IntField(default=0)
+    generated_at = DateTimeField()
 
 
 class LoanRequest(Document):
@@ -27,7 +72,7 @@ class LoanRequest(Document):
     requester = ReferenceField("User", required=True)
     owner = ReferenceField("User", required=True)
     status = StringField(default="pending", choices=REQUEST_STATUSES)
-    payment_status = StringField(default="unpaid", choices=PAYMENT_STATUSES)
+    payment_status = StringField(default="unpaid", choices=LOAN_PAYMENT_STATUSES)
     pickup_date = DateTimeField(required=True)
     expected_return_date = DateTimeField(required=True)
     actual_return_date = DateTimeField()
@@ -54,21 +99,16 @@ class LoanRequest(Document):
     responded_at = DateTimeField()
     # Pickup/return each require both sides to confirm before the status
     # actually advances — an owner acting alone can't fabricate a handoff
-    # that never happened. `*_forced` marks the owner-only escape hatch used
-    # when the other side never confirms (see loan_request_service.lifecycle).
-    pickup_confirmed_by_owner_at = DateTimeField()
-    pickup_confirmed_by_requester_at = DateTimeField()
-    pickup_forced = BooleanField(default=False)
-    # Delivery-fulfilled requests skip the dual-confirmation dance above:
-    # the requester is shown this code once accepted, hands it to the owner
-    # at the door, and the owner typing it in sets both *_confirmed_by_*_at
-    # fields at once (see loan_request_service.lifecycle.confirm_pickup_by_code).
-    delivery_confirmation_code = StringField(max_length=6)
-    delivery_confirmation_code_attempts = IntField(default=0)
-    delivery_confirmation_code_generated_at = DateTimeField()
-    return_confirmed_by_owner_at = DateTimeField()
-    return_confirmed_by_requester_at = DateTimeField()
-    return_forced = BooleanField(default=False)
+    # that never happened. See PickupConfirmation/ReturnConfirmation above
+    # and loan_request_service.lifecycle.
+    pickup_confirmation = EmbeddedDocumentField(
+        PickupConfirmation, default=PickupConfirmation
+    )
+    return_confirmation = EmbeddedDocumentField(
+        ReturnConfirmation, default=ReturnConfirmation
+    )
+    # Only present for delivery-fulfilled requests — see DeliveryCode above.
+    delivery_confirmation = EmbeddedDocumentField(DeliveryCode)
     # One-shot flag — set the first time the review-reminder job checks this
     # request, whether or not it actually had anything to remind about.
     review_reminder_sent_at = DateTimeField()

@@ -35,7 +35,7 @@ def _create_item(client, token, **overrides):
 
 def _finished_paid_request(client, register_user, suffix, declared_value=800.0):
     owner_id, owner_token = register_user(f"dono.sinistro{suffix}@example.com")
-    User.objects(id=owner_id).update(mp_user_id="MP-OWNER-CLAIM")
+    User.objects(id=owner_id).update(set__mp_connection__mp_user_id="MP-OWNER-CLAIM")
     item = _create_item(client, owner_token, declared_value=declared_value)
     requester_id, requester_token = register_user(
         f"solicitante.sinistro{suffix}@example.com"
@@ -154,7 +154,7 @@ def test_claim_blocked_without_declared_value(client, register_user):
 
 def test_claim_blocked_before_finished(client, register_user):
     owner_id, owner_token = register_user("dono.sinistronaofinal@example.com")
-    User.objects(id=owner_id).update(mp_user_id="MP-OWNER-CLAIM-2")
+    User.objects(id=owner_id).update(set__mp_connection__mp_user_id="MP-OWNER-CLAIM-2")
     item = _create_item(client, owner_token, declared_value=800.0)
     _, requester_token = register_user("solicitante.sinistronaofinal@example.com")
     owner_headers = {"Authorization": f"Bearer {owner_token}"}

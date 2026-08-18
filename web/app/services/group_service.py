@@ -1,9 +1,9 @@
-import math
 import secrets
 import uuid
 from typing import Any
 
 from fastapi import BackgroundTasks, UploadFile
+from mongoengine import Q
 
 from app.models.group import Group, Vouch
 from app.models.group_post import GroupPost
@@ -21,26 +21,15 @@ from app.schemas.group import (
 )
 from app.services import activity_service, notification_service, storage
 from app.utils import errors
+from app.utils.geo import haversine_km, radius_km_to_radians, to_point
 from app.utils.images import load_and_resize
+from app.utils.time import utcnow
 
 GROUP_PHOTO_DIMENSION = 400
 
 # Same cap as items' "no meu bairro" feed (item_service/crud.py) — a
 # neighbor-lending app has no business surfacing a group hundreds of km away.
 DEFAULT_MAX_RADIUS_KM = 50
-
-
-def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    earth_radius_km = 6371.0
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(math.radians(lat1))
-        * math.cos(math.radians(lat2))
-        * math.sin(dlon / 2) ** 2
-    )
-    return earth_radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 def _member_response(
@@ -56,7 +45,7 @@ def _member_response(
         id=str(user.id),
         name=user.name,
         avatar_url=user.avatar_url,
-        average_rating=user.average_rating,
+        average_rating=user.reputation.average_rating,
         vouch_count=len(vouches_for_user),
         vouched_by_me=vouched_by_me,
         is_moderator=any(str(m.id) == str(user.id) for m in group.moderators),
@@ -156,7 +145,7 @@ def _strip_vouches(group: Group, user: User) -> None:
         if str(v.voucher.id) != str(user.id) and str(v.vouched_for.id) != str(user.id)
     ]
     if len(remaining) != len(group.vouches):
-        group.update(vouches=remaining)
+        group.update(vouches=remaining, updated_at=utcnow())
 
 
 def create_group(data: GroupCreate, current_user: User) -> GroupResponse:
@@ -173,6 +162,7 @@ def create_group(data: GroupCreate, current_user: User) -> GroupResponse:
         state=current_user.state,
         latitude=current_user.latitude,
         longitude=current_user.longitude,
+        location=to_point(current_user.latitude, current_user.longitude),
     )
     group.save()
     activity_service.record(
@@ -197,7 +187,7 @@ def update_group(group_id: str, data: GroupUpdate, current_user: User) -> GroupR
         )
     updates = data.model_dump(exclude_none=True)
     if updates:
-        group.update(**updates)
+        group.update(**updates, updated_at=utcnow())
         group.reload()
     return _to_response(group, viewer=current_user)
 
@@ -215,8 +205,10 @@ async def upload_photo(
 
     key = f"groups/{group.id}/{uuid.uuid4().hex}.jpg"
     url = storage.save_public_image(img, key)
-    group.update(photo_url=url)
+    old_photo_url = group.photo_url
+    group.update(photo_url=url, updated_at=utcnow())
     group.reload()
+    storage.delete_public_image(old_photo_url)
     return _to_response(group, viewer=current_user)
 
 
@@ -226,8 +218,10 @@ def remove_photo(group_id: str, current_user: User) -> GroupResponse:
         raise errors.forbidden(
             "Only the creator or a moderator can change the group photo"
         )
-    group.update(unset__photo_url=1)
+    old_photo_url = group.photo_url
+    group.update(unset__photo_url=1, set__updated_at=utcnow())
     group.reload()
+    storage.delete_public_image(old_photo_url)
     return _to_response(group, viewer=current_user)
 
 
@@ -252,6 +246,8 @@ def refresh_location(group_id: str, current_user: User) -> GroupResponse:
         state=creator.state,
         latitude=creator.latitude,
         longitude=creator.longitude,
+        location=to_point(creator.latitude, creator.longitude),
+        updated_at=utcnow(),
     )
     group.reload()
     return _to_response(group, viewer=current_user)
@@ -265,7 +261,7 @@ def regenerate_invite_code(group_id: str, current_user: User) -> GroupResponse:
         raise errors.forbidden(
             "Only the creator or a moderator can regenerate the invite code"
         )
-    group.update(invite_code=secrets.token_urlsafe(12))
+    group.update(invite_code=secrets.token_urlsafe(12), updated_at=utcnow())
     group.reload()
     return _to_response(group, viewer=current_user)
 
@@ -290,7 +286,9 @@ def transfer_ownership(
     new_creator = next((m for m in group.members if str(m.id) == new_creator_id), None)
     if not new_creator:
         raise errors.not_found("Member not found in this group")
-    group.update(created_by=new_creator, pull__moderators=new_creator)
+    group.update(
+        created_by=new_creator, pull__moderators=new_creator, updated_at=utcnow()
+    )
     group.reload()
     activity_service.record(
         recipient=new_creator,
@@ -330,7 +328,7 @@ def add_moderator(
         raise errors.not_found("Member not found in this group")
     already = any(str(m.id) == user_id for m in group.moderators)
     if not already:
-        group.update(push__moderators=target)
+        group.update(push__moderators=target, updated_at=utcnow())
         group.reload()
         activity_service.record(
             recipient=target,
@@ -368,7 +366,7 @@ def remove_moderator(
         raise errors.not_found("Member not found in this group")
     is_moderator = any(str(m.id) == user_id for m in group.moderators)
     if is_moderator:
-        group.update(pull__moderators=target)
+        group.update(pull__moderators=target, updated_at=utcnow())
         group.reload()
         activity_service.record(
             recipient=target,
@@ -416,7 +414,7 @@ def remove_member(
         raise errors.forbidden("Only the creator can remove a moderator")
     _strip_group_from_items(group, member)
     _strip_vouches(group, member)
-    group.update(pull__members=member, pull__moderators=member)
+    group.update(pull__members=member, pull__moderators=member, updated_at=utcnow())
     group.reload()
     activity_service.record(
         recipient=member,
@@ -474,20 +472,28 @@ def list_nearby_groups(
     if not origins:
         return []
     effective_radius = radius_km or DEFAULT_MAX_RADIUS_KM
+    radius_radians = radius_km_to_radians(effective_radius)
 
-    candidates = Group.objects(is_discoverable=True, members__ne=current_user).order_by(
-        "name"
-    )
-    nearby = []
-    for group in candidates:
-        if group.latitude is None or group.longitude is None:
-            continue
-        distance = min(
-            _haversine_km(o_lat, o_lng, group.latitude, group.longitude)
-            for o_lat, o_lng in origins
+    geo_clauses = [
+        Q(location__geo_within_sphere=[to_point(o_lat, o_lng), radius_radians])
+        for o_lat, o_lng in origins
+    ]
+    geo_q = geo_clauses[0]
+    for clause in geo_clauses[1:]:
+        geo_q |= clause
+    candidates = Group.objects(
+        geo_q, is_discoverable=True, members__ne=current_user
+    ).order_by("name")
+    nearby = [
+        (
+            min(
+                haversine_km(o_lat, o_lng, group.latitude, group.longitude)
+                for o_lat, o_lng in origins
+            ),
+            group,
         )
-        if distance <= effective_radius:
-            nearby.append((distance, group))
+        for group in candidates
+    ]
     nearby.sort(key=lambda pair: pair[0])
     page = nearby[skip : skip + limit]
     return [
@@ -513,7 +519,7 @@ def join_discoverable_group(group_id: str, current_user: User) -> GroupResponse:
         raise errors.not_found("Group not found")
     is_member = any(str(m.id) == str(current_user.id) for m in group.members)
     if not is_member and not current_user.is_admin:
-        group.update(push__members=current_user)
+        group.update(push__members=current_user, updated_at=utcnow())
         group.reload()
         activity_service.record(
             recipient=current_user,
@@ -584,7 +590,7 @@ def join_group(invite_code: str, current_user: User) -> GroupResponse:
     # Admins never become members — they can already view any group read-only.
     is_member = any(str(m.id) == str(current_user.id) for m in group.members)
     if not is_member and not current_user.is_admin:
-        group.update(push__members=current_user)
+        group.update(push__members=current_user, updated_at=utcnow())
         group.reload()
         activity_service.record(
             recipient=current_user,
@@ -605,7 +611,9 @@ def leave_group(group_id: str, current_user: User) -> dict:
         )
     _strip_group_from_items(group, current_user)
     _strip_vouches(group, current_user)
-    group.update(pull__members=current_user, pull__moderators=current_user)
+    group.update(
+        pull__members=current_user, pull__moderators=current_user, updated_at=utcnow()
+    )
     activity_service.record(
         recipient=current_user,
         event="group.left",
@@ -630,6 +638,7 @@ def delete_group(
     for member in members:
         _strip_group_from_items(group, member)
     GroupPost.objects(group=group).delete()
+    storage.delete_public_image(group.photo_url)
     group.delete()
     for member in members:
         activity_service.record(
@@ -664,6 +673,7 @@ def admin_delete_group(
     for member in members:
         _strip_group_from_items(group, member)
     GroupPost.objects(group=group).delete()
+    storage.delete_public_image(group.photo_url)
     group.delete()
     for member in members:
         activity_service.record(
@@ -706,7 +716,7 @@ def admin_remove_member(
         )
     _strip_group_from_items(group, member)
     _strip_vouches(group, member)
-    group.update(pull__members=member, pull__moderators=member)
+    group.update(pull__members=member, pull__moderators=member, updated_at=utcnow())
     group.reload()
     activity_service.record(
         recipient=member,
@@ -753,7 +763,8 @@ def vouch_for_member(
     )
     if not already:
         group.update(
-            push__vouches=Vouch(voucher=current_user, vouched_for=target, note=note)
+            push__vouches=Vouch(voucher=current_user, vouched_for=target, note=note),
+            updated_at=utcnow(),
         )
         group.reload()
         activity_service.record(
@@ -795,7 +806,7 @@ def unvouch_for_member(
         )
     ]
     if len(remaining) != len(group.vouches):
-        group.update(vouches=remaining)
+        group.update(vouches=remaining, updated_at=utcnow())
         group.reload()
         activity_service.record(
             recipient=target,

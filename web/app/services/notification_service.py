@@ -91,7 +91,7 @@ def mark_read(
     if not notif:
         raise errors.not_found("Notification not found")
     if not notif.read_at:
-        notif.update(read_at=utcnow())
+        notif.update(read_at=utcnow(), updated_at=utcnow())
         notif.reload()
         if background_tasks:
             background_tasks.add_task(
@@ -106,7 +106,7 @@ def mark_all_read(
     current_user: User, background_tasks: BackgroundTasks | None = None
 ) -> int:
     count = Notification.objects(recipient=current_user, read_at=None).update(
-        read_at=utcnow()
+        read_at=utcnow(), updated_at=utcnow()
     )
     if background_tasks and count:
         background_tasks.add_task(_broadcast_sync, current_user, {"kind": "read_all"})

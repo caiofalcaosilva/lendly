@@ -113,11 +113,13 @@ def create_report(data: ReportCreate, current_user: User) -> ReportResponse:
     return _to_response(report)
 
 
-def list_reports(status_filter: str | None) -> list[ReportResponse]:
+def list_reports(
+    status_filter: str | None, skip: int = 0, limit: int = 100
+) -> list[ReportResponse]:
     qs = Report.objects()
     if status_filter:
         qs = qs.filter(status=status_filter)
-    return [_to_response(r) for r in qs.order_by("-created_at")]
+    return [_to_response(r) for r in qs.order_by("-created_at").skip(skip).limit(limit)]
 
 
 def _get_pending_report(report_id: str) -> Report:
@@ -131,7 +133,9 @@ def _get_pending_report(report_id: str) -> Report:
 
 def dismiss_report(report_id: str, admin: User) -> ReportResponse:
     report = _get_pending_report(report_id)
-    report.update(status="dismissed", reviewed_by=admin, reviewed_at=utcnow())
+    report.update(
+        status="dismissed", reviewed_by=admin, reviewed_at=utcnow(), updated_at=utcnow()
+    )
     report.reload()
     _record_report_activity(report, "admin.report_dismissed", admin)
     return _to_response(report)
@@ -157,7 +161,9 @@ def action_report(
             deleted_group_id = str(group.id)
             deleted_group_title = group.name
 
-    report.update(status="actioned", reviewed_by=admin, reviewed_at=utcnow())
+    report.update(
+        status="actioned", reviewed_by=admin, reviewed_at=utcnow(), updated_at=utcnow()
+    )
     # Reload — and let it dereference reported_group — before deleting the
     # group below, or the reload itself raises DoesNotExist on a dangling
     # reference. Mongoengine caches the dereferenced doc on this instance,

@@ -1,4 +1,10 @@
-from mongoengine import DateTimeField, Document, ReferenceField, StringField
+from mongoengine import (
+    DateTimeField,
+    Document,
+    ReferenceField,
+    StringField,
+    ValidationError,
+)
 
 from app.utils.time import utcnow
 
@@ -18,6 +24,7 @@ class Report(Document):
     reviewed_by = ReferenceField("User")
     reviewed_at = DateTimeField()
     created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "reports",
@@ -31,3 +38,10 @@ class Report(Document):
             "reviewed_by",
         ],
     }
+
+    def clean(self) -> None:
+        targets = [self.item, self.reported_user, self.reported_group]
+        if sum(1 for t in targets if t is not None) != 1:
+            raise ValidationError(
+                "Exactly one of item/reported_user/reported_group must be set"
+            )

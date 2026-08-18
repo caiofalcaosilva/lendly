@@ -2,6 +2,13 @@ import re
 from urllib.parse import urlparse
 
 
+def normalize_digits(value: str) -> str:
+    """Strips everything but digits — CPF/CNPJ/phone all get stored this
+    way so the same document never ends up in two different formats
+    depending on whether the caller happened to send it punctuated."""
+    return re.sub(r"\D", "", value or "")
+
+
 def _check_digit(digits: list, weights: list) -> int:
     total = sum(d * w for d, w in zip(digits, weights, strict=False))
     remainder = total % 11

@@ -13,6 +13,9 @@ class GroupPost(Document):
     author = ReferenceField("User", required=True)
     body = StringField(required=True, max_length=1000)
     created_at = DateTimeField(default=utcnow)
+    # Never actually changes — no editing, per the docstring above; kept
+    # only for consistency with every other collection.
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "group_posts",

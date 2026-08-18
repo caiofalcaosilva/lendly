@@ -44,6 +44,53 @@ def reserved_quantity(
 
 
 def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResponse:
+    claim = Claim.objects(loan_request=req).order_by("-created_at").first()
+    has_pending_extension_payment = (
+        Payment.objects(loan_request=req, kind="extension", status="pending").first()
+        is not None
+    )
+    return _build_response(req, viewer, claim, has_pending_extension_payment)
+
+
+def to_response_many(
+    requests: list[LoanRequest], viewer: User | None = None
+) -> list[LoanRequestResponse]:
+    """Same output as calling to_response() per item, but batches the Claim
+    and Payment lookups into 2 queries total instead of 2 per request —
+    for get_sent_requests/get_received_requests/get_history, which list
+    many requests at once. Callers should pass a queryset already using
+    select_related(max_depth=1) to also batch the item/requester/owner
+    dereferences."""
+    ids = [r.id for r in requests]
+    latest_claim_by_request: dict = {}
+    for claim in Claim.objects(loan_request__in=ids).order_by("-created_at"):
+        # Already ordered newest-first, so the first claim seen per
+        # request id is the latest one — matches to_response()'s
+        # .order_by("-created_at").first() semantics exactly.
+        latest_claim_by_request.setdefault(claim.loan_request.id, claim)
+    pending_extension_payment_ids = {
+        p.loan_request.id
+        for p in Payment.objects(
+            loan_request__in=ids, kind="extension", status="pending"
+        )
+    }
+    return [
+        _build_response(
+            req,
+            viewer,
+            latest_claim_by_request.get(req.id),
+            req.id in pending_extension_payment_ids,
+        )
+        for req in requests
+    ]
+
+
+def _build_response(
+    req: LoanRequest,
+    viewer: User | None,
+    claim: Claim | None,
+    has_pending_extension_payment: bool,
+) -> LoanRequestResponse:
     show_phones = req.status in _PHONE_VISIBLE_STATUSES
     # The code is only ever shown to the requester — the owner is told it
     # verbally/in person and types it in blind. Defaulting viewer to None
@@ -52,7 +99,6 @@ def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResp
     is_owner_viewer = viewer is not None and (
         str(viewer.id) == str(req.owner.id) or viewer.is_admin
     )
-    claim = Claim.objects(loan_request=req).order_by("-created_at").first()
     return LoanRequestResponse(
         id=str(req.id),
         item_id=str(req.item.id),
@@ -72,23 +118,23 @@ def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResp
         notes=req.notes,
         requested_extension_date=req.requested_extension_date,
         extension_status=req.extension_status or "none",
-        has_pending_extension_payment=Payment.objects(
-            loan_request=req, kind="extension", status="pending"
-        ).first()
-        is not None,
+        has_pending_extension_payment=has_pending_extension_payment,
         fulfillment_method=req.fulfillment_method or "pickup",
         delivery_confirmation_code=(
-            req.delivery_confirmation_code if is_requester_viewer else None
+            req.delivery_confirmation.code
+            if req.delivery_confirmation and is_requester_viewer
+            else None
         ),
-        delivery_confirmation_code_attempts=req.delivery_confirmation_code_attempts
-        or 0,
+        delivery_confirmation_code_attempts=(
+            req.delivery_confirmation.attempts or 0 if req.delivery_confirmation else 0
+        ),
         delivery_confirmation_code_max_attempts=DELIVERY_CODE_MAX_ATTEMPTS,
-        pickup_confirmed_by_owner_at=req.pickup_confirmed_by_owner_at,
-        pickup_confirmed_by_requester_at=req.pickup_confirmed_by_requester_at,
-        pickup_forced=req.pickup_forced or False,
-        return_confirmed_by_owner_at=req.return_confirmed_by_owner_at,
-        return_confirmed_by_requester_at=req.return_confirmed_by_requester_at,
-        return_forced=req.return_forced or False,
+        pickup_confirmed_by_owner_at=req.pickup_confirmation.confirmed_by_owner_at,
+        pickup_confirmed_by_requester_at=req.pickup_confirmation.confirmed_by_requester_at,
+        pickup_forced=req.pickup_confirmation.forced or False,
+        return_confirmed_by_owner_at=req.return_confirmation.confirmed_by_owner_at,
+        return_confirmed_by_requester_at=req.return_confirmation.confirmed_by_requester_at,
+        return_forced=req.return_confirmation.forced or False,
         declared_value=req.item.declared_value if is_owner_viewer else None,
         claim_id=str(claim.id) if claim else None,
         claim_status=claim.status if claim else None,

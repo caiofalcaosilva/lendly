@@ -38,6 +38,7 @@ class Claim(Document):
     paid_by = ReferenceField("User")
     paid_at = DateTimeField()
     created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "claims",

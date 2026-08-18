@@ -55,6 +55,7 @@ from app.services.auth_service import (
 )
 from app.utils import errors
 from app.utils.time import utcnow
+from app.utils.validators import normalize_digits
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -66,12 +67,38 @@ def get_me(current_user: User = Depends(get_current_user)):
     return user_to_response(current_user)
 
 
+_BUSINESS_PROFILE_FIELDS = {
+    "company_name",
+    "trade_name",
+    "cnpj",
+    "business_category",
+    "business_phone",
+    "business_hours",
+    "website",
+    "instagram",
+    "whatsapp",
+}
+
+
 @router.put("/me", response_model=UserResponse)
 def update_profile(data: UserUpdate, current_user: User = Depends(get_current_user)):
     """Partial update of the logged-in user's profile — only fields present
     in the payload are changed."""
     updates = data.model_dump(exclude_none=True)
     if updates:
+        for field in ("phone", "business_phone", "whatsapp", "cnpj"):
+            if updates.get(field):
+                updates[field] = normalize_digits(updates[field])
+        business_updates = {
+            k: updates.pop(k) for k in list(updates) if k in _BUSINESS_PROFILE_FIELDS
+        }
+        if business_updates:
+            current_user.update(
+                **{
+                    f"set__business_profile__{k}": v
+                    for k, v in business_updates.items()
+                }
+            )
         updates["updated_at"] = utcnow()
         current_user.update(**updates)
         current_user.reload()
@@ -161,9 +188,11 @@ def my_items(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/me/favorites", response_model=list[ItemResponse])
-def my_favorites(current_user: User = Depends(get_current_user)):
+def my_favorites(
+    skip: int = 0, limit: int = 50, current_user: User = Depends(get_current_user)
+):
     """Items the logged-in user has favorited."""
-    return item_service.get_favorite_items(current_user)
+    return item_service.get_favorite_items(current_user, skip, limit)
 
 
 @router.get("/me/requests/sent", response_model=list[LoanRequestResponse])
@@ -280,9 +309,11 @@ def google_status(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/me/favorite-users", response_model=list[FavoriteUserSummary])
-def my_favorite_users(current_user: User = Depends(get_current_user)):
+def my_favorite_users(
+    skip: int = 0, limit: int = 50, current_user: User = Depends(get_current_user)
+):
     """Users/businesses the logged-in user has favorited."""
-    return user_favorites_service.get_favorite_users(current_user)
+    return user_favorites_service.get_favorite_users(current_user, skip, limit)
 
 
 @router.get("/businesses", response_model=list[BusinessSummary])
@@ -292,20 +323,24 @@ def list_businesses():
     # Registered before /{user_id} so "businesses" isn't swallowed as a path param.
     users = User.objects(
         account_type="business", is_active=True, is_admin__ne=True
-    ).order_by("company_name")
+    ).order_by("business_profile.company_name")
     return [
         BusinessSummary(
             id=str(u.id),
             name=u.name,
             avatar_url=u.avatar_url,
-            company_name=u.company_name,
-            trade_name=u.trade_name,
-            business_category=u.business_category,
+            company_name=u.business_profile.company_name
+            if u.business_profile
+            else None,
+            trade_name=u.business_profile.trade_name if u.business_profile else None,
+            business_category=(
+                u.business_profile.business_category if u.business_profile else None
+            ),
             city=u.city,
             neighborhood=u.neighborhood,
-            average_rating=u.average_rating,
-            reliability_score=u.reliability_score,
-            reliability_count=u.reliability_count or 0,
+            average_rating=u.reputation.average_rating,
+            reliability_score=u.reputation.reliability_score,
+            reliability_count=u.reputation.reliability_count or 0,
         )
         for u in users
     ]

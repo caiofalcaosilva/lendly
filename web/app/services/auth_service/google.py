@@ -1,7 +1,7 @@
 from fastapi import BackgroundTasks, Request
 
 from app.config import settings
-from app.models.user import User
+from app.models.user import GoogleConnection, TermsAcceptance, User
 from app.schemas.user import LoginResponse
 from app.services import (
     activity_service,
@@ -55,12 +55,12 @@ def google_login(
 
     ip, user_agent = client_info(request)
 
-    user = User.objects(google_id=google_id).first()
+    user = User.objects(google_connection__google_id=google_id).first()
     is_new = False
     if not user:
         user = User.objects(email=email).first()
         if user:
-            user.update(google_id=google_id)
+            user.update(set__google_connection__google_id=google_id)
             user.reload()
         else:
             is_new = True
@@ -69,11 +69,11 @@ def google_login(
                 name=info.get("name") or email.split("@")[0],
                 email=email,
                 avatar_url=info.get("picture"),
-                google_id=google_id,
+                google_connection=GoogleConnection(google_id=google_id),
                 is_verified=True,  # Google already confirmed this email.
-                terms_accepted_version=CURRENT_TERMS_VERSION,
-                terms_accepted_at=utcnow(),
-                terms_accepted_ip=ip,
+                terms_acceptance=TermsAcceptance(
+                    version=CURRENT_TERMS_VERSION, accepted_at=utcnow(), ip_address=ip
+                ),
                 trusted_devices=[device_token],
                 account_type="individual",  # No CNPJ/trade info from Google.
             )

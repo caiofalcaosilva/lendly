@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from '@/i18n/navigation'
 import { History } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
@@ -8,12 +8,19 @@ import { activitiesService } from '@/services/activities'
 import { useAuth } from '@/contexts/AuthContext'
 import { ACTIVITY_DOMAIN_ICONS, EVENTS_BY_DOMAIN, humanizeEventAction, activityResourceHref } from '@/lib/activityDisplay'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { getAccessToken } from '@/lib/tokenStorage'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/Skeleton'
 import Select from '@/components/ui/Select'
 
 const LIMIT = 20
+
+function wsUrl(token: string) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const base = apiUrl.replace(/^http/, 'ws')
+  return `${base}/activities/ws?token=${encodeURIComponent(token)}`
+}
 
 function SkeletonRow() {
   return (
@@ -60,16 +67,52 @@ export default function ActivitiesPage() {
   const [event, setEvent] = useState<ActivityEventType | ''>('')
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Activities')
+  const seenIds = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     setLoading(true)
     activitiesService
       .list(undefined, LIMIT, event || undefined)
       .then((data) => {
+        seenIds.current = new Set(data.map((a) => a.id))
         setActivities(data)
         setHasMore(data.length === LIMIT)
       })
       .finally(() => setLoading(false))
+  }, [event])
+
+  // Live push for new activities — connects once per mount, auto-reconnects
+  // on drop, same pattern as GroupMural's socket. Activity rows are
+  // append-only (never edited/deleted after the fact), so the payload is
+  // always exactly "a new activity was recorded" — no message-type
+  // discriminator needed, unlike the mural/notification sockets.
+  useEffect(() => {
+    let socket: WebSocket | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
+
+    const connect = () => {
+      const token = getAccessToken()
+      if (!token || cancelled) return
+      socket = new WebSocket(wsUrl(token))
+      socket.onmessage = (msgEvent) => {
+        const activity: Activity = JSON.parse(msgEvent.data)
+        if (seenIds.current.has(activity.id)) return
+        if (event && activity.event !== event) return
+        seenIds.current.add(activity.id)
+        setActivities((prev) => [activity, ...prev])
+      }
+      socket.onclose = () => {
+        if (!cancelled) reconnectTimer = setTimeout(connect, 3000)
+      }
+    }
+    connect()
+
+    return () => {
+      cancelled = true
+      socket?.close()
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+    }
   }, [event])
 
   const loadMore = async () => {
@@ -77,6 +120,7 @@ export default function ActivitiesPage() {
     try {
       const lastId = activities[activities.length - 1]?.id
       const data = await activitiesService.list(lastId, LIMIT, event || undefined)
+      data.forEach((a) => seenIds.current.add(a.id))
       setActivities((prev) => [...prev, ...data])
       setHasMore(data.length === LIMIT)
     } finally {

@@ -4,7 +4,7 @@ from datetime import timedelta
 from fastapi import BackgroundTasks
 
 from app.models.item import Item
-from app.models.loan_request import LoanRequest
+from app.models.loan_request import DeliveryCode, LoanRequest
 from app.models.user import User
 from app.schemas.loan_request import LoanRequestCreate, LoanRequestResponse
 from app.services import email_service, notification_service, payment_service
@@ -183,9 +183,9 @@ def accept_request(
     assert_status(req, "pending")
     updates = {"status": "accepted", "responded_at": utcnow(), "updated_at": utcnow()}
     if req.fulfillment_method == "delivery":
-        updates["delivery_confirmation_code"] = _generate_delivery_code()
-        updates["delivery_confirmation_code_attempts"] = 0
-        updates["delivery_confirmation_code_generated_at"] = utcnow()
+        updates["delivery_confirmation"] = DeliveryCode(
+            code=_generate_delivery_code(), attempts=0, generated_at=utcnow()
+        )
     req.update(**updates)
     req.reload()
     recalculate_response_time(current_user)
@@ -237,19 +237,31 @@ def confirm_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
         )
 
     is_owner = str(req.owner.id) == str(current_user.id)
-    field = (
-        "pickup_confirmed_by_owner_at"
+    already_confirmed = (
+        req.pickup_confirmation.confirmed_by_owner_at
         if is_owner
-        else "pickup_confirmed_by_requester_at"
+        else req.pickup_confirmation.confirmed_by_requester_at
     )
-    if getattr(req, field):
+    if already_confirmed:
         raise errors.conflict("Você já confirmou a retirada")
 
-    req.update(**{field: utcnow(), "updated_at": utcnow()})
+    if is_owner:
+        req.update(
+            set__pickup_confirmation__confirmed_by_owner_at=utcnow(),
+            updated_at=utcnow(),
+        )
+    else:
+        req.update(
+            set__pickup_confirmation__confirmed_by_requester_at=utcnow(),
+            updated_at=utcnow(),
+        )
     req.reload()
     record_activity(req, "rental.pickup_confirmed", actor=current_user)
 
-    if req.pickup_confirmed_by_owner_at and req.pickup_confirmed_by_requester_at:
+    if (
+        req.pickup_confirmation.confirmed_by_owner_at
+        and req.pickup_confirmation.confirmed_by_requester_at
+    ):
         _complete_pickup(req)
 
     return to_response(req, viewer=current_user)
@@ -263,17 +275,17 @@ def force_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
     assert_status(req, "accepted")
 
-    if not req.pickup_confirmed_by_owner_at:
+    if not req.pickup_confirmation.confirmed_by_owner_at:
         raise errors.conflict("Confirme sua própria retirada antes de forçar")
 
     grace_hours = get_platform_settings().handoff_confirmation_grace_hours
-    elapsed = utcnow() - req.pickup_confirmed_by_owner_at
+    elapsed = utcnow() - req.pickup_confirmation.confirmed_by_owner_at
     if elapsed < timedelta(hours=grace_hours):
         raise errors.conflict(
             f"Aguarde {grace_hours}h desde sua confirmação antes de forçar a retirada"
         )
 
-    req.update(pickup_forced=True, updated_at=utcnow())
+    req.update(set__pickup_confirmation__forced=True, updated_at=utcnow())
     req.reload()
     record_activity(req, "rental.pickup_forced", actor=current_user)
     _complete_pickup(req)
@@ -300,21 +312,20 @@ def confirm_pickup_by_code(
             "confirmada depois que o Pix for aprovado"
         )
 
-    if req.delivery_confirmation_code_attempts >= DELIVERY_CODE_MAX_ATTEMPTS:
+    if req.delivery_confirmation.attempts >= DELIVERY_CODE_MAX_ATTEMPTS:
         raise errors.conflict("Número de tentativas excedido — gere um novo código")
 
-    if code.strip() != req.delivery_confirmation_code:
+    if code.strip() != req.delivery_confirmation.code:
         req.update(
-            delivery_confirmation_code_attempts=req.delivery_confirmation_code_attempts
-            + 1,
+            inc__delivery_confirmation__attempts=1,
             updated_at=utcnow(),
         )
         raise errors.bad_request("Código incorreto")
 
     now = utcnow()
     req.update(
-        pickup_confirmed_by_owner_at=now,
-        pickup_confirmed_by_requester_at=now,
+        set__pickup_confirmation__confirmed_by_owner_at=now,
+        set__pickup_confirmation__confirmed_by_requester_at=now,
         updated_at=now,
     )
     req.reload()
@@ -344,9 +355,9 @@ def regenerate_delivery_code(
         raise errors.bad_request("Este pedido não usa entrega com código")
 
     req.update(
-        delivery_confirmation_code=_generate_delivery_code(),
-        delivery_confirmation_code_attempts=0,
-        delivery_confirmation_code_generated_at=utcnow(),
+        delivery_confirmation=DeliveryCode(
+            code=_generate_delivery_code(), attempts=0, generated_at=utcnow()
+        ),
         updated_at=utcnow(),
     )
     req.reload()
@@ -383,19 +394,31 @@ def confirm_return(
     assert_status(req, "in_progress")
 
     is_owner = str(req.owner.id) == str(current_user.id)
-    field = (
-        "return_confirmed_by_owner_at"
+    already_confirmed = (
+        req.return_confirmation.confirmed_by_owner_at
         if is_owner
-        else "return_confirmed_by_requester_at"
+        else req.return_confirmation.confirmed_by_requester_at
     )
-    if getattr(req, field):
+    if already_confirmed:
         raise errors.conflict("Você já confirmou a devolução")
 
-    req.update(**{field: utcnow(), "updated_at": utcnow()})
+    if is_owner:
+        req.update(
+            set__return_confirmation__confirmed_by_owner_at=utcnow(),
+            updated_at=utcnow(),
+        )
+    else:
+        req.update(
+            set__return_confirmation__confirmed_by_requester_at=utcnow(),
+            updated_at=utcnow(),
+        )
     req.reload()
     record_activity(req, "rental.return_confirmed", actor=current_user)
 
-    if req.return_confirmed_by_owner_at and req.return_confirmed_by_requester_at:
+    if (
+        req.return_confirmation.confirmed_by_owner_at
+        and req.return_confirmation.confirmed_by_requester_at
+    ):
         _complete_return(req, background_tasks)
 
     return to_response(req, viewer=current_user)
@@ -409,17 +432,17 @@ def force_return(
     req = get_as_owner(request_id, current_user)
     assert_status(req, "in_progress")
 
-    if not req.return_confirmed_by_owner_at:
+    if not req.return_confirmation.confirmed_by_owner_at:
         raise errors.conflict("Confirme sua própria devolução antes de forçar")
 
     grace_hours = get_platform_settings().handoff_confirmation_grace_hours
-    elapsed = utcnow() - req.return_confirmed_by_owner_at
+    elapsed = utcnow() - req.return_confirmation.confirmed_by_owner_at
     if elapsed < timedelta(hours=grace_hours):
         raise errors.conflict(
             f"Aguarde {grace_hours}h desde sua confirmação antes de forçar a devolução"
         )
 
-    req.update(return_forced=True, updated_at=utcnow())
+    req.update(set__return_confirmation__forced=True, updated_at=utcnow())
     req.reload()
     record_activity(req, "rental.return_forced", actor=current_user)
     _complete_return(req, background_tasks)

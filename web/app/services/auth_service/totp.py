@@ -4,6 +4,7 @@ from app.schemas.user import UserResponse
 from app.services import activity_service, totp_service
 from app.services.auth_service._common import user_to_response
 from app.utils import errors
+from app.utils.crypto import decrypt, encrypt
 
 
 def setup_totp(current_user: User) -> TotpSetupResponse:
@@ -12,7 +13,7 @@ def setup_totp(current_user: User) -> TotpSetupResponse:
             "2FA já está ativado. Desative antes de gerar um novo QR code."
         )
     secret = totp_service.generate_secret()
-    current_user.update(totp_secret=secret)
+    current_user.update(totp_secret=encrypt(secret))
     return TotpSetupResponse(
         secret=secret,
         uri=totp_service.provisioning_uri(secret, current_user.email),
@@ -22,7 +23,7 @@ def setup_totp(current_user: User) -> TotpSetupResponse:
 def enable_totp(code: str, current_user: User) -> UserResponse:
     if not current_user.totp_secret:
         raise errors.bad_request("Inicie o setup primeiro em /auth/2fa/setup")
-    if not totp_service.verify_code(current_user.totp_secret, code):
+    if not totp_service.verify_code(decrypt(current_user.totp_secret), code):
         raise errors.bad_request("Código inválido")
 
     current_user.update(totp_enabled=True)
@@ -40,7 +41,7 @@ def enable_totp(code: str, current_user: User) -> UserResponse:
 def disable_totp(code: str, current_user: User) -> UserResponse:
     if not current_user.totp_enabled:
         raise errors.bad_request("2FA não está ativado")
-    if not totp_service.verify_code(current_user.totp_secret, code):
+    if not totp_service.verify_code(decrypt(current_user.totp_secret), code):
         raise errors.bad_request("Código inválido")
 
     current_user.update(totp_enabled=False, totp_secret=None)

@@ -3,6 +3,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.models._choices import BRAZIL_STATES
+
 
 class AvailabilityType(str, Enum):
     FREE = "free"
@@ -12,6 +14,12 @@ class AvailabilityType(str, Enum):
 class FulfillmentOption(str, Enum):
     PICKUP = "pickup"
     DELIVERY = "delivery"
+
+
+def _validate_state(value: str | None) -> str | None:
+    if value is not None and value not in BRAZIL_STATES:
+        raise ValueError("state must be a valid Brazilian UF")
+    return value
 
 
 def _validate_available_days(value: list[int]) -> list[int]:
@@ -67,6 +75,7 @@ class ItemCreate(BaseModel):
     _check_fulfillment_options = field_validator("fulfillment_options")(
         _validate_fulfillment_options
     )
+    _check_state = field_validator("state")(_validate_state)
 
 
 class ItemUpdate(BaseModel):
@@ -102,6 +111,7 @@ class ItemUpdate(BaseModel):
     _check_fulfillment_options = field_validator("fulfillment_options")(
         lambda v: v if v is None else _validate_fulfillment_options(v)
     )
+    _check_state = field_validator("state")(_validate_state)
 
 
 class ItemOwnerResponse(BaseModel):

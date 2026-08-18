@@ -3,6 +3,7 @@ import logging
 from app.models.activity import Activity
 from app.models.user import User
 from app.schemas.activity import ActivityActor, ActivityResource, ActivityResponse
+from app.ws_manager import activity_manager, broadcast_threadsafe
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def record(
     See docs/historico-de-atividades.md for the full event catalog and the
     metadata content rules."""
     try:
-        Activity(
+        activity = Activity(
             recipient=recipient,
             event=event,
             actor=actor,
@@ -55,7 +56,13 @@ def record(
             resource_id=resource_id,
             resource_title=resource_title,
             metadata=metadata or {},
-        ).save()
+        )
+        activity.save()
+        broadcast_threadsafe(
+            activity_manager,
+            str(recipient.id),
+            _to_response(activity).model_dump(mode="json"),
+        )
     except Exception:
         logger.exception(
             "failed to record activity",

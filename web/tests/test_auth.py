@@ -75,8 +75,8 @@ def test_register_records_terms_acceptance(client):
     assert resp.status_code == 201, resp.text
 
     user = User.objects(email=email).first()
-    assert user.terms_accepted_version == CURRENT_TERMS_VERSION
-    assert user.terms_accepted_at is not None
+    assert user.terms_acceptance.version == CURRENT_TERMS_VERSION
+    assert user.terms_acceptance.accepted_at is not None
 
 
 def test_business_account_requires_valid_cnpj(client):

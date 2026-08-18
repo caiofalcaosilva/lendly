@@ -53,7 +53,7 @@ def test_free_lending_only_off_allows_paid_item(client, register_user):
     from app.models.user import User
 
     user_id, token = register_user("dono.pagopermitido@example.com")
-    User.objects(id=user_id).update(mp_user_id="MP-TEST-123")
+    User.objects(id=user_id).update(set__mp_connection__mp_user_id="MP-TEST-123")
 
     resp = client.post(
         "/items/",

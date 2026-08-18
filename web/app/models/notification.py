@@ -33,6 +33,7 @@ class Notification(Document):
     link = StringField(max_length=200)
     read_at = DateTimeField()
     created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "notifications",

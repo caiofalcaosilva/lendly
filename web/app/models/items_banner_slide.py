@@ -14,5 +14,6 @@ class ItemsBannerSlide(Document):
     link_url = StringField(max_length=500)
     order = IntField(default=0)
     created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {"collection": "items_banner_slides", "ordering": ["order"]}

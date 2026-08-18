@@ -134,7 +134,7 @@ async def upload_claim_photo(
     img = await load_and_resize(file)
     key = f"claims/{claim.id}/{uuid.uuid4().hex}.jpg"
     url = storage.save_public_image(img, key)
-    claim.update(photos=(claim.photos or []) + [url])
+    claim.update(photos=(claim.photos or []) + [url], updated_at=utcnow())
     claim.reload()
     return _to_response(claim)
 
@@ -149,11 +149,13 @@ def get_claim(claim_id: str, current_user: User) -> ClaimResponse:
     return _to_response(claim)
 
 
-def list_claims(status_filter: str | None) -> list[ClaimResponse]:
+def list_claims(
+    status_filter: str | None, skip: int = 0, limit: int = 100
+) -> list[ClaimResponse]:
     qs = Claim.objects()
     if status_filter:
         qs = qs.filter(status=status_filter)
-    return [_to_response(c) for c in qs.order_by("-created_at")]
+    return [_to_response(c) for c in qs.order_by("-created_at").skip(skip).limit(limit)]
 
 
 def _get_claim_in_status(claim_id: str, expected: str) -> Claim:
@@ -182,6 +184,7 @@ def approve_claim(
         approved_amount=approved_amount,
         reviewed_by=admin,
         reviewed_at=utcnow(),
+        updated_at=utcnow(),
     )
     claim.reload()
     _record_claim_activity(claim, "claim.approved", admin)
@@ -203,6 +206,7 @@ def reject_claim(
         rejection_reason=reason,
         reviewed_by=admin,
         reviewed_at=utcnow(),
+        updated_at=utcnow(),
     )
     claim.reload()
     _record_claim_activity(claim, "claim.rejected", admin)
@@ -219,7 +223,7 @@ def mark_claim_paid(
     claim_id: str, admin: User, background_tasks: BackgroundTasks
 ) -> ClaimResponse:
     claim = _get_claim_in_status(claim_id, "approved")
-    claim.update(status="paid", paid_by=admin, paid_at=utcnow())
+    claim.update(status="paid", paid_by=admin, paid_at=utcnow(), updated_at=utcnow())
     claim.reload()
     _record_claim_activity(claim, "claim.paid", admin)
     _notify_owner(

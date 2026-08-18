@@ -14,21 +14,47 @@ _CANCELLED_POINTS = 0.0
 
 
 def recalculate_reliability(user: User) -> None:
-    points = 0.0
-    count = 0
-    finished_count = 0
-    on_time_count = 0
+    # Only the "finished" branch ever needed individual documents (to check
+    # actual_return_date vs. expected_return_date per request) — refused/
+    # cancelled were already .count()-only. Server-side $group replaces the
+    # Python loop that used to materialize every finished LoanRequest.
+    pipeline = [
+        {"$match": {"requester": user.id, "status": "finished"}},
+        {
+            "$group": {
+                "_id": None,
+                "finished_count": {"$sum": 1},
+                "on_time_count": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$and": [
+                                    {"$ne": ["$actual_return_date", None]},
+                                    {
+                                        "$lte": [
+                                            "$actual_return_date",
+                                            "$expected_return_date",
+                                        ]
+                                    },
+                                ]
+                            },
+                            1,
+                            0,
+                        ]
+                    }
+                },
+            }
+        },
+    ]
+    result = list(LoanRequest.objects.aggregate(pipeline))
+    finished_count = result[0]["finished_count"] if result else 0
+    on_time_count = result[0]["on_time_count"] if result else 0
 
-    for req in LoanRequest.objects(requester=user, status="finished"):
-        count += 1
-        finished_count += 1
-        on_time = (
-            req.actual_return_date
-            and req.actual_return_date <= req.expected_return_date
-        )
-        if on_time:
-            on_time_count += 1
-        points += _ON_TIME_POINTS if on_time else _LATE_POINTS
+    count = finished_count
+    points = (
+        on_time_count * _ON_TIME_POINTS
+        + (finished_count - on_time_count) * _LATE_POINTS
+    )
 
     refused_count = LoanRequest.objects(owner=user, status="refused").count()
     count += refused_count
@@ -40,11 +66,13 @@ def recalculate_reliability(user: User) -> None:
 
     updates = {}
     if finished_count > 0:
-        updates["on_time_rate"] = round(100 * on_time_count / finished_count, 1)
-        updates["finished_loans_count"] = finished_count
+        updates["set__reputation__on_time_rate"] = round(
+            100 * on_time_count / finished_count, 1
+        )
+        updates["set__reputation__finished_loans_count"] = finished_count
     if count > 0:
-        updates["reliability_score"] = round(100 * points / count, 1)
-        updates["reliability_count"] = count
+        updates["set__reputation__reliability_score"] = round(100 * points / count, 1)
+        updates["set__reputation__reliability_count"] = count
     if updates:
         user.update(**updates)
 
@@ -52,15 +80,34 @@ def recalculate_reliability(user: User) -> None:
 def recalculate_response_time(owner: User) -> None:
     """Average minutes between a request landing and the owner accepting or
     refusing it — distinct from reliability_score, which only looks at what
-    happens after acceptance."""
-    responded = LoanRequest.objects(
-        owner=owner, status__in=["accepted", "refused"], responded_at__ne=None
-    )
-    deltas = [
-        (req.responded_at - req.created_at).total_seconds() / 60 for req in responded
+    happens after acceptance. Averaged server-side via $group instead of
+    pulling every responded LoanRequest into Python."""
+    pipeline = [
+        {
+            "$match": {
+                "owner": owner.id,
+                "status": {"$in": ["accepted", "refused"]},
+                "responded_at": {"$ne": None},
+            }
+        },
+        {
+            "$group": {
+                "_id": None,
+                "avg_minutes": {
+                    "$avg": {
+                        "$divide": [
+                            {"$subtract": ["$responded_at", "$created_at"]},
+                            60000,
+                        ]
+                    }
+                },
+                "count": {"$sum": 1},
+            }
+        },
     ]
-    if deltas:
+    result = list(LoanRequest.objects.aggregate(pipeline))
+    if result:
         owner.update(
-            avg_response_minutes=round(sum(deltas) / len(deltas), 1),
-            response_count=len(deltas),
+            set__reputation__avg_response_minutes=round(result[0]["avg_minutes"], 1),
+            set__reputation__response_count=result[0]["count"],
         )

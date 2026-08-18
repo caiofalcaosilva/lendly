@@ -30,7 +30,7 @@ def _to_summary(item: Item) -> AdminItemSummary:
 
 
 def list_items(search: str | None, skip: int, limit: int) -> list[AdminItemSummary]:
-    qs = Item.objects()
+    qs = Item.objects().select_related(max_depth=1)
     if search:
         qs = qs.filter(title__icontains=search)
     return [_to_summary(i) for i in qs.order_by("-created_at").skip(skip).limit(limit)]

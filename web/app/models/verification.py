@@ -16,6 +16,7 @@ class VerificationSubmission(Document):
     reviewed_by = ReferenceField("User")
     reviewed_at = DateTimeField()
     created_at = DateTimeField(default=utcnow)
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "verification_submissions",

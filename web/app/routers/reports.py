@@ -15,9 +15,14 @@ def create_report(data: ReportCreate, current_user: User = Depends(get_current_u
 
 
 @router.get("/", response_model=list[ReportResponse])
-def list_reports(status: str | None = None, admin: User = Depends(get_current_admin)):
+def list_reports(
+    status: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    admin: User = Depends(get_current_admin),
+):
     """Admin — every report, optionally filtered by status."""
-    return report_service.list_reports(status)
+    return report_service.list_reports(status, skip, limit)
 
 
 @router.patch("/{report_id}/dismiss", response_model=ReportResponse)

@@ -5,10 +5,12 @@ from mongoengine import (
     FloatField,
     IntField,
     ListField,
+    PointField,
     ReferenceField,
     StringField,
 )
 
+from app.models._choices import BRAZIL_STATES
 from app.utils.time import utcnow
 
 
@@ -30,9 +32,15 @@ class Item(Document):
     zip_code = StringField(max_length=10)
     neighborhood = StringField(max_length=100)
     city = StringField(max_length=100)
-    state = StringField(max_length=2)
+    state = StringField(max_length=2, choices=BRAZIL_STATES)
     latitude = FloatField()
     longitude = FloatField()
+    # GeoJSON mirror of latitude/longitude, kept in sync on every write (see
+    # app.utils.geo.to_point) — latitude/longitude stay the source of truth
+    # read everywhere else (schemas, frontend maps); this field exists only
+    # so list_items' radius search can use a real $geoWithin/2dsphere index
+    # instead of Haversine-in-Python over the whole collection.
+    location = PointField()
     is_available = BooleanField(default=True)
     # How many identical units this item represents (e.g. a "kit" the owner
     # has hundreds of). Independent of is_available — that's still the

@@ -24,16 +24,16 @@ def _to_summary(user: User) -> AdminUserSummary:
         name=user.name,
         email=user.email,
         account_type=user.account_type or "individual",
-        trade_name=user.trade_name,
+        trade_name=user.business_profile.trade_name if user.business_profile else None,
         city=user.city,
         neighborhood=user.neighborhood,
         is_active=user.is_active,
         is_admin=user.is_admin or False,
         is_verified=user.is_verified or False,
         identity_status=user.identity_status or "none",
-        average_rating=user.average_rating,
-        rating_count=user.rating_count,
-        finished_loans_count=user.finished_loans_count or 0,
+        average_rating=user.reputation.average_rating,
+        rating_count=user.reputation.rating_count,
+        finished_loans_count=user.reputation.finished_loans_count or 0,
         created_at=user.created_at,
     )
 
@@ -44,7 +44,7 @@ def list_users(search: str | None, skip: int, limit: int) -> list[AdminUserSumma
         qs = qs.filter(
             Q(name__icontains=search)
             | Q(email__icontains=search)
-            | Q(trade_name__icontains=search)
+            | Q(business_profile__trade_name__icontains=search)
         )
     return [_to_summary(u) for u in qs.order_by("-created_at").skip(skip).limit(limit)]
 

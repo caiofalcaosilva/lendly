@@ -43,11 +43,14 @@ def get_my_verification(current_user: User = Depends(get_current_user)):
 
 @router.get("/", response_model=list[VerificationResponse])
 def list_verifications(
-    status: str | None = None, admin: User = Depends(get_current_admin)
+    status: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    admin: User = Depends(get_current_admin),
 ):
     """Admin — every verification submission, optionally filtered by
     status."""
-    return verification_service.list_submissions(status)
+    return verification_service.list_submissions(status, skip, limit)
 
 
 @router.get("/{submission_id}/photo/{kind}")

@@ -7,6 +7,7 @@ from app.schemas.items_banner_slide import ItemsBannerSlideResponse
 from app.services import storage
 from app.utils import errors
 from app.utils.images import load_and_resize
+from app.utils.time import utcnow
 
 MAX_SLIDES = 8
 
@@ -47,7 +48,7 @@ def update_slide(slide_id: str, link_url: str | None) -> ItemsBannerSlideRespons
     doc = ItemsBannerSlide.objects(id=slide_id).first()
     if not doc:
         raise errors.not_found("Slide não encontrado")
-    doc.update(link_url=link_url or None)
+    doc.update(link_url=link_url or None, updated_at=utcnow())
     doc.reload()
     return _to_response(doc)
 
@@ -64,5 +65,5 @@ def reorder_slides(slide_ids: list[str]) -> list[ItemsBannerSlideResponse]:
     if set(docs.keys()) != set(slide_ids):
         raise errors.bad_request("Lista de slides inválida")
     for index, slide_id in enumerate(slide_ids):
-        docs[slide_id].update(order=index)
+        docs[slide_id].update(order=index, updated_at=utcnow())
     return list_slides()

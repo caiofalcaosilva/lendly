@@ -4,8 +4,8 @@ from unittest.mock import patch
 from app.models.activity import Activity
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
-from app.models.payment import Payment
-from app.models.user import User
+from app.models.payment import Payment, PixCharge
+from app.models.user import MercadoPagoConnection, User
 from app.services import activity_service, payment_service
 
 
@@ -488,7 +488,7 @@ def _make_paid_loan_request():
         email="dono.activity.payment@example.com",
         password_hash="x",
         is_verified=True,
-        mp_user_id="MP-OWNER-ACT",
+        mp_connection=MercadoPagoConnection(mp_user_id="MP-OWNER-ACT"),
     ).save()
     requester = User(
         name="Solicitante Pagamento",
@@ -517,7 +517,7 @@ def _make_paid_loan_request():
         gross_amount=100.0,
         platform_fee_amount=5.0,
         status="held",
-        mp_payment_id="mp-123",
+        pix_charge=PixCharge(mp_payment_id="mp-123"),
     ).save()
     return req, payment
 
@@ -838,7 +838,7 @@ def test_mercadopago_connect_records_activity(client, register_user):
 
     user_id, _ = register_user("mpconnect.activity@example.com")
     user = _get_user(user_id)
-    user.update(mp_oauth_state="state-token")
+    user.update(set__mp_connection__oauth_state="state-token")
     user.reload()
 
     with patch.object(

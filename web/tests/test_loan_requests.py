@@ -223,7 +223,9 @@ def test_force_pickup_allowed_after_grace_period(client, register_user):
     # Backdate the owner's own confirmation past the grace period instead
     # of waiting for it in real time.
     req = LoanRequest.objects(id=request_id).first()
-    req.update(pickup_confirmed_by_owner_at=utcnow() - timedelta(hours=3))
+    req.update(
+        set__pickup_confirmation__confirmed_by_owner_at=utcnow() - timedelta(hours=3)
+    )
 
     force = client.patch(
         f"/requests/{request_id}/start/force",

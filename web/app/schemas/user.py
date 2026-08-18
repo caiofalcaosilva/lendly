@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
+from app.models._choices import BRAZIL_STATES
 from app.utils.validators import is_valid_cnpj, is_valid_website_url
 
 
@@ -40,6 +41,8 @@ class UserCreate(BaseModel):
                 raise ValueError("A valid cnpj is required for business accounts")
         if self.website and not is_valid_website_url(self.website):
             raise ValueError("website must be an http(s) URL")
+        if self.state and self.state not in BRAZIL_STATES:
+            raise ValueError("state must be a valid Brazilian UF")
         return self
 
     @model_validator(mode="after")
@@ -101,6 +104,8 @@ class UserUpdate(BaseModel):
             raise ValueError("Invalid cnpj")
         if self.website and not is_valid_website_url(self.website):
             raise ValueError("website must be an http(s) URL")
+        if self.state and self.state not in BRAZIL_STATES:
+            raise ValueError("state must be a valid Brazilian UF")
         return self
 
 

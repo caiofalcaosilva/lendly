@@ -4,7 +4,7 @@ import secrets
 from app.config import settings
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
-from app.models.payment import Payment
+from app.models.payment import Payment, PixCharge
 from app.models.user import User
 from app.schemas.payment import PaymentResponse
 from app.services import activity_service, mercadopago_gateway, mp_connect_service
@@ -63,9 +63,11 @@ def _to_response(payment: Payment) -> PaymentResponse:
         gross_amount=payment.gross_amount,
         platform_fee_amount=payment.platform_fee_amount,
         guarantee_fee_amount=payment.guarantee_fee_amount,
-        pix_qr_code=payment.pix_qr_code,
-        pix_qr_code_base64=payment.pix_qr_code_base64,
-        expires_at=payment.expires_at,
+        pix_qr_code=payment.pix_charge.qr_code if payment.pix_charge else None,
+        pix_qr_code_base64=(
+            payment.pix_charge.qr_code_base64 if payment.pix_charge else None
+        ),
+        expires_at=payment.pix_charge.expires_at if payment.pix_charge else None,
         created_at=payment.created_at,
     )
 
@@ -130,9 +132,11 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
         platform_fee_amount=platform_fee_amount,
         guarantee_fee_amount=guarantee_fee_amount,
         status="pending",
-        mp_payment_id=result["mp_payment_id"],
-        pix_qr_code=result["pix_qr_code"],
-        pix_qr_code_base64=result["pix_qr_code_base64"],
+        pix_charge=PixCharge(
+            mp_payment_id=result["mp_payment_id"],
+            qr_code=result["pix_qr_code"],
+            qr_code_base64=result["pix_qr_code_base64"],
+        ),
     )
     payment.save()
 
@@ -186,9 +190,11 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
         platform_fee_amount=platform_fee_amount,
         guarantee_fee_amount=guarantee_fee_amount,
         status="pending",
-        mp_payment_id=result["mp_payment_id"],
-        pix_qr_code=result["pix_qr_code"],
-        pix_qr_code_base64=result["pix_qr_code_base64"],
+        pix_charge=PixCharge(
+            mp_payment_id=result["mp_payment_id"],
+            qr_code=result["pix_qr_code"],
+            qr_code_base64=result["pix_qr_code_base64"],
+        ),
     )
     payment.save()
     return payment
@@ -256,7 +262,7 @@ def _release_payment_doc(payment: Payment) -> None:
     to match, at whatever point in the workflow that's meant to become
     visible (webhook time for extensions, pickup-confirmation time for
     rentals — see call sites)."""
-    payment.update(status="released", released_at=utcnow())
+    payment.update(status="released", released_at=utcnow(), updated_at=utcnow())
     _record_payment_activity(payment, "payment.released")
 
 
@@ -279,15 +285,19 @@ def refund_payment(req: LoanRequest) -> None:
     already-settled share automatically — see mercadopago_gateway.
     refund_payment's docstring."""
     payment = _get_payment(req, kind="rental")
+    if not payment.pix_charge or not payment.pix_charge.mp_payment_id:
+        raise errors.bad_gateway("Pagamento sem cobrança Pix associada")
     try:
         seller_access_token = mp_connect_service.get_valid_access_token(payment.payee)
-        mercadopago_gateway.refund_payment(payment.mp_payment_id, seller_access_token)
+        mercadopago_gateway.refund_payment(
+            payment.pix_charge.mp_payment_id, seller_access_token
+        )
     except MercadoPagoError as e:
         raise errors.bad_gateway(
             f"Não foi possível estornar o pagamento agora ({e}). "
             "Tente novamente em instantes."
         ) from e
-    payment.update(status="refunded", refunded_at=utcnow())
+    payment.update(status="refunded", refunded_at=utcnow(), updated_at=utcnow())
     req.update(payment_status="refunded", updated_at=utcnow())
     _record_payment_activity(payment, "payment.refunded")
 
@@ -311,7 +321,7 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
         )
         raise errors.unauthorized("Invalid webhook signature")
 
-    payment = Payment.objects(mp_payment_id=data_id).first()
+    payment = Payment.objects(pix_charge__mp_payment_id=data_id).first()
     if not payment or payment.status != "pending":
         # Not ours, or already processed — webhooks can be redelivered.
         return
@@ -330,7 +340,7 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
     # status (confirmed live against the sandbox — the Advanced Payments-era
     # API this replaced used "approved" instead).
     if remote_status == "processed":
-        payment.update(status="held", held_at=utcnow())
+        payment.update(status="held", held_at=utcnow(), updated_at=utcnow())
         # payment_status on the LoanRequest tracks the rental charge only —
         # it's what gates confirm_pickup. An extension payment reaching
         # "held" must not overwrite it (the rental payment may already be
@@ -352,7 +362,7 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
             # LoanRequest-level gate/UX still tracks pickup, unchanged.)
             _release_payment_doc(payment)
     elif remote_status in ("failed", "rejected", "cancelled"):
-        payment.update(status="failed")
+        payment.update(status="failed", updated_at=utcnow())
         if payment.kind == "rental":
             payment.loan_request.update(payment_status="failed", updated_at=utcnow())
         _record_payment_activity(payment, "payment.failed")

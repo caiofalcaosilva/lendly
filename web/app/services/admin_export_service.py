@@ -41,9 +41,9 @@ def export_users_csv() -> str:
             u.neighborhood,
             u.is_active,
             u.is_admin or False,
-            u.average_rating,
-            u.rating_count,
-            u.finished_loans_count or 0,
+            u.reputation.average_rating,
+            u.reputation.rating_count,
+            u.reputation.finished_loans_count or 0,
             u.created_at.isoformat(),
         ]
         for u in User.objects().order_by("created_at")

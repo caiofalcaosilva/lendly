@@ -100,6 +100,10 @@ class Activity(Document):
     resource_title = StringField(max_length=200)
     metadata = DictField()
     created_at = DateTimeField(default=utcnow)
+    # Never actually changes — an Activity row is written once and never
+    # mutated (see class docstring) — kept only so every collection has
+    # the same "when was this last touched" field for consistency.
+    updated_at = DateTimeField(default=utcnow)
 
     meta = {
         "collection": "activities",

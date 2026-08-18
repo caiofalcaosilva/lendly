@@ -8,6 +8,7 @@ from app.schemas.category import (
 )
 from app.services.category_service import list_all, to_response
 from app.utils import errors
+from app.utils.time import utcnow
 
 
 def _get_category(key: str) -> Category:
@@ -29,7 +30,7 @@ def update_category(key: str, data: CategoryUpdate) -> CategoryResponse:
     category = _get_category(key)
     updates = data.model_dump(exclude_none=True)
     if updates:
-        category.update(**updates)
+        category.update(**updates, updated_at=utcnow())
         category.reload()
     return to_response(category)
 
@@ -38,7 +39,10 @@ def create_subcategory(category_key: str, data: SubcategoryCreate) -> CategoryRe
     category = _get_category(category_key)
     if any(s.key == data.key for s in category.subcategories):
         raise errors.conflict("Subcategory key already exists")
-    category.update(push__subcategories=Subcategory(key=data.key, label=data.label))
+    category.update(
+        push__subcategories=Subcategory(key=data.key, label=data.label),
+        updated_at=utcnow(),
+    )
     category.reload()
     return to_response(category)
 
@@ -54,6 +58,7 @@ def update_subcategory(
         sub.label = data.label
     if data.is_active is not None:
         sub.is_active = data.is_active
+    category.updated_at = utcnow()
     category.save()
     return to_response(category)
 

@@ -1,4 +1,3 @@
-import math
 from datetime import datetime
 
 from fastapi import BackgroundTasks
@@ -19,25 +18,14 @@ from app.services import (
     category_service,
     email_service,
     notification_service,
+    storage,
 )
 from app.services.item_service._common import get_owned_item, to_response
 from app.services.loan_request_service._common import reserved_quantity
 from app.utils import errors
+from app.utils.geo import haversine_km, radius_km_to_radians, to_point
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
-
-
-def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    earth_radius_km = 6371.0
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(math.radians(lat1))
-        * math.cos(math.radians(lat2))
-        * math.sin(dlon / 2) ** 2
-    )
-    return earth_radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 def _resolve_member_groups(group_ids: list[str], current_user: User) -> list[Group]:
@@ -126,7 +114,10 @@ def create_item(
     if data.availability_type.value == "paid" and not data.daily_rate:
         raise errors.bad_request("Paid items must have a daily_rate greater than 0")
 
-    if data.availability_type.value == "paid" and not current_user.mp_user_id:
+    mp_connected = bool(
+        current_user.mp_connection and current_user.mp_connection.mp_user_id
+    )
+    if data.availability_type.value == "paid" and not mp_connected:
         raise errors.bad_request(
             "Conecte sua conta Mercado Pago antes de anunciar um item pago. "
             "Faça isso em /profile."
@@ -141,6 +132,17 @@ def create_item(
     # a partial custom address must never get the owner's lat/lng mixed in.
     using_owner_address = not any(
         [data.zip_code, data.neighborhood, data.city, data.state]
+    )
+
+    latitude = (
+        data.latitude
+        if data.latitude is not None
+        else (current_user.latitude if using_owner_address else None)
+    )
+    longitude = (
+        data.longitude
+        if data.longitude is not None
+        else (current_user.longitude if using_owner_address else None)
     )
 
     item = Item(
@@ -164,12 +166,9 @@ def create_item(
         or (current_user.neighborhood if using_owner_address else None),
         city=data.city or (current_user.city if using_owner_address else None),
         state=data.state or (current_user.state if using_owner_address else None),
-        latitude=data.latitude
-        if data.latitude is not None
-        else (current_user.latitude if using_owner_address else None),
-        longitude=data.longitude
-        if data.longitude is not None
-        else (current_user.longitude if using_owner_address else None),
+        latitude=latitude,
+        longitude=longitude,
+        location=to_point(latitude, longitude),
         groups=groups,
         is_public=data.is_public,
         available_days=data.available_days or [],
@@ -289,22 +288,40 @@ def list_items(
     effective_radius = radius_km or (DEFAULT_MAX_RADIUS_KM if origins else None)
 
     if effective_radius and origins:
+        # $geoWithin/$centerSphere via the 2dsphere index on `location` does
+        # the actual radius filtering in Mongo — union of up to 2 origins is
+        # just an OR of two geo clauses. Only the (now much smaller)
+        # resulting candidate set gets dereferenced/materialized below.
+        radius_radians = radius_km_to_radians(effective_radius)
+        geo_clauses = [
+            Q(location__geo_within_sphere=[to_point(o_lat, o_lng), radius_radians])
+            for o_lat, o_lng in origins
+        ]
+        geo_q = geo_clauses[0]
+        for clause in geo_clauses[1:]:
+            geo_q |= clause
+        qs = qs.filter(geo_q)
+
         ordered = _search_items(qs, search) if search else qs.order_by("-created_at")
         all_items = [to_response(i, current_user) for i in ordered]
         # Distance to the nearest of the (up to two) origins is computed
-        # here regardless of `sort` — the radius filter below already needs
-        # it, so keeping it alongside each item costs nothing extra and
-        # lets `sort=nearest` reuse it instead of recomputing.
-        candidates: list[tuple[ItemResponse, float]] = []
-        for item in all_items:
-            if item.latitude is None or item.longitude is None:
-                continue
-            nearest_distance = min(
-                _haversine_km(o_lat, o_lng, item.latitude, item.longitude)
-                for o_lat, o_lng in origins
+        # here regardless of `sort` — needed for sort=nearest, and this
+        # candidate set is already small (radius-filtered by the query
+        # above), so recomputing it in Python here costs little. lat/lng are
+        # never None here — the geo filter above only matches items whose
+        # `location` (kept in sync with latitude/longitude on every write)
+        # is set — but the schema types them as optional, so narrow explicitly.
+        candidates = [
+            (
+                item,
+                min(
+                    haversine_km(o_lat, o_lng, item.latitude, item.longitude)
+                    for o_lat, o_lng in origins
+                ),
             )
-            if nearest_distance <= effective_radius:
-                candidates.append((item, nearest_distance))
+            for item in all_items
+            if item.latitude is not None and item.longitude is not None
+        ]
         if sort == "nearest":
             candidates.sort(key=lambda pair: pair[1])
         elif sort == "price_asc":
@@ -368,7 +385,10 @@ def update_item(
         raise errors.bad_request(
             "No momento o Lendly só aceita itens em empréstimo gratuito."
         )
-    if effective_availability == "paid" and not current_user.mp_user_id:
+    mp_connected = bool(
+        current_user.mp_connection and current_user.mp_connection.mp_user_id
+    )
+    if effective_availability == "paid" and not mp_connected:
         raise errors.bad_request(
             "Conecte sua conta Mercado Pago antes de tornar este item pago. "
             "Faça isso em /profile."
@@ -385,9 +405,24 @@ def update_item(
     effective_groups = updates.get("groups", item.groups)
     _assert_visible(effective_is_public, effective_groups)
 
+    # `photos` is a full-array replacement (not append/remove), so any URL
+    # dropped from the old array needs its file cleaned up explicitly —
+    # item.update() below would otherwise just orphan it in storage.
+    removed_photo_urls: list[str] = []
+    if "photos" in updates:
+        removed_photo_urls = list(set(item.photos or []) - set(updates["photos"] or []))
+
+    if "latitude" in updates or "longitude" in updates:
+        updates["location"] = to_point(
+            updates.get("latitude", item.latitude),
+            updates.get("longitude", item.longitude),
+        )
+
     updates["updated_at"] = utcnow()
     item.update(**updates)
     item.reload()
+    for url in removed_photo_urls:
+        storage.delete_public_image(url)
 
     if background_tasks and newly_added_groups:
         _notify_groups_of_new_item(

@@ -26,6 +26,7 @@ from app.services.auth_service._common import (
     user_to_response,
 )
 from app.utils import errors
+from app.utils.crypto import decrypt
 from app.utils.security import decode_token, hash_refresh_token, verify_password
 from app.utils.time import utcnow
 
@@ -120,7 +121,7 @@ def complete_2fa(
     if not user:
         raise errors.unauthorized("Usuário não encontrado")
 
-    if not totp_service.verify_code(user.totp_secret, code):
+    if not totp_service.verify_code(decrypt(user.totp_secret), code):
         raise errors.bad_request("Código 2FA inválido")
 
     device_token = new_device_token()
