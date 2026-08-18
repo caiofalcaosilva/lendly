@@ -500,7 +500,7 @@ def _make_paid_loan_request():
         title="Furadeira",
         category="toys",
         availability_type="paid",
-        daily_rate=50.0,
+        daily_rate_cents=5000,
     ).save()
     req = LoanRequest(
         item=item,
@@ -514,8 +514,8 @@ def _make_paid_loan_request():
         loan_request=req,
         payer=requester,
         payee=owner,
-        gross_amount=100.0,
-        platform_fee_amount=5.0,
+        gross_amount_cents=10000,
+        platform_fee_amount_cents=500,
         status="held",
         pix_charge=PixCharge(mp_payment_id="mp-123"),
     ).save()

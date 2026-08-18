@@ -5,6 +5,7 @@ from app.schemas.bulk import BulkActionResult
 from app.services import activity_service
 from app.utils import errors
 from app.utils.bulk import run_bulk
+from app.utils.money import to_reais
 from app.utils.time import utcnow
 
 
@@ -21,7 +22,7 @@ def _to_summary(item: Item) -> AdminItemSummary:
         city=item.city,
         neighborhood=item.neighborhood,
         availability_type=item.availability_type,
-        daily_rate=item.daily_rate,
+        daily_rate=to_reais(item.daily_rate_cents),
         is_active=item.is_active,
         is_available=item.is_available,
         is_public=item.is_public,

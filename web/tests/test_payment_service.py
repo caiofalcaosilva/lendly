@@ -10,6 +10,7 @@ from app.models.payment import Payment
 from app.models.user import MercadoPagoConnection, User
 from app.services import payment_service
 from app.services.mercadopago_gateway import MercadoPagoError
+from app.utils.money import to_cents
 
 _MOCK_CHARGE_RESULT = {
     "mp_payment_id": "123",
@@ -35,9 +36,9 @@ def _make_paid_loan_request(quantity=1, declared_value=None):
         title="Furadeira",
         category="toys",
         availability_type="paid",
-        daily_rate=50.0,
+        daily_rate_cents=5000,
         quantity_total=max(quantity, 1),
-        declared_value=declared_value,
+        declared_value_cents=to_cents(declared_value),
     ).save()
     return LoanRequest(
         item=item,
@@ -59,8 +60,8 @@ def test_create_payment_splits_fee_correctly(client):
         payment = payment_service.create_payment_for_request(req)
 
     mocked.assert_called_once()
-    assert payment.gross_amount == 100.0  # daily_rate 50 * 2 days
-    assert payment.platform_fee_amount == 5.0  # 5% platform fee
+    assert payment.gross_amount_cents == 10000  # daily_rate 50 * 2 days
+    assert payment.platform_fee_amount_cents == 500  # 5% platform fee
     req.reload()
     assert req.payment_status == "processing"
 
@@ -114,37 +115,37 @@ def _item(**overrides):
         title="Kit",
         category="toys",
         availability_type="paid",
-        daily_rate=50.0,
+        daily_rate_cents=5000,
         **overrides,
     )
 
 
 def test_price_falls_back_to_daily_rate_without_tiers():
-    assert payment_service._calculate_price(_item(), 10) == 500.0
+    assert payment_service._calculate_price_cents(_item(), 10) == 50000
 
 
 def test_price_uses_weekly_tier_with_daily_remainder():
-    item = _item(weekly_rate=300.0)
+    item = _item(weekly_rate_cents=30000)
     # 10 days = 1 week (300) + 3 days (3 * 50 = 150)
-    assert payment_service._calculate_price(item, 10) == 450.0
+    assert payment_service._calculate_price_cents(item, 10) == 45000
 
 
 def test_price_uses_monthly_tier_with_weekly_and_daily_remainder():
-    item = _item(weekly_rate=300.0, monthly_rate=1000.0)
+    item = _item(weekly_rate_cents=30000, monthly_rate_cents=100000)
     # 40 days = 1 month (1000) + 1 week (300) + 3 days (150)
-    assert payment_service._calculate_price(item, 40) == 1450.0
+    assert payment_service._calculate_price_cents(item, 40) == 145000
 
 
 def test_price_monthly_tier_without_weekly_falls_through_to_daily():
-    item = _item(monthly_rate=1000.0)
+    item = _item(monthly_rate_cents=100000)
     # 40 days = 1 month (1000) + 10 days (500), no weekly tier configured
-    assert payment_service._calculate_price(item, 40) == 1500.0
+    assert payment_service._calculate_price_cents(item, 40) == 150000
 
 
 def test_price_exact_multiple_uses_tier_cleanly():
-    item = _item(weekly_rate=300.0)
-    assert payment_service._calculate_price(item, 7) == 300.0
-    assert payment_service._calculate_price(item, 14) == 600.0
+    item = _item(weekly_rate_cents=30000)
+    assert payment_service._calculate_price_cents(item, 7) == 30000
+    assert payment_service._calculate_price_cents(item, 14) == 60000
 
 
 # ── Extension payments ───────────────────────────────────────────────────────
@@ -178,7 +179,7 @@ def test_create_payment_for_extension_does_not_touch_rental_payment_status(clien
 
     mocked.assert_called_once()
     assert payment.kind == "extension"
-    assert payment.gross_amount == 150.0  # 3 days * daily_rate 50
+    assert payment.gross_amount_cents == 15000  # 3 days * daily_rate 50
     req.reload()
     assert req.payment_status == "released"  # unchanged by the extension charge
 
@@ -240,9 +241,9 @@ def _make_delivery_request(delivery_fee=20.0):
         title="Furadeira",
         category="toys",
         availability_type="paid",
-        daily_rate=50.0,
+        daily_rate_cents=5000,
         fulfillment_options=["delivery"],
-        delivery_fee=delivery_fee,
+        delivery_fee_cents=to_cents(delivery_fee),
     ).save()
     return LoanRequest(
         item=item,
@@ -264,8 +265,8 @@ def test_delivery_fee_added_to_gross_amount_and_taxed(client):
         payment = payment_service.create_payment_for_request(req)
 
     # daily_rate 50 * 2 days + delivery_fee 20 = 120, taxed as a whole.
-    assert payment.gross_amount == 120.0
-    assert payment.platform_fee_amount == 6.0  # 5% of 120
+    assert payment.gross_amount_cents == 12000
+    assert payment.platform_fee_amount_cents == 600  # 5% of 120
 
 
 def test_delivery_fee_ignored_for_pickup_requests(client):
@@ -279,7 +280,7 @@ def test_delivery_fee_ignored_for_pickup_requests(client):
     ):
         payment = payment_service.create_payment_for_request(req)
 
-    assert payment.gross_amount == 100.0  # no delivery fee added
+    assert payment.gross_amount_cents == 10000  # no delivery fee added
 
 
 def test_cancellation_before_pickup_refunds_delivery_fee_too(client):
@@ -302,7 +303,7 @@ def test_cancellation_before_pickup_refunds_delivery_fee_too(client):
     mocked.assert_called_once()
     payment = Payment.objects(loan_request=req, kind="rental").first()
     assert payment.status == "refunded"
-    assert payment.gross_amount == 120.0  # the refunded amount includes delivery
+    assert payment.gross_amount_cents == 12000  # the refunded amount includes delivery
 
 
 # ── Quantity ──────────────────────────────────────────────────────────────
@@ -318,8 +319,8 @@ def test_gross_amount_multiplied_by_quantity(client):
         payment = payment_service.create_payment_for_request(req)
 
     # daily_rate 50 * 2 days * 3 units = 300
-    assert payment.gross_amount == 300.0
-    assert payment.platform_fee_amount == 15.0  # 5% of 300
+    assert payment.gross_amount_cents == 30000
+    assert payment.platform_fee_amount_cents == 1500  # 5% of 300
 
 
 def test_delivery_fee_not_multiplied_by_quantity(client):
@@ -336,7 +337,7 @@ def test_delivery_fee_not_multiplied_by_quantity(client):
         payment = payment_service.create_payment_for_request(req)
 
     # (daily_rate 50 * 2 days * 3 units) + delivery_fee 20 = 320
-    assert payment.gross_amount == 320.0
+    assert payment.gross_amount_cents == 32000
 
 
 # ── Guarantee fee ─────────────────────────────────────────────────────────
@@ -352,9 +353,9 @@ def test_guarantee_fee_charged_when_declared_value_set(client):
         payment = payment_service.create_payment_for_request(req)
 
     # base = daily_rate 50 * 2 days = 100; guarantee = 3% of 100 = 3.0
-    assert payment.guarantee_fee_amount == 3.0
-    assert payment.gross_amount == 103.0
-    assert payment.platform_fee_amount == 5.0  # unaffected — still 5% of the base
+    assert payment.guarantee_fee_amount_cents == 300
+    assert payment.gross_amount_cents == 10300
+    assert payment.platform_fee_amount_cents == 500  # unaffected — still 5% of the base
 
 
 def test_no_guarantee_fee_without_declared_value(client):
@@ -366,8 +367,8 @@ def test_no_guarantee_fee_without_declared_value(client):
     ):
         payment = payment_service.create_payment_for_request(req)
 
-    assert payment.guarantee_fee_amount == 0.0
-    assert payment.gross_amount == 100.0
+    assert payment.guarantee_fee_amount_cents == 0
+    assert payment.gross_amount_cents == 10000
 
 
 def test_guarantee_fee_does_not_leak_into_owner_payout(client):
@@ -390,7 +391,7 @@ def test_guarantee_fee_does_not_leak_into_owner_payout(client):
 
 def test_guarantee_fee_applies_to_extension_charge(client):
     req = _make_in_progress_paid_request()
-    Item.objects(id=req.item.id).update(declared_value=800.0)
+    Item.objects(id=req.item.id).update(declared_value_cents=80000)
     req.item.reload()
     with patch.object(
         payment_service.mercadopago_gateway,
@@ -400,5 +401,5 @@ def test_guarantee_fee_applies_to_extension_charge(client):
         payment = payment_service.create_payment_for_extension(req, 3)
 
     # base = 3 days * 50 = 150; guarantee = 3% of 150 = 4.5
-    assert payment.guarantee_fee_amount == 4.5
-    assert payment.gross_amount == 154.5
+    assert payment.guarantee_fee_amount_cents == 450
+    assert payment.gross_amount_cents == 15450

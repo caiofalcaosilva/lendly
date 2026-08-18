@@ -22,12 +22,16 @@ class Item(Document):
     subcategory = StringField()
     photos = ListField(StringField())
     availability_type = StringField(required=True, choices=["free", "paid"])
-    daily_rate = FloatField(min_value=0)
+    # Money fields are stored as integer cents (not reais-as-float) so
+    # price-tier/fee math never carries binary-float rounding noise — see
+    # app.utils.money. The API still speaks reais as float; that
+    # conversion happens only where these fields are read/written.
+    daily_rate_cents = IntField(min_value=0)
     # Optional discounted tiers — see payment_service._calculate_price for how
-    # these combine with daily_rate. Unset means "behave exactly like before
-    # tiered pricing existed": daily_rate * days, no tiers involved.
-    weekly_rate = FloatField(min_value=0)
-    monthly_rate = FloatField(min_value=0)
+    # these combine with daily_rate_cents. Unset means "behave exactly like
+    # before tiered pricing existed": daily_rate_cents * days, no tiers involved.
+    weekly_rate_cents = IntField(min_value=0)
+    monthly_rate_cents = IntField(min_value=0)
     usage_rules = StringField(max_length=500)
     zip_code = StringField(max_length=10)
     neighborhood = StringField(max_length=100)
@@ -62,14 +66,14 @@ class Item(Document):
     # payment_service.create_payment_for_request), so it's taxed by the same
     # platform fee % as everything else and refunded automatically along
     # with the rest on a pre-pickup cancellation. Only takes effect on paid
-    # items — inert on free ones, same as daily_rate already is.
-    delivery_fee = FloatField(min_value=0)
+    # items — inert on free ones, same as daily_rate_cents already is.
+    delivery_fee_cents = IntField(min_value=0)
     # Replacement value, set by the owner — never shown on the public item
     # page (see item_service._common.to_response), only to the owner and
     # admins. Independent of availability_type: a free item still has real
     # value if it's lost or damaged. Currently just a record; will become
     # the guarantee payout ceiling once that feature exists.
-    declared_value = FloatField(min_value=0)
+    declared_value_cents = IntField(min_value=0)
     requires_identity_verification = BooleanField(default=False)
     is_active = BooleanField(default=True)
     # True only for items this specific pause cycle deactivated — lets resume

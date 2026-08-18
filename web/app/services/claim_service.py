@@ -14,6 +14,7 @@ from app.services import activity_service, notification_service, storage
 from app.services.loan_request_service._common import get_as_participant
 from app.utils import errors
 from app.utils.images import load_and_resize
+from app.utils.money import to_cents_required, to_reais, to_reais_required
 from app.utils.time import utcnow
 
 # How long after the item comes back the owner has to file a claim.
@@ -31,11 +32,11 @@ def _to_response(claim: Claim) -> ClaimResponse:
         requester_id=str(claim.requester.id),
         requester_name=claim.requester.name,
         description=claim.description,
-        requested_amount=claim.requested_amount,
-        declared_value=claim.item.declared_value or 0.0,
+        requested_amount=to_reais_required(claim.requested_amount_cents),
+        declared_value=to_reais(claim.item.declared_value_cents) or 0.0,
         photos=claim.photos or [],
         status=claim.status,
-        approved_amount=claim.approved_amount,
+        approved_amount=to_reais(claim.approved_amount_cents),
         rejection_reason=claim.rejection_reason,
         reviewed_by_name=claim.reviewed_by.name if claim.reviewed_by else None,
         reviewed_at=claim.reviewed_at,
@@ -81,7 +82,7 @@ def create_claim(
     if req.status != "finished":
         raise errors.bad_request("O empréstimo precisa estar finalizado")
     item = req.item
-    if item.declared_value is None:
+    if item.declared_value_cents is None:
         raise errors.bad_request(
             "Esse item não tem valor de reposição definido — não é possível "
             "registrar um sinistro"
@@ -99,10 +100,11 @@ def create_claim(
     ).first()
     if existing:
         raise errors.conflict("Já existe um sinistro em andamento pra esse pedido")
-    if data.requested_amount > item.declared_value:
+    requested_amount_cents = to_cents_required(data.requested_amount)
+    if requested_amount_cents > item.declared_value_cents:
         raise errors.bad_request(
             "O valor pedido não pode passar do valor de reposição do item "
-            f"(R$ {item.declared_value:.2f})"
+            f"(R$ {to_reais(item.declared_value_cents):.2f})"
         )
 
     claim = Claim(
@@ -111,7 +113,7 @@ def create_claim(
         owner=req.owner,
         requester=req.requester,
         description=data.description,
-        requested_amount=data.requested_amount,
+        requested_amount_cents=requested_amount_cents,
     )
     claim.save()
     _record_claim_activity(claim, "claim.filed", current_user)
@@ -174,14 +176,16 @@ def approve_claim(
     background_tasks: BackgroundTasks,
 ) -> ClaimResponse:
     claim = _get_claim_in_status(claim_id, "pending")
-    declared_value = claim.item.declared_value or 0.0
-    if approved_amount <= 0 or approved_amount > declared_value:
+    declared_value_cents = claim.item.declared_value_cents or 0
+    approved_amount_cents = to_cents_required(approved_amount)
+    if approved_amount_cents <= 0 or approved_amount_cents > declared_value_cents:
         raise errors.bad_request(
-            f"O valor aprovado precisa estar entre R$ 0,01 e R$ {declared_value:.2f}"
+            "O valor aprovado precisa estar entre R$ 0,01 e "
+            f"R$ {to_reais_required(declared_value_cents):.2f}"
         )
     claim.update(
         status="approved",
-        approved_amount=approved_amount,
+        approved_amount_cents=approved_amount_cents,
         reviewed_by=admin,
         reviewed_at=utcnow(),
         updated_at=utcnow(),
@@ -229,25 +233,23 @@ def mark_claim_paid(
     _notify_owner(
         claim,
         "Seu sinistro foi pago",
-        f"O valor de R$ {claim.approved_amount:.2f} pra {claim.item.title} foi pago.",
+        f"O valor de R$ {to_reais(claim.approved_amount_cents):.2f} pra "
+        f"{claim.item.title} foi pago.",
         background_tasks,
     )
     return _to_response(claim)
 
 
 def get_fund_summary() -> FundSummaryResponse:
-    collected = round(
-        sum(
-            p.guarantee_fee_amount or 0.0
-            for p in Payment.objects(status__in=["held", "released"])
-        ),
-        2,
+    collected_cents = sum(
+        p.guarantee_fee_amount_cents or 0
+        for p in Payment.objects(status__in=["held", "released"])
     )
-    paid_out = round(
-        sum(c.approved_amount or 0.0 for c in Claim.objects(status="paid")), 2
+    paid_out_cents = sum(
+        c.approved_amount_cents or 0 for c in Claim.objects(status="paid")
     )
     return FundSummaryResponse(
-        collected=collected,
-        paid_out=paid_out,
-        balance=round(collected - paid_out, 2),
+        collected=to_reais_required(collected_cents),
+        paid_out=to_reais_required(paid_out_cents),
+        balance=to_reais_required(collected_cents - paid_out_cents),
     )

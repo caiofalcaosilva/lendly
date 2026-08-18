@@ -8,6 +8,7 @@ from app.schemas.analytics import (
     RequesterSpendingSummary,
     SpendingEntry,
 )
+from app.utils.money import to_reais_required
 from app.utils.time import utcnow
 
 # What actually left the requester's account — "pending"/"failed" never
@@ -28,14 +29,14 @@ def get_owner_analytics(current_user: User) -> OwnerAnalyticsSummary:
     for item in items:
         finished = LoanRequest.objects(item=item, status="finished")
         times_borrowed = 0
-        revenue = 0.0
+        revenue_cents = 0
         days_rented = 0
         for req in finished:
             times_borrowed += 1
             duration = _duration_days(req)
             days_rented += duration
-            if item.availability_type == "paid" and item.daily_rate:
-                revenue += item.daily_rate * duration
+            if item.availability_type == "paid" and item.daily_rate_cents:
+                revenue_cents += item.daily_rate_cents * duration
 
         days_since_created = max((now - item.created_at).days, 1)
         occupancy_rate = round(min(100.0, 100 * days_rented / days_since_created), 1)
@@ -46,7 +47,7 @@ def get_owner_analytics(current_user: User) -> OwnerAnalyticsSummary:
                 title=item.title,
                 category=item.category,
                 times_borrowed=times_borrowed,
-                revenue=round(revenue, 2),
+                revenue=to_reais_required(revenue_cents),
                 occupancy_rate=occupancy_rate,
             )
         )
@@ -90,7 +91,7 @@ def get_requester_spending(current_user: User) -> RequesterSpendingSummary:
         SpendingEntry(
             loan_request_id=str(p.loan_request.id),
             item_title=p.loan_request.item.title,
-            amount=p.gross_amount,
+            amount=to_reais_required(p.gross_amount_cents),
             status=p.status,
             created_at=p.created_at,
         )

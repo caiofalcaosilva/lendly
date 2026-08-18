@@ -10,28 +10,31 @@ from app.schemas.payment import PaymentResponse
 from app.services import activity_service, mercadopago_gateway, mp_connect_service
 from app.services.mercadopago_gateway import MercadoPagoError
 from app.utils import errors
+from app.utils.money import to_reais_required
 from app.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
 
 
-def _calculate_price(item: Item, days: int) -> float:
-    """Greedy tiered pricing: whole 30-day months first (if item.monthly_rate
-    is set), then whole 7-day weeks (if item.weekly_rate is set), remainder
-    at daily_rate. Falls back to plain daily_rate * days when neither tier
-    is configured — identical to the pre-tiered-pricing behavior. Months/
-    weeks are fixed-size blocks, not calendar-aware, matching how `days`
-    itself is already computed (a raw date subtraction, no calendar logic)."""
+def _calculate_price_cents(item: Item, days: int) -> int:
+    """Greedy tiered pricing: whole 30-day months first (if
+    item.monthly_rate_cents is set), then whole 7-day weeks (if
+    item.weekly_rate_cents is set), remainder at daily_rate_cents. Falls
+    back to plain daily_rate_cents * days when neither tier is configured —
+    identical to the pre-tiered-pricing behavior. Months/weeks are
+    fixed-size blocks, not calendar-aware, matching how `days` itself is
+    already computed (a raw date subtraction, no calendar logic). All
+    integer cents — no rounding needed, multiplication of ints is exact."""
     remaining = days
-    total = 0.0
-    if item.monthly_rate:
+    total_cents = 0
+    if item.monthly_rate_cents:
         months, remaining = divmod(remaining, 30)
-        total += months * item.monthly_rate
-    if item.weekly_rate:
+        total_cents += months * item.monthly_rate_cents
+    if item.weekly_rate_cents:
         weeks, remaining = divmod(remaining, 7)
-        total += weeks * item.weekly_rate
-    total += remaining * item.daily_rate
-    return round(total, 2)
+        total_cents += weeks * item.weekly_rate_cents
+    total_cents += remaining * item.daily_rate_cents
+    return total_cents
 
 
 def _record_payment_activity(payment: Payment, event: str) -> None:
@@ -47,9 +50,13 @@ def _record_payment_activity(payment: Payment, event: str) -> None:
             resource_id=str(payment.id),
             resource_title=payment.loan_request.item.title,
             metadata={
-                "gross_amount": payment.gross_amount,
-                "platform_fee_amount": payment.platform_fee_amount,
-                "guarantee_fee_amount": payment.guarantee_fee_amount,
+                "gross_amount": to_reais_required(payment.gross_amount_cents),
+                "platform_fee_amount": to_reais_required(
+                    payment.platform_fee_amount_cents
+                ),
+                "guarantee_fee_amount": to_reais_required(
+                    payment.guarantee_fee_amount_cents
+                ),
             },
         )
 
@@ -60,9 +67,9 @@ def _to_response(payment: Payment) -> PaymentResponse:
         loan_request_id=str(payment.loan_request.id),
         kind=payment.kind or "rental",
         status=payment.status,
-        gross_amount=payment.gross_amount,
-        platform_fee_amount=payment.platform_fee_amount,
-        guarantee_fee_amount=payment.guarantee_fee_amount,
+        gross_amount=to_reais_required(payment.gross_amount_cents),
+        platform_fee_amount=to_reais_required(payment.platform_fee_amount_cents),
+        guarantee_fee_amount=to_reais_required(payment.guarantee_fee_amount_cents),
         pix_qr_code=payment.pix_charge.qr_code if payment.pix_charge else None,
         pix_qr_code_base64=(
             payment.pix_charge.qr_code_base64 if payment.pix_charge else None
@@ -87,34 +94,38 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
     """
     item = req.item
     days = max((req.expected_return_date - req.pickup_date).days, 1)
-    gross_amount = round(_calculate_price(item, days) * (req.quantity or 1), 2)
-    if req.fulfillment_method == "delivery" and item.delivery_fee:
-        # Folded straight into gross_amount — taxed by the same platform
-        # fee % as the rental itself, and refunded automatically along with
-        # it on a pre-pickup cancellation (see refund_payment).
-        gross_amount = round(gross_amount + item.delivery_fee, 2)
-    platform_fee_amount = round(gross_amount * settings.PLATFORM_FEE_PERCENT, 2)
+    gross_amount_cents = _calculate_price_cents(item, days) * (req.quantity or 1)
+    if req.fulfillment_method == "delivery" and item.delivery_fee_cents:
+        # Folded straight into gross_amount_cents — taxed by the same
+        # platform fee % as the rental itself, and refunded automatically
+        # along with it on a pre-pickup cancellation (see refund_payment).
+        gross_amount_cents += item.delivery_fee_cents
+    platform_fee_amount_cents = round(
+        gross_amount_cents * settings.PLATFORM_FEE_PERCENT
+    )
     # Guarantee fee — extra charge to the requester, only for items with a
     # declared_value (that's what a claim would be capped at). Computed on
-    # the pre-guarantee gross_amount so it isn't itself taxed by the
-    # platform fee, then folded into gross_amount like delivery_fee.
-    guarantee_fee_amount = (
-        round(gross_amount * settings.GUARANTEE_FEE_PERCENT, 2)
-        if item.declared_value
-        else 0.0
+    # the pre-guarantee gross_amount_cents so it isn't itself taxed by the
+    # platform fee, then folded into gross_amount_cents like delivery_fee.
+    guarantee_fee_amount_cents = (
+        round(gross_amount_cents * settings.GUARANTEE_FEE_PERCENT)
+        if item.declared_value_cents
+        else 0
     )
-    gross_amount = round(gross_amount + guarantee_fee_amount, 2)
+    gross_amount_cents += guarantee_fee_amount_cents
 
     try:
         seller_access_token = mp_connect_service.get_valid_access_token(req.owner)
         result = mercadopago_gateway.create_pix_charge(
             external_reference=str(req.id),
             payer_email=req.requester.email,
-            gross_amount=gross_amount,
+            gross_amount=to_reais_required(gross_amount_cents),
             # Both the platform's own cut and the guarantee fee are withheld
             # from the seller via marketplace_fee — combined here only for
             # the gateway call, kept separate on the Payment doc below.
-            marketplace_fee_amount=platform_fee_amount + guarantee_fee_amount,
+            marketplace_fee_amount=to_reais_required(
+                platform_fee_amount_cents + guarantee_fee_amount_cents
+            ),
             seller_access_token=seller_access_token,
         )
     except MercadoPagoError as e:
@@ -128,9 +139,9 @@ def create_payment_for_request(req: LoanRequest) -> Payment:
         kind="rental",
         payer=req.requester,
         payee=req.owner,
-        gross_amount=gross_amount,
-        platform_fee_amount=platform_fee_amount,
-        guarantee_fee_amount=guarantee_fee_amount,
+        gross_amount_cents=gross_amount_cents,
+        platform_fee_amount_cents=platform_fee_amount_cents,
+        guarantee_fee_amount_cents=guarantee_fee_amount_cents,
         status="pending",
         pix_charge=PixCharge(
             mp_payment_id=result["mp_payment_id"],
@@ -153,16 +164,18 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
     event left to gate it on, the extra days were already granted the
     moment the owner approved the extension."""
     item = req.item
-    gross_amount = round(
-        _calculate_price(item, additional_days) * (req.quantity or 1), 2
+    gross_amount_cents = _calculate_price_cents(item, additional_days) * (
+        req.quantity or 1
     )
-    platform_fee_amount = round(gross_amount * settings.PLATFORM_FEE_PERCENT, 2)
-    guarantee_fee_amount = (
-        round(gross_amount * settings.GUARANTEE_FEE_PERCENT, 2)
-        if item.declared_value
-        else 0.0
+    platform_fee_amount_cents = round(
+        gross_amount_cents * settings.PLATFORM_FEE_PERCENT
     )
-    gross_amount = round(gross_amount + guarantee_fee_amount, 2)
+    guarantee_fee_amount_cents = (
+        round(gross_amount_cents * settings.GUARANTEE_FEE_PERCENT)
+        if item.declared_value_cents
+        else 0
+    )
+    gross_amount_cents += guarantee_fee_amount_cents
 
     try:
         seller_access_token = mp_connect_service.get_valid_access_token(req.owner)
@@ -171,8 +184,10 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
             # each extension needs its own unique reference.
             external_reference=f"{req.id}-ext-{secrets.token_hex(4)}",
             payer_email=req.requester.email,
-            gross_amount=gross_amount,
-            marketplace_fee_amount=platform_fee_amount + guarantee_fee_amount,
+            gross_amount=to_reais_required(gross_amount_cents),
+            marketplace_fee_amount=to_reais_required(
+                platform_fee_amount_cents + guarantee_fee_amount_cents
+            ),
             seller_access_token=seller_access_token,
         )
     except MercadoPagoError as e:
@@ -186,9 +201,9 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
         kind="extension",
         payer=req.requester,
         payee=req.owner,
-        gross_amount=gross_amount,
-        platform_fee_amount=platform_fee_amount,
-        guarantee_fee_amount=guarantee_fee_amount,
+        gross_amount_cents=gross_amount_cents,
+        platform_fee_amount_cents=platform_fee_amount_cents,
+        guarantee_fee_amount_cents=guarantee_fee_amount_cents,
         status="pending",
         pix_charge=PixCharge(
             mp_payment_id=result["mp_payment_id"],

@@ -6,6 +6,7 @@ from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.services import admin_activity_service
+from app.utils.money import to_reais
 
 
 def _write_csv(header: list, rows: list) -> str:
@@ -74,7 +75,7 @@ def export_items_csv() -> str:
             i.city,
             i.is_active,
             i.availability_type,
-            i.daily_rate if i.availability_type == "paid" else "",
+            to_reais(i.daily_rate_cents) if i.availability_type == "paid" else "",
             i.created_at.isoformat(),
         ]
         for i in Item.objects().order_by("created_at").select_related(max_depth=1)

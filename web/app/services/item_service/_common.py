@@ -2,6 +2,7 @@ from app.models.item import Item
 from app.models.user import User
 from app.schemas.item import ItemGroupSummary, ItemOwnerResponse, ItemResponse
 from app.utils import errors
+from app.utils.money import to_reais
 
 
 def _visible_group_summaries(
@@ -58,12 +59,14 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
         photos=item.photos or [],
         availability_type=item.availability_type,
         quantity_total=item.quantity_total or 1,
-        daily_rate=item.daily_rate,
-        weekly_rate=item.weekly_rate,
-        monthly_rate=item.monthly_rate,
-        delivery_fee=item.delivery_fee,
-        declared_value=item.declared_value if show_declared_value else None,
-        has_declared_value=item.declared_value is not None,
+        daily_rate=to_reais(item.daily_rate_cents),
+        weekly_rate=to_reais(item.weekly_rate_cents),
+        monthly_rate=to_reais(item.monthly_rate_cents),
+        delivery_fee=to_reais(item.delivery_fee_cents),
+        declared_value=to_reais(item.declared_value_cents)
+        if show_declared_value
+        else None,
+        has_declared_value=item.declared_value_cents is not None,
         usage_rules=item.usage_rules,
         zip_code=item.zip_code,
         neighborhood=item.neighborhood,

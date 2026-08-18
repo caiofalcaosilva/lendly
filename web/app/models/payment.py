@@ -3,7 +3,7 @@ from mongoengine import (
     Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
-    FloatField,
+    IntField,
     ReferenceField,
     StringField,
 )
@@ -27,9 +27,10 @@ class PixCharge(EmbeddedDocument):
 
 
 class Payment(Document):
-    """See docs/pagamento-online.md for the state machine. gross_amount/
-    platform_fee_amount are snapshotted at charge time, never recomputed
-    from Item.daily_rate later.
+    """See docs/pagamento-online.md for the state machine. Money fields are
+    integer cents (see app.utils.money) — gross_amount_cents/
+    platform_fee_amount_cents are snapshotted at charge time, never
+    recomputed from Item.daily_rate_cents later.
 
     `kind="rental"` is the original charge for the loan itself — exactly
     one per paid LoanRequest. `kind="extension"` is a separate charge for
@@ -42,13 +43,14 @@ class Payment(Document):
     kind = StringField(default="rental", choices=PAYMENT_KINDS)
     payer = ReferenceField("User", required=True)
     payee = ReferenceField("User", required=True)
-    gross_amount = FloatField(required=True, min_value=0)
-    platform_fee_amount = FloatField(required=True, min_value=0)
-    # Slice of gross_amount that funds the damage/loss claims pool — folded
-    # into gross_amount (the requester pays it) but tracked separately from
-    # platform_fee_amount so the two can be reported independently. 0 for
-    # any item without a declared_value. See claim_service.get_fund_summary.
-    guarantee_fee_amount = FloatField(default=0.0, min_value=0)
+    gross_amount_cents = IntField(required=True, min_value=0)
+    platform_fee_amount_cents = IntField(required=True, min_value=0)
+    # Slice of gross_amount_cents that funds the damage/loss claims pool —
+    # folded into gross_amount_cents (the requester pays it) but tracked
+    # separately from platform_fee_amount_cents so the two can be reported
+    # independently. 0 for any item without a declared_value. See
+    # claim_service.get_fund_summary.
+    guarantee_fee_amount_cents = IntField(default=0, min_value=0)
     status = StringField(default="pending", choices=PAYMENT_STATUSES)
     pix_charge = EmbeddedDocumentField(PixCharge)
     created_at = DateTimeField(default=utcnow)

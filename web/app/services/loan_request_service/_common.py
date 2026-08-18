@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.loan_request import LoanRequestResponse
 from app.services import activity_service
 from app.utils import errors
+from app.utils.money import to_reais
 
 WEEKDAY_LABELS = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
 
@@ -135,7 +136,9 @@ def _build_response(
         return_confirmed_by_owner_at=req.return_confirmation.confirmed_by_owner_at,
         return_confirmed_by_requester_at=req.return_confirmation.confirmed_by_requester_at,
         return_forced=req.return_confirmation.forced or False,
-        declared_value=req.item.declared_value if is_owner_viewer else None,
+        declared_value=to_reais(req.item.declared_value_cents)
+        if is_owner_viewer
+        else None,
         claim_id=str(claim.id) if claim else None,
         claim_status=claim.status if claim else None,
         created_at=req.created_at,

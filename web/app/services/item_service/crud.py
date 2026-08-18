@@ -24,6 +24,7 @@ from app.services.item_service._common import get_owned_item, to_response
 from app.services.loan_request_service._common import reserved_quantity
 from app.utils import errors
 from app.utils.geo import haversine_km, radius_km_to_radians, to_point
+from app.utils.money import to_cents
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
 
@@ -114,6 +115,12 @@ def create_item(
     if data.availability_type.value == "paid" and not data.daily_rate:
         raise errors.bad_request("Paid items must have a daily_rate greater than 0")
 
+    daily_rate_cents = to_cents(data.daily_rate)
+    weekly_rate_cents = to_cents(data.weekly_rate)
+    monthly_rate_cents = to_cents(data.monthly_rate)
+    delivery_fee_cents = to_cents(data.delivery_fee)
+    declared_value_cents = to_cents(data.declared_value)
+
     mp_connected = bool(
         current_user.mp_connection and current_user.mp_connection.mp_user_id
     )
@@ -154,11 +161,11 @@ def create_item(
         photos=data.photos or [],
         availability_type=data.availability_type.value,
         quantity_total=data.quantity_total,
-        daily_rate=data.daily_rate,
-        weekly_rate=data.weekly_rate,
-        monthly_rate=data.monthly_rate,
-        delivery_fee=data.delivery_fee,
-        declared_value=data.declared_value,
+        daily_rate_cents=daily_rate_cents,
+        weekly_rate_cents=weekly_rate_cents,
+        monthly_rate_cents=monthly_rate_cents,
+        delivery_fee_cents=delivery_fee_cents,
+        declared_value_cents=declared_value_cents,
         usage_rules=data.usage_rules,
         zip_code=data.zip_code
         or (current_user.zip_code if using_owner_address else None),
@@ -345,7 +352,7 @@ def list_items(
     if sort == "price_asc":
         return [
             to_response(i, current_user)
-            for i in qs.skip(skip).limit(limit).order_by("daily_rate")
+            for i in qs.skip(skip).limit(limit).order_by("daily_rate_cents")
         ]
 
     return [
@@ -361,7 +368,7 @@ def update_item(
     background_tasks: BackgroundTasks | None = None,
 ) -> ItemResponse:
     item = get_owned_item(item_id, current_user)
-    old_daily_rate = item.daily_rate
+    old_daily_rate_cents = item.daily_rate_cents
     old_availability_type = item.availability_type
 
     updates = data.model_dump(exclude_none=True)
@@ -418,6 +425,16 @@ def update_item(
             updates.get("longitude", item.longitude),
         )
 
+    for money_field in (
+        "daily_rate",
+        "weekly_rate",
+        "monthly_rate",
+        "delivery_fee",
+        "declared_value",
+    ):
+        if money_field in updates:
+            updates[f"{money_field}_cents"] = to_cents(updates.pop(money_field))
+
     updates["updated_at"] = utcnow()
     item.update(**updates)
     item.reload()
@@ -429,7 +446,10 @@ def update_item(
             newly_added_groups, item, current_user, background_tasks
         )
 
-    price_changed = "daily_rate" in updates and updates["daily_rate"] != old_daily_rate
+    price_changed = (
+        "daily_rate_cents" in updates
+        and updates["daily_rate_cents"] != old_daily_rate_cents
+    )
     availability_changed = (
         "availability_type" in updates
         and updates["availability_type"] != old_availability_type
