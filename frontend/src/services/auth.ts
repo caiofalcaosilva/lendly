@@ -94,4 +94,10 @@ export const authService = {
 
   getGoogleConnectStatus: () =>
     api.get<GoogleConnectStatus>('/users/me/google/status').then((r) => r.data),
+
+  sendPhoneVerificationCode: () =>
+    api.post<{ sent: boolean }>('/users/me/phone/send-code').then((r) => r.data),
+
+  verifyPhoneCode: (code: string) =>
+    api.post<User>('/users/me/phone/verify', { code }).then((r) => r.data),
 }

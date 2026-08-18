@@ -1,7 +1,8 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, UploadFile
 
 from app.dependencies import get_current_user, get_current_user_optional
 from app.models.user import User
+from app.rate_limit import limiter
 from app.schemas.analytics import OwnerAnalyticsSummary, RequesterSpendingSummary
 from app.schemas.auth import (
     GoogleConnectCallback,
@@ -24,6 +25,8 @@ from app.schemas.user import (
     LoginHistoryEntry,
     NotificationPreferencesUpdate,
     PasswordChangeRequest,
+    PhoneVerificationSendResponse,
+    PhoneVerifyRequest,
     PublicUserResponse,
     SessionSummary,
     UserResponse,
@@ -39,6 +42,7 @@ from app.services import (
     loan_request_service,
     mp_connect_service,
     notification_prefs_service,
+    phone_verification_service,
     user_favorites_service,
 )
 from app.services.auth_service import (
@@ -53,6 +57,7 @@ from app.services.auth_service import (
     user_to_public_response,
     user_to_response,
 )
+from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils import errors
 from app.utils.time import utcnow
 from app.utils.validators import normalize_digits
@@ -89,6 +94,12 @@ def update_profile(data: UserUpdate, current_user: User = Depends(get_current_us
         for field in ("phone", "business_phone", "whatsapp", "cnpj"):
             if updates.get(field):
                 updates[field] = normalize_digits(updates[field])
+        # A new phone number hasn't been confirmed yet — never let it
+        # inherit the verified badge (or a code in flight) from whatever
+        # number was there before.
+        if "phone" in updates and updates["phone"] != current_user.phone:
+            updates["phone_verified"] = False
+            current_user.update(unset__phone_verification=1)
         business_updates = {
             k: updates.pop(k) for k in list(updates) if k in _BUSINESS_PROFILE_FIELDS
         }
@@ -306,6 +317,25 @@ def google_connect_callback(
 def google_status(current_user: User = Depends(get_current_user)):
     """Whether the logged-in user has a Google account connected."""
     return google_connect_service.get_connect_status(current_user)
+
+
+@router.post("/me/phone/send-code", response_model=PhoneVerificationSendResponse)
+@limiter.limit(
+    lambda: f"{get_platform_settings().phone_verification_rate_limit_per_minute}/minute"
+)
+def phone_send_code(request: Request, current_user: User = Depends(get_current_user)):
+    """Sends (or re-sends) a 6-digit SMS code to the logged-in user's own
+    phone — the one already saved on their profile, not one passed in the
+    request."""
+    return phone_verification_service.send_code(current_user)
+
+
+@router.post("/me/phone/verify", response_model=UserResponse)
+def phone_verify(
+    data: PhoneVerifyRequest, current_user: User = Depends(get_current_user)
+):
+    """Confirms the code sent by /me/phone/send-code."""
+    return phone_verification_service.verify_code(current_user, data.code)
 
 
 @router.get("/me/favorite-users", response_model=list[FavoriteUserSummary])

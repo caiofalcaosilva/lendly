@@ -12,6 +12,8 @@ class PlatformSettingsUpdate(BaseModel):
     complete_2fa_rate_limit_per_minute: int | None = Field(None, ge=1)
     refresh_rate_limit_per_minute: int | None = Field(None, ge=1)
     resend_verification_rate_limit_per_minute: int | None = Field(None, ge=1)
+    phone_verification_expire_minutes: int | None = Field(None, ge=1)
+    phone_verification_rate_limit_per_minute: int | None = Field(None, ge=1)
     chat_message_rate_limit_per_minute: int | None = Field(None, ge=1)
     password_reset_rate_limit_per_minute: int | None = Field(None, ge=1)
     group_create_rate_limit_per_minute: int | None = Field(None, ge=1)
@@ -30,6 +32,8 @@ class PlatformSettingsResponse(BaseModel):
     complete_2fa_rate_limit_per_minute: int
     refresh_rate_limit_per_minute: int
     resend_verification_rate_limit_per_minute: int
+    phone_verification_expire_minutes: int
+    phone_verification_rate_limit_per_minute: int
     chat_message_rate_limit_per_minute: int
     password_reset_rate_limit_per_minute: int
     group_create_rate_limit_per_minute: int

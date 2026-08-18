@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:3000/auth/google/callback"
+    # Phone verification SMS (see app/services/sms_gateway.py) — same
+    # "blank until configured" pattern as Google/Mercado Pago above. With
+    # this blank, the gateway logs the code instead of sending it, so the
+    # feature stays fully testable before a real Twilio account exists.
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_FROM_NUMBER: str = ""
     # Lendly's cut of every paid loan, taken from the seller's payout.
     PLATFORM_FEE_PERCENT: float = 0.05
     # Guarantee pool fee — charged on top of gross_amount (paid by the

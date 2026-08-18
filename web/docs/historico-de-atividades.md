@@ -52,6 +52,7 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `account.password_reset` | `auth_service/password_reset.py::reset_password` (fluxo "esqueci minha senha", ator=`None`) | O próprio usuário |
 | `account.session_revoked` | `auth_service/session.py::revoke_session` ("desconectar este dispositivo" em `/me/sessions`) | O próprio usuário |
 | `account.mercadopago_connected` | `mp_connect_service.py::handle_callback` | O próprio usuário |
+| `account.phone_verified` | `phone_verification_service.py::verify_code` | O próprio usuário |
 | `account.data_exported` | `export_service.py::export_user_data` | O próprio usuário |
 | `admin.user_activated` / `deactivated` / `promoted` / `demoted` | `admin_user_service.py` | Usuário alvo |
 | `admin.item_activated` / `deactivated` | `admin_item_service.py` | Owner do item |

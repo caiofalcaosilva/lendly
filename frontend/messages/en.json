@@ -454,6 +454,7 @@
       "aboutBusiness": "About the business",
       "bio": "Bio",
       "phone": "Phone",
+      "phoneVerified": "Verified phone",
       "address": "Address",
       "emailVerified": "Verified email",
       "twoFactor": "Two-factor authentication",
@@ -567,6 +568,19 @@
       "trustDevice": "Trust this device for 30 days",
       "verify": "Verify",
       "cancel": "Cancel"
+    },
+    "PhoneVerificationSection": {
+      "title": "Phone verification",
+      "verified": "Phone verified",
+      "notVerified": "Phone not verified yet",
+      "noPhone": "Add a phone number above to verify it",
+      "verifyButton": "Verify",
+      "errorSending": "Couldn't send the code — try again",
+      "errorInvalidCode": "Invalid code",
+      "codeSentTo": "We sent a 6-digit code to {phone}",
+      "confirm": "Confirm",
+      "resend": "Resend code",
+      "resendIn": "Resend in {seconds}s"
     },
     "ReputationBadges": {
       "new": {
@@ -777,6 +791,8 @@
         "complete_2fa_rate_limit_per_minute": { "label": "2FA confirmation limit per minute", "helper": "Per IP — protects against brute-forcing the authenticator code." },
         "refresh_rate_limit_per_minute": { "label": "Session refresh limit per minute", "helper": "Per IP — exchanging a refresh token for a new token pair." },
         "resend_verification_rate_limit_per_minute": { "label": "Verification resend limit per minute", "helper": "Per IP — protects against verification email spam." },
+        "phone_verification_expire_minutes": { "label": "Phone verification code expiration (minutes)", "helper": "Deadline for the user to enter the code before needing a new one." },
+        "phone_verification_rate_limit_per_minute": { "label": "Verification SMS send limit per minute", "helper": "Per IP — protects against abuse (every SMS has a real cost)." },
         "chat_message_rate_limit_per_minute": { "label": "Chat message limit per minute", "helper": "Per user — protects the loan chat against flooding." },
         "password_reset_rate_limit_per_minute": { "label": "Password reset request limit per minute", "helper": "Per IP — protects \"forgot my password\" against abuse." },
         "group_create_rate_limit_per_minute": { "label": "Group creation limit per minute", "helper": "Per user — protects against group spam." },
@@ -1365,6 +1381,7 @@
         "session_revoked": "You disconnected a device",
         "mercadopago_connected": "You connected your Mercado Pago account",
         "google_connected": "You connected your Google account",
+        "phone_verified": "You verified your phone",
         "data_exported": "You downloaded your data"
       },
       "admin": {

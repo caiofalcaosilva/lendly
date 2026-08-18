@@ -1,10 +1,11 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { ShieldCheck, Smartphone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Checkbox from '@/components/ui/Checkbox'
+import CodeInput, { CodeInputHandle } from '@/components/ui/CodeInput'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface Props {
@@ -15,41 +16,14 @@ interface Props {
 
 export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props) {
   const { completeTwoFactor } = useAuth()
-  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const [code, setCode] = useState('')
   const [trustDevice, setTrustDevice] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const inputs = useRef<(HTMLInputElement | null)[]>([])
+  const codeInput = useRef<CodeInputHandle>(null)
   const t = useTranslations('Common.TwoFactorModal')
 
-  useEffect(() => {
-    inputs.current[0]?.focus()
-  }, [])
-
-  const handleChange = (i: number, val: string) => {
-    const clean = val.replace(/\D/g, '').slice(-1)
-    const next = [...digits]
-    next[i] = clean
-    setDigits(next)
-    if (clean && i < 5) inputs.current[i + 1]?.focus()
-  }
-
-  const handleKeyDown = (i: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) {
-      inputs.current[i - 1]?.focus()
-    }
-  }
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    if (text.length === 6) {
-      setDigits(text.split(''))
-      inputs.current[5]?.focus()
-    }
-  }
-
   const submit = async () => {
-    const code = digits.join('')
     if (code.length < 6) return setError(t('errorSixDigits'))
     setLoading(true)
     setError('')
@@ -58,8 +32,7 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
       onSuccess()
     } catch (e: any) {
       setError(e.response?.data?.detail || t('errorInvalidCode'))
-      setDigits(['', '', '', '', '', ''])
-      inputs.current[0]?.focus()
+      codeInput.current?.reset()
     } finally {
       setLoading(false)
     }
@@ -82,23 +55,7 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
           </div>
         </div>
 
-        <div className="flex gap-2 justify-center" onPaste={handlePaste}>
-          {digits.map((d, i) => (
-            <input
-              key={i}
-              ref={(el) => { inputs.current[i] = el }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={d}
-              onChange={(e) => handleChange(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              className={`w-11 h-13 text-center text-xl font-bold border-2 rounded-control outline-none transition-colors text-ink
-                ${d ? 'border-primary bg-primary-subtle' : 'border-border bg-surface'}
-                focus:border-primary`}
-            />
-          ))}
-        </div>
+        <CodeInput ref={codeInput} onChange={setCode} />
 
         {error && <p className="text-center text-sm text-danger">{error}</p>}
 
@@ -108,7 +65,7 @@ export default function TwoFactorModal({ tempToken, onSuccess, onClose }: Props)
           <Button
             onClick={submit}
             loading={loading}
-            disabled={digits.join('').length < 6}
+            disabled={code.length < 6}
             className="flex-1"
           >
             {t('verify')}

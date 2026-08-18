@@ -25,6 +25,7 @@ import ProfileCompleteness from '@/components/profile/ProfileCompleteness'
 import BusinessBadge from '@/components/ui/BusinessBadge'
 import ReputationBadges from '@/components/ui/ReputationBadges'
 import IdentityVerificationSection from '@/components/profile/IdentityVerificationSection'
+import PhoneVerificationSection from '@/components/profile/PhoneVerificationSection'
 import MercadoPagoConnectSection from '@/components/profile/MercadoPagoConnectSection'
 import GoogleConnectSection from '@/components/profile/GoogleConnectSection'
 import SessionsSection from '@/components/profile/SessionsSection'
@@ -565,6 +566,9 @@ export default function ProfilePage() {
                     </Button>
                   )}
                 </div>
+
+                {/* Phone verification */}
+                {user && <PhoneVerificationSection user={user} updateUser={updateUser} />}
 
                 {/* Identity verification */}
                 {user && <IdentityVerificationSection user={user} updateUser={updateUser} />}

@@ -154,6 +154,7 @@ class UserResponse(BaseModel):
     avatar_url: str | None = None
     bio: str | None = None
     phone: str | None = None
+    phone_verified: bool = False
     zip_code: str | None = None
     street: str | None = None
     number: str | None = None
@@ -310,3 +311,11 @@ class RefreshResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+
+
+class PhoneVerificationSendResponse(BaseModel):
+    sent: bool
+
+
+class PhoneVerifyRequest(BaseModel):
+    code: str = Field(..., min_length=6, max_length=6)

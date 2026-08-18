@@ -22,6 +22,8 @@ class PlatformSettings(Document):
     complete_2fa_rate_limit_per_minute = IntField(default=5, min_value=1)
     refresh_rate_limit_per_minute = IntField(default=10, min_value=1)
     resend_verification_rate_limit_per_minute = IntField(default=3, min_value=1)
+    phone_verification_expire_minutes = IntField(default=10, min_value=1)
+    phone_verification_rate_limit_per_minute = IntField(default=3, min_value=1)
     chat_message_rate_limit_per_minute = IntField(default=20, min_value=1)
     password_reset_rate_limit_per_minute = IntField(default=3, min_value=1)
     group_create_rate_limit_per_minute = IntField(default=5, min_value=1)

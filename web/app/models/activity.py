@@ -56,6 +56,7 @@ ACTIVITY_EVENTS = [
     "account.session_revoked",
     "account.mercadopago_connected",
     "account.google_connected",
+    "account.phone_verified",
     "account.data_exported",
     "admin.user_activated",
     "admin.user_deactivated",

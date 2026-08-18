@@ -21,6 +21,10 @@ def _to_response(doc: PlatformSettings) -> PlatformSettingsResponse:
         resend_verification_rate_limit_per_minute=(
             doc.resend_verification_rate_limit_per_minute
         ),
+        phone_verification_expire_minutes=doc.phone_verification_expire_minutes,
+        phone_verification_rate_limit_per_minute=(
+            doc.phone_verification_rate_limit_per_minute
+        ),
         chat_message_rate_limit_per_minute=doc.chat_message_rate_limit_per_minute,
         password_reset_rate_limit_per_minute=doc.password_reset_rate_limit_per_minute,
         group_create_rate_limit_per_minute=doc.group_create_rate_limit_per_minute,

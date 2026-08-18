@@ -12,6 +12,13 @@ function buildChecks(user: User, t: ReturnType<typeof useTranslations>) {
     { key: 'verified', label: t('emailVerified'), done: user.is_verified },
     { key: '2fa', label: t('twoFactor'), done: user.totp_enabled },
   ]
+  // Only counted once a phone exists at all — otherwise "no phone" would
+  // count as two separate incomplete items (phone + phoneVerified) for
+  // what's really one gap. Email has no equivalent case since it's
+  // always present (required at signup).
+  if (user.phone) {
+    checks.push({ key: 'phoneVerified', label: t('phoneVerified'), done: !!user.phone_verified })
+  }
   if (user.account_type === 'business') {
     checks.push({
       key: 'contact',

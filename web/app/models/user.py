@@ -64,6 +64,19 @@ class BusinessProfile(EmbeddedDocument):
     whatsapp = StringField(max_length=20)
 
 
+class PhoneVerification(EmbeddedDocument):
+    """A code in flight for User.phone — only present while a verification
+    attempt is active (mirrors LoanRequest.DeliveryCode), cleared on
+    success or when a new phone is saved. Unlike DeliveryCode, this one
+    also expires by time (SMS is easier to intercept than a code shown
+    only to the requester on-screen)."""
+
+    code = StringField(max_length=6)
+    attempts = IntField(default=0)
+    generated_at = DateTimeField()
+    expires_at = DateTimeField()
+
+
 class MercadoPagoConnection(EmbeddedDocument):
     """OAuth connection to the seller's own Mercado Pago account — see
     mp_connect_service.py. access_token/refresh_token are encrypted at
@@ -127,6 +140,8 @@ class User(Document):
     name = StringField(required=True, max_length=100)
     email = EmailField(required=True, unique=True)
     phone = StringField(max_length=20)
+    phone_verified = BooleanField(default=False)
+    phone_verification = EmbeddedDocumentField(PhoneVerification)
     avatar_url = StringField(max_length=300)
     bio = StringField(max_length=500)
     # Capped at 3 by featured_items_service.set_featured_items, not enforced here.

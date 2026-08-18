@@ -454,6 +454,7 @@
       "aboutBusiness": "Sobre o negócio",
       "bio": "Bio",
       "phone": "Telefone",
+      "phoneVerified": "Telefone verificado",
       "address": "Endereço",
       "emailVerified": "E-mail verificado",
       "twoFactor": "Autenticação em duas etapas",
@@ -567,6 +568,19 @@
       "trustDevice": "Confiar neste dispositivo por 30 dias",
       "verify": "Verificar",
       "cancel": "Cancelar"
+    },
+    "PhoneVerificationSection": {
+      "title": "Verificação de telefone",
+      "verified": "Telefone verificado",
+      "notVerified": "Telefone ainda não verificado",
+      "noPhone": "Cadastre um telefone acima para verificar",
+      "verifyButton": "Verificar",
+      "errorSending": "Não foi possível enviar o código — tente de novo",
+      "errorInvalidCode": "Código inválido",
+      "codeSentTo": "Enviamos um código de 6 dígitos para {phone}",
+      "confirm": "Confirmar",
+      "resend": "Reenviar código",
+      "resendIn": "Reenviar em {seconds}s"
     },
     "ReputationBadges": {
       "new": {
@@ -777,6 +791,8 @@
         "complete_2fa_rate_limit_per_minute": { "label": "Limite de confirmações de 2FA por minuto", "helper": "Por IP — protege contra força bruta no código do autenticador." },
         "refresh_rate_limit_per_minute": { "label": "Limite de renovações de sessão por minuto", "helper": "Por IP — troca de refresh token por um novo par de tokens." },
         "resend_verification_rate_limit_per_minute": { "label": "Limite de reenvio de verificação por minuto", "helper": "Por IP — protege contra spam de e-mails de verificação." },
+        "phone_verification_expire_minutes": { "label": "Expiração do código de verificação de telefone (minutos)", "helper": "Prazo pro usuário digitar o código antes de precisar pedir um novo." },
+        "phone_verification_rate_limit_per_minute": { "label": "Limite de envio de SMS de verificação por minuto", "helper": "Por IP — protege contra abuso (cada SMS tem custo real)." },
         "chat_message_rate_limit_per_minute": { "label": "Limite de mensagens de chat por minuto", "helper": "Por usuário — protege o chat de empréstimos contra flood." },
         "password_reset_rate_limit_per_minute": { "label": "Limite de pedidos de redefinição de senha por minuto", "helper": "Por IP — protege \"esqueci minha senha\" contra abuso." },
         "group_create_rate_limit_per_minute": { "label": "Limite de criação de grupos por minuto", "helper": "Por usuário — protege contra spam de grupos." },
@@ -1365,6 +1381,7 @@
         "session_revoked": "Você desconectou um dispositivo",
         "mercadopago_connected": "Você conectou sua conta Mercado Pago",
         "google_connected": "Você conectou sua conta Google",
+        "phone_verified": "Você verificou seu telefone",
         "data_exported": "Você baixou seus dados"
       },
       "admin": {

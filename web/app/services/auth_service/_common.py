@@ -67,6 +67,7 @@ def user_to_response(user: User) -> UserResponse:
         avatar_url=user.avatar_url,
         bio=user.bio,
         phone=user.phone,
+        phone_verified=user.phone_verified or False,
         zip_code=user.zip_code,
         street=user.street,
         number=user.number,
