@@ -393,7 +393,7 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
 
         {/* Results header + view toggle */}
         <h2 className="sr-only">{t('resultsHeading')}</h2>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <p className="text-sm text-ink-subtle">
             {!initialLoading && items.length > 0 && (
               <>
@@ -405,7 +405,7 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
               </>
             )}
           </p>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <label htmlFor="items-sort" className="text-xs text-ink-subtle whitespace-nowrap">
                 {t('sortLabel')}

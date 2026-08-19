@@ -23,6 +23,7 @@ import RequestModal from '@/components/requests/RequestModal'
 import ReportModal from '@/components/reports/ReportModal'
 import ItemCard from '@/components/items/ItemCard'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ImageLightbox from '@/components/ui/ImageLightbox'
 import { useToast } from '@/contexts/ToastContext'
 
 const SIMILAR_LIMIT = 4
@@ -75,6 +76,7 @@ export default function ItemDetailClient() {
   const [showRequest, setShowRequest] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [activePhoto, setActivePhoto] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [waitlistLoading, setWaitlistLoading] = useState(false)
@@ -159,8 +161,9 @@ export default function ItemDetailClient() {
                 src={photos[activePhoto]}
                 alt={item.title}
                 fill
-                className="object-cover"
+                className="object-cover cursor-zoom-in"
                 unoptimized
+                onClick={() => setLightboxOpen(true)}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -211,6 +214,14 @@ export default function ItemDetailClient() {
                 </button>
               ))}
             </div>
+          )}
+          {photos.length > 0 && (
+            <ImageLightbox
+              src={photos[activePhoto]}
+              alt={item.title}
+              open={lightboxOpen}
+              onClose={() => setLightboxOpen(false)}
+            />
           )}
         </div>
 

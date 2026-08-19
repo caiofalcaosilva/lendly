@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted mb-4">
               <TrendingUp className="w-4 h-4 text-primary" /> {t('weeklySignups')}
             </div>
-            <div className="flex items-end gap-2 h-24">
+            <div className="flex items-end gap-2 h-24 overflow-x-hidden">
               {data.signups_last_8_weeks.map((w) => (
                 <div key={w.week_start} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
                   <span className="text-[10px] text-ink-subtle font-mono tabular-nums">{w.count}</span>

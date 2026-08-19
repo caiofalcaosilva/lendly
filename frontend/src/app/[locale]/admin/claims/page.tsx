@@ -136,8 +136,8 @@ export default function AdminClaimsPage() {
         </div>
       )}
 
-      <div className="border-b border-border mb-6">
-        <div className="flex gap-0 -mb-px">
+      <div className="border-b border-border mb-6 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-0 -mb-px w-max">
           {TABS.map((status) => {
             const count = claims.filter((c) => c.status === status).length
             return (
@@ -221,7 +221,7 @@ export default function AdminClaimsPage() {
               {claim.status === 'pending' && (
                 <div className="mt-3">
                   {approveTarget === claim.id ? (
-                    <div className="flex items-end gap-2">
+                    <div className="flex flex-wrap items-end gap-2">
                       <Input
                         label={t('approvedAmountLabel')}
                         type="number"
@@ -238,7 +238,7 @@ export default function AdminClaimsPage() {
                       <Button size="sm" variant="outline" onClick={() => setApproveTarget(null)}>{t('cancel')}</Button>
                     </div>
                   ) : rejectTarget === claim.id ? (
-                    <div className="flex items-end gap-2">
+                    <div className="flex flex-wrap items-end gap-2">
                       <Textarea
                         label={t('rejectReasonLabel')}
                         value={rejectReason}
