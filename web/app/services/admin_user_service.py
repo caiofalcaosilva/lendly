@@ -39,7 +39,9 @@ def _to_summary(user: User) -> AdminUserSummary:
 
 
 def list_users(search: str | None, skip: int, limit: int) -> list[AdminUserSummary]:
-    qs = User.objects()
+    # Excludes the system sentinel account (system_account_service) — it
+    # never signed up and has nothing an admin would act on here.
+    qs = User.objects(is_system_account__ne=True)
     if search:
         qs = qs.filter(
             Q(name__icontains=search)

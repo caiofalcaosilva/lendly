@@ -19,6 +19,9 @@ class PlatformSettingsUpdate(BaseModel):
     group_create_rate_limit_per_minute: int | None = Field(None, ge=1)
     group_post_rate_limit_per_minute: int | None = Field(None, ge=1)
     handoff_confirmation_grace_hours: int | None = Field(None, ge=1)
+    claim_filing_window_hours: int | None = Field(None, ge=1)
+    claim_payment_deadline_days: int | None = Field(None, ge=1)
+    claim_late_fee_percent: float | None = Field(None, ge=0)
     announcement_message: str | None = Field(None, max_length=280)
     announcement_active: bool | None = None
 
@@ -39,6 +42,9 @@ class PlatformSettingsResponse(BaseModel):
     group_create_rate_limit_per_minute: int
     group_post_rate_limit_per_minute: int
     handoff_confirmation_grace_hours: int
+    claim_filing_window_hours: int
+    claim_payment_deadline_days: int
+    claim_late_fee_percent: float
     announcement_message: str | None = None
     announcement_active: bool = False
     updated_by_name: str | None = None

@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
@@ -211,7 +211,10 @@ def test_extension_webhook_confirmation_releases_automatically(client):
         ),
     ):
         payment_service.handle_webhook(
-            {"data": {"id": "ext-2"}}, x_signature="sig", x_request_id="req-id"
+            {"data": {"id": "ext-2"}},
+            x_signature="sig",
+            x_request_id="req-id",
+            background_tasks=BackgroundTasks(),
         )
 
     extension = Payment.objects(loan_request=req, kind="extension").first()

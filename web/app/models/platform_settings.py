@@ -2,6 +2,7 @@ from mongoengine import (
     BooleanField,
     DateTimeField,
     Document,
+    FloatField,
     IntField,
     ReferenceField,
     StringField,
@@ -32,6 +33,23 @@ class PlatformSettings(Document):
     # own side, before forcing the transition through without the other
     # party's confirmation (see loan_request_service.lifecycle).
     handoff_confirmation_grace_hours = IntField(default=2, min_value=1)
+    # How long, after the OWNER confirms an item's return, they have to
+    # file a claim (see claim_service.create_claim) — anchored on the
+    # owner's own confirmation, not the LoanRequest reaching "finished",
+    # since the other side confirming last would otherwise leave the
+    # owner with no window at all.
+    claim_filing_window_hours = IntField(default=2, min_value=1)
+    # How long the requester has to pay an approved claim's Pix charge
+    # before claim_overdue_service marks it overdue and restricts their
+    # account (see User.is_restricted).
+    claim_payment_deadline_days = IntField(default=7, min_value=1)
+    # Extra fraction charged when the platform has to advance a paid
+    # item's owner and collect the debt back from the requester instead
+    # (see claim_service.advance_paid_by_lendly) — stored as a fraction
+    # (0.05 = 5%), same convention as settings.PLATFORM_FEE_PERCENT/
+    # GUARANTEE_FEE_PERCENT (env-var based, unrelated to this admin-
+    # configurable field).
+    claim_late_fee_percent = FloatField(default=0.05, min_value=0)
     announcement_message = StringField(max_length=280)
     announcement_active = BooleanField(default=False)
     updated_by = ReferenceField("User")

@@ -9,21 +9,39 @@ from mongoengine import (
 
 from app.utils.time import utcnow
 
-CLAIM_STATUSES = ["pending", "approved", "rejected", "paid"]
+CLAIM_STATUSES = [
+    "pending",
+    "approved",
+    "overdue",
+    "advanced_by_lendly",
+    "cancelled",
+    "rejected",
+    "paid",
+]
 
 
 class Claim(Document):
-    """A damage/loss claim filed by an item's owner after a finished paid
-    rental, against the guarantee pool funded by
-    Payment.guarantee_fee_amount_cents (see claim_service.get_fund_summary).
-    Money fields are integer cents (see app.utils.money).
-    requested_amount_cents/approved_amount_cents are both capped by the
-    item's declared_value_cents at the time of filing — see
-    claim_service.create_claim/approve_claim.
+    """A damage/loss claim filed by an item's owner, opened only within
+    platform_settings.claim_filing_window_hours of the owner confirming
+    the item's return (see claim_service.create_claim). Money fields are
+    integer cents (see app.utils.money). requested_amount_cents/
+    approved_amount_cents are both capped by the item's declared_value_cents
+    at the time of filing — see claim_service.create_claim/approve_claim.
 
-    Approval is two steps: `approved` records the admin's decision (no
-    automated payout exists), `paid` records that the owner was actually
-    transferred the money outside the platform."""
+    Status machine: pending -> approved (admin sets approved_amount_cents,
+    a real Pix charge from requester to owner is created — see
+    payment_service.create_payment_for_claim) -> paid (webhook confirms
+    the charge, automatic) OR overdue (claim_overdue_service, deadline
+    passed unpaid) -> paid (paid late) OR advanced_by_lendly (owner-paid
+    items only — admin manually transferred the owner, requester now owes
+    the platform instead, see claim_service.advance_paid_by_lendly) ->
+    paid (debt settled). pending -> rejected (admin declines). approved/
+    overdue -> cancelled (admin voids it, see claim_service.cancel_claim).
+
+    The active/most-recent charge for a claim is found via
+    Payment.objects(claim=claim) — not stored here, since it can change
+    (original charge -> debt-to-platform charge) and losing that history
+    would hide exactly the kind of thing an admin needs to audit."""
 
     loan_request = ReferenceField("LoanRequest", required=True)
     item = ReferenceField("Item", required=True)
@@ -37,8 +55,17 @@ class Claim(Document):
     rejection_reason = StringField(max_length=500)
     reviewed_by = ReferenceField("User")
     reviewed_at = DateTimeField()
+    # Manual fallback only — the happy path marks this via the Pix webhook
+    # now (see payment_service.handle_webhook). Kept as an admin escape
+    # hatch for a stuck/missed webhook, same reasoning as the rest of the
+    # payment flow having no automatic retry (see docs/pagamento-online.md).
     paid_by = ReferenceField("User")
     paid_at = DateTimeField()
+    advanced_by = ReferenceField("User")
+    advanced_at = DateTimeField()
+    cancelled_by = ReferenceField("User")
+    cancelled_at = DateTimeField()
+    cancellation_reason = StringField(max_length=500)
     created_at = DateTimeField(default=utcnow)
     updated_at = DateTimeField(default=utcnow)
 

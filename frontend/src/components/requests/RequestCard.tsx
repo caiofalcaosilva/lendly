@@ -6,21 +6,20 @@ import { useLocale, useTranslations } from 'next-intl'
 import { LoanRequest, PaymentStatus } from '@/types'
 import { requestsService } from '@/services/requests'
 import { formatDate } from '@/lib/utils'
-import Badge, { STATUS_COLORS } from '@/components/ui/Badge'
+import Badge, { CLAIM_STATUS_COLORS, STATUS_COLORS } from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import ReviewModal from '@/components/reviews/ReviewModal'
 import ExtensionModal from '@/components/requests/ExtensionModal'
 import ClaimModal from '@/components/requests/ClaimModal'
 import PixCheckout from '@/components/requests/PixCheckout'
 import ExtensionPixCheckout from '@/components/requests/ExtensionPixCheckout'
+import ClaimPixCheckout from '@/components/requests/ClaimPixCheckout'
 import DeliveryCodeConfirm from '@/components/requests/DeliveryCodeConfirm'
 
-const CLAIM_STATUS_COLORS: Record<string, 'green' | 'blue' | 'yellow' | 'red' | 'gray'> = {
-  pending: 'yellow',
-  approved: 'blue',
-  rejected: 'red',
-  paid: 'green',
-}
+// Claim statuses where the requester still has an active Pix charge to
+// pay off — either the original owner-bound one or, once the platform
+// has advanced an overdue paid-item claim's owner, the debt-to-platform one.
+const CLAIM_STATUSES_WITH_PENDING_CHARGE = ['approved', 'overdue', 'advanced_by_lendly']
 
 const PAYMENT_STATUS_KEYS: Partial<Record<PaymentStatus, string>> = {
   processing: 'processing',
@@ -49,6 +48,7 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
   const [showReview, setShowReview] = useState(false)
   const [showExtension, setShowExtension] = useState(false)
   const [showClaim, setShowClaim] = useState(false)
+  const [showReturnPrompt, setShowReturnPrompt] = useState(false)
   const [actionError, setActionError] = useState('')
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Common.RequestCard')
@@ -63,6 +63,34 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
     try {
       await action()
       onUpdate()
+    } catch (e: any) {
+      setActionError(e.response?.data?.detail || t('errorConfirming'))
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  // Confirming return is the only moment the owner can still open a
+  // claim (see claim_service.create_claim's filing window) — the prompt
+  // fires right after their own confirmation succeeds, whether or not
+  // the other side has confirmed too, and whether it's a mutual confirm
+  // or the force-return escape hatch.
+  const confirmReturn = async (action: () => Promise<unknown>, key: string) => {
+    setLoading(key)
+    setActionError('')
+    try {
+      await action()
+      // Deliberately NOT calling onUpdate() here when the prompt is about
+      // to show — onUpdate() (loadAll in the dashboard) flips a `loading`
+      // flag that unmounts this whole list while refetching, which would
+      // wipe showReturnPrompt/showClaim before the user ever saw them.
+      // It's called instead once the prompt/modal interaction concludes
+      // (see the prompt buttons and ClaimModal's onClose/onSuccess below).
+      if (role === 'owner' && req.declared_value != null) {
+        setShowReturnPrompt(true)
+      } else {
+        onUpdate()
+      }
     } catch (e: any) {
       setActionError(e.response?.data?.detail || t('errorConfirming'))
     } finally {
@@ -152,6 +180,12 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
         </div>
       )}
 
+      {role === 'requester' && req.claim_status && CLAIM_STATUSES_WITH_PENDING_CHARGE.includes(req.claim_status) && (
+        <div className="mb-4">
+          <ClaimPixCheckout requestId={req.id} onConfirmed={onUpdate} />
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         {role === 'owner' && req.status === 'pending' && (
           <>
@@ -200,23 +234,35 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           )
         )}
 
-        {req.status === 'in_progress' && (
+        {req.status === 'in_progress' && !showReturnPrompt && (
           myReturnConfirmedAt ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-primary self-center">
                 {role === 'owner' ? t('returnConfirmedWaitingRequester') : t('returnConfirmedWaitingOwner')}
               </span>
               {role === 'owner' && (
-                <Button size="sm" variant="outline" loading={loading === 'forceFinish'} onClick={() => act(() => requestsService.finishForce(req.id), 'forceFinish')}>
+                <Button size="sm" variant="outline" loading={loading === 'forceFinish'} onClick={() => confirmReturn(() => requestsService.finishForce(req.id), 'forceFinish')}>
                   {t('forceReturn')}
                 </Button>
               )}
             </div>
           ) : (
-            <Button size="sm" loading={loading === 'finish'} onClick={() => act(() => requestsService.finish(req.id), 'finish')}>
+            <Button size="sm" loading={loading === 'finish'} onClick={() => confirmReturn(() => requestsService.finish(req.id), 'finish')}>
               {t('confirmReturn')}
             </Button>
           )
+        )}
+
+        {showReturnPrompt && role === 'owner' && req.declared_value != null && (
+          <div className="w-full bg-surface-2 rounded-control p-3 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-ink flex-1 min-w-0">{t('anyProblemWithItem')}</span>
+            <Button size="sm" variant="outline" onClick={() => { setShowReturnPrompt(false); onUpdate() }}>
+              {t('noProblem')}
+            </Button>
+            <Button size="sm" variant="danger" onClick={() => { setShowReturnPrompt(false); setShowClaim(true) }}>
+              {t('yesProblem')}
+            </Button>
+          </div>
         )}
 
         {(req.status === 'pending' || req.status === 'accepted') && (
@@ -231,16 +277,10 @@ export default function RequestCard({ request: req, role, onUpdate }: Props) {
           </Button>
         )}
 
-        {role === 'owner' && req.status === 'finished' && req.declared_value != null && (
-          req.claim_id ? (
-            <Badge variant={CLAIM_STATUS_COLORS[req.claim_status ?? 'pending']}>
-              {t(`claimStatus.${req.claim_status ?? 'pending'}`)}
-            </Badge>
-          ) : (
-            <Button size="sm" variant="outline" onClick={() => setShowClaim(true)}>
-              {t('fileClaim')}
-            </Button>
-          )
+        {req.claim_id && (
+          <Badge variant={CLAIM_STATUS_COLORS[req.claim_status ?? 'pending']}>
+            {t(`claimStatus.${req.claim_status ?? 'pending'}`)}
+          </Badge>
         )}
 
         {role === 'requester' && req.status === 'in_progress' && req.extension_status !== 'pending' && (

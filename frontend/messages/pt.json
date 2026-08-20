@@ -30,6 +30,8 @@
       "closeMenu": "Fechar menu",
       "verifyEmail": "Verifique seu e-mail para ativar a conta.",
       "resendLink": "Reenviar link",
+      "accountRestricted": "Sua conta está restrita por uma pendência de sinistro.",
+      "accountRestrictedPay": "Regularizar pagamento",
       "identityPending": "Sua verificação de identidade está em análise.",
       "identityRejected": "Sua verificação de identidade não foi aprovada.",
       "identityNone": "Verifique sua identidade para acessar itens que exigem verificação.",
@@ -295,9 +297,17 @@
       "accept": "Aceitar",
       "refuse": "Recusar",
       "fileClaim": "Registrar dano/perda",
+      "anyProblemWithItem": "Teve algum problema com o item?",
+      "noProblem": "Não, tudo certo",
+      "yesProblem": "Sim, teve um problema",
+      "payClaimCharge": "Pague o sinistro pra concluir",
+      "payClaimDebt": "Você deve esse valor à Lendly",
       "claimStatus": {
         "pending": "Sinistro em análise",
-        "approved": "Sinistro aprovado",
+        "approved": "Sinistro aprovado — aguardando pagamento",
+        "overdue": "Sinistro vencido",
+        "advanced_by_lendly": "Sinistro pago pela Lendly — você deve à Lendly",
+        "cancelled": "Sinistro cancelado",
         "rejected": "Sinistro recusado",
         "paid": "Sinistro pago"
       }
@@ -753,12 +763,18 @@
       "status": {
         "pending": "Pendentes",
         "approved": "Aprovados",
+        "overdue": "Vencidos",
+        "advanced_by_lendly": "Adiantados",
+        "cancelled": "Cancelados",
         "rejected": "Recusados",
         "paid": "Pagos"
       },
       "statusBadge": {
         "pending": "Pendente",
-        "approved": "Aprovado",
+        "approved": "Aprovado — aguardando pagamento",
+        "overdue": "Vencido",
+        "advanced_by_lendly": "Adiantado pela Lendly",
+        "cancelled": "Cancelado",
         "rejected": "Recusado",
         "paid": "Pago"
       },
@@ -768,14 +784,18 @@
       "ceiling": "Teto (valor de reposição):",
       "approvedAmount": "Valor aprovado:",
       "rejectionReason": "Motivo da recusa:",
+      "cancellationReason": "Motivo do cancelamento:",
       "reviewedBy": "Revisado por {name} em <d>{date}</d>",
       "approvedAmountLabel": "Valor a aprovar (R$)",
       "rejectReasonLabel": "Motivo da recusa",
+      "cancelReasonLabel": "Motivo do cancelamento",
       "approve": "Aprovar",
       "reject": "Recusar",
       "confirm": "Confirmar",
       "cancel": "Cancelar",
-      "markPaid": "Marcar como pago",
+      "markPaid": "Marcar como pago manualmente",
+      "advancePaid": "Confirmar adiantamento da Lendly",
+      "cancelClaim": "Cancelar sinistro",
       "error": "Não foi possível concluir a ação."
     },
     "Settings": {
@@ -797,7 +817,10 @@
         "password_reset_rate_limit_per_minute": { "label": "Limite de pedidos de redefinição de senha por minuto", "helper": "Por IP — protege \"esqueci minha senha\" contra abuso." },
         "group_create_rate_limit_per_minute": { "label": "Limite de criação de grupos por minuto", "helper": "Por usuário — protege contra spam de grupos." },
         "group_post_rate_limit_per_minute": { "label": "Limite de posts no mural por minuto", "helper": "Por usuário — protege o mural de cada grupo contra flood." },
-        "handoff_confirmation_grace_hours": { "label": "Prazo pra forçar confirmação de retirada/devolução (horas)", "helper": "Depois desse prazo desde a confirmação do dono, ele pode forçar mesmo sem o solicitante confirmar." }
+        "handoff_confirmation_grace_hours": { "label": "Prazo pra forçar confirmação de retirada/devolução (horas)", "helper": "Depois desse prazo desde a confirmação do dono, ele pode forçar mesmo sem o solicitante confirmar." },
+        "claim_filing_window_hours": { "label": "Prazo pra abrir sinistro (horas)", "helper": "A partir do momento em que o dono confirma a devolução — depois disso, não dá mais pra registrar." },
+        "claim_payment_deadline_days": { "label": "Prazo de pagamento do sinistro (dias)", "helper": "Depois de aprovado, quanto tempo quem pegou emprestado tem pra pagar antes da conta ser restrita." },
+        "claim_late_fee_percent": { "label": "Multa por atraso (fração, ex: 0.05 = 5%)", "helper": "Aplicada só quando a Lendly adianta o dono e passa a cobrar quem pegou emprestado de volta." }
       },
       "announcement": "Aviso da plataforma",
       "announcementHint": "Banner visível a todos os visitantes, logados ou não (ex: manutenção programada).",
@@ -1368,6 +1391,14 @@
       },
       "report": {
         "filed": "Você denunciou {resource}"
+      },
+      "claim": {
+        "filed": "Você registrou um sinistro para {resource}",
+        "approved": "Seu sinistro para {resource} foi aprovado",
+        "rejected": "Seu sinistro para {resource} foi recusado",
+        "paid": "O sinistro para {resource} foi pago",
+        "advanced_by_lendly": "A Lendly adiantou o pagamento do sinistro para {resource}",
+        "cancelled": "O sinistro para {resource} foi cancelado"
       },
       "account": {
         "new_login": "Novo login detectado",

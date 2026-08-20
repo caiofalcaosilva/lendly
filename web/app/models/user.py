@@ -165,6 +165,22 @@ class User(Document):
     # reached via account deletion. Hides items and blocks new requests
     # without touching login or any other data.
     is_paused = BooleanField(default=False)
+    # Different from is_paused above: set only by claim_overdue_service
+    # when a claim payment (rental or debt-to-platform) goes unpaid past
+    # its deadline. Blocks new loan requests/item listings only (see the
+    # gates in loan_request_service.lifecycle/item_service.crud) — login,
+    # browsing, and paying off the debt itself all keep working. Cleared
+    # automatically once the relevant Payment is confirmed (see
+    # payment_service.handle_webhook), or by an admin cancelling the
+    # claim (claim_service.cancel_claim).
+    is_restricted = BooleanField(default=False)
+    restricted_reason = StringField(max_length=300)
+    restricted_at = DateTimeField()
+    # The one sentinel account that receives kind="claim_debt" Payments —
+    # see system_account_service.get_system_account(). is_active=False so
+    # it's naturally excluded from the ~15 places that filter on that
+    # field (public listings, login, dashboard counts, etc.).
+    is_system_account = BooleanField(default=False)
     is_admin = BooleanField(default=False)
     status_changed_by = ReferenceField("User")
     status_changed_at = DateTimeField()

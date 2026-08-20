@@ -168,6 +168,14 @@ def get_extension_payment(
     return payment_service.get_extension_payment_for_request(request_id, current_user)
 
 
+@router.get("/{request_id}/claim-payment", response_model=PaymentResponse)
+def get_claim_payment(request_id: str, current_user: User = Depends(get_current_user)):
+    """The active claim charge for this request, if any — the requester ->
+    owner charge, or the requester -> platform debt charge once the
+    platform has advanced an overdue paid-item claim's owner."""
+    return payment_service.get_claim_payment_for_request(request_id, current_user)
+
+
 @router.post(
     "/{request_id}/extend", response_model=LoanRequestResponse, status_code=201
 )

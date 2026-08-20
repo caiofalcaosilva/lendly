@@ -2,28 +2,29 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
-import { HandCoins, Package, Check, X as XIcon } from 'lucide-react'
+import { HandCoins, Package, Check, X as XIcon, Banknote, Ban } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Claim, ClaimStatus, FundSummary } from '@/types'
 import { claimsService } from '@/services/claims'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import Button from '@/components/ui/Button'
-import Badge from '@/components/ui/Badge'
+import Badge, { CLAIM_STATUS_COLORS } from '@/components/ui/Badge'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
 import { useToast } from '@/contexts/ToastContext'
 
-const STATUS_COLORS: Record<ClaimStatus, 'green' | 'blue' | 'yellow' | 'red' | 'gray'> = {
-  pending: 'yellow',
-  approved: 'blue',
-  rejected: 'red',
-  paid: 'green',
-}
-
-const TABS: ClaimStatus[] = ['pending', 'approved', 'rejected', 'paid']
+const TABS: ClaimStatus[] = [
+  'pending',
+  'approved',
+  'overdue',
+  'advanced_by_lendly',
+  'cancelled',
+  'rejected',
+  'paid',
+]
 
 export default function AdminClaimsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -37,6 +38,8 @@ export default function AdminClaimsPage() {
   const [approveAmount, setApproveAmount] = useState('')
   const [rejectTarget, setRejectTarget] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
   const locale = useLocale() as 'pt' | 'en'
   const t = useTranslations('Admin.Claims')
   const toast = useToast()
@@ -95,6 +98,33 @@ export default function AdminClaimsPage() {
     setBusy(id)
     try {
       await claimsService.markPaid(id)
+      await load()
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const advancePaid = async (id: string) => {
+    setBusy(id)
+    try {
+      await claimsService.advancePaid(id)
+      await load()
+    } catch {
+      toast.error(t('error'))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const cancel = async (id: string) => {
+    if (cancelReason.trim().length < 3) return
+    setBusy(id)
+    try {
+      await claimsService.cancel(id, cancelReason.trim())
+      setCancelTarget(null)
+      setCancelReason('')
       await load()
     } catch {
       toast.error(t('error'))
@@ -177,7 +207,7 @@ export default function AdminClaimsPage() {
                     {claim.item_title}
                   </Link>
                 </div>
-                <Badge variant={STATUS_COLORS[claim.status]}>{t(`statusBadge.${claim.status}`)}</Badge>
+                <Badge variant={CLAIM_STATUS_COLORS[claim.status]}>{t(`statusBadge.${claim.status}`)}</Badge>
               </div>
 
               <p className="text-xs text-ink-subtle mb-2">
@@ -211,6 +241,9 @@ export default function AdminClaimsPage() {
               )}
               {claim.rejection_reason && (
                 <p className="text-sm text-danger mb-2">{t('rejectionReason')} {claim.rejection_reason}</p>
+              )}
+              {claim.cancellation_reason && (
+                <p className="text-sm text-ink-subtle mb-2">{t('cancellationReason')} {claim.cancellation_reason}</p>
               )}
               {claim.reviewed_by_name && claim.reviewed_at && (
                 <p className="text-xs text-ink-subtle mb-2">
@@ -264,10 +297,44 @@ export default function AdminClaimsPage() {
                 </div>
               )}
 
-              {claim.status === 'approved' && (
-                <Button size="sm" loading={busy === claim.id} onClick={() => markPaid(claim.id)}>
-                  {t('markPaid')}
-                </Button>
+              {/* Payable states: approved (on-time), overdue (late), advanced_by_lendly
+                  (paying off the platform debt instead of the owner) — markPaid is a
+                  manual fallback valid in all three, mirroring the backend's
+                  _PAYABLE_STATUSES. Cancelling is only offered for approved/overdue —
+                  once the platform has actually advanced the owner, there's no
+                  one-click undo (see claim_service.cancel_claim's docstring). */}
+              {(claim.status === 'approved' || claim.status === 'overdue' || claim.status === 'advanced_by_lendly') && (
+                cancelTarget === claim.id ? (
+                  <div className="flex flex-wrap items-end gap-2">
+                    <Textarea
+                      label={t('cancelReasonLabel')}
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      rows={2}
+                      className="flex-1"
+                    />
+                    <Button size="sm" variant="danger" loading={busy === claim.id} onClick={() => cancel(claim.id)}>
+                      <Ban className="w-4 h-4" /> {t('confirm')}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setCancelTarget(null)}>{t('cancel')}</Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" loading={busy === claim.id} onClick={() => markPaid(claim.id)}>
+                      {t('markPaid')}
+                    </Button>
+                    {claim.status === 'overdue' && claim.item_availability_type === 'paid' && (
+                      <Button size="sm" loading={busy === claim.id} onClick={() => advancePaid(claim.id)}>
+                        <Banknote className="w-4 h-4" /> {t('advancePaid')}
+                      </Button>
+                    )}
+                    {claim.status !== 'advanced_by_lendly' && (
+                      <Button size="sm" variant="outline" onClick={() => setCancelTarget(claim.id)}>
+                        <Ban className="w-4 h-4" /> {t('cancelClaim')}
+                      </Button>
+                    )}
+                  </div>
+                )
               )}
             </div>
           ))}

@@ -4,6 +4,7 @@ from app.dependencies import get_current_admin, get_current_user
 from app.models.user import User
 from app.schemas.claim import (
     ClaimApprove,
+    ClaimCancel,
     ClaimCreate,
     ClaimReject,
     ClaimResponse,
@@ -66,11 +67,36 @@ def approve_claim(
     background_tasks: BackgroundTasks,
     admin: User = Depends(get_current_admin),
 ):
-    """Admin — records the payout decision. Doesn't move any money; see
-    mark-paid for the manual-transfer confirmation step."""
+    """Admin — approves the claim and generates a real Pix charge from the
+    requester to the owner for the approved amount (no platform cut)."""
     return claim_service.approve_claim(
         claim_id, data.approved_amount, admin, background_tasks
     )
+
+
+@router.patch("/claims/{claim_id}/advance-paid", response_model=ClaimResponse)
+def advance_paid_by_lendly(
+    claim_id: str,
+    background_tasks: BackgroundTasks,
+    admin: User = Depends(get_current_admin),
+):
+    """Admin — confirms the platform manually transferred the owner
+    outside the platform for an overdue PAID-item claim (no automated
+    payout exists). Flips the requester's debt to the platform instead,
+    with a late fee, and generates the new Pix charge for that."""
+    return claim_service.advance_paid_by_lendly(claim_id, admin, background_tasks)
+
+
+@router.patch("/claims/{claim_id}/cancel", response_model=ClaimResponse)
+def cancel_claim(
+    claim_id: str,
+    data: ClaimCancel,
+    background_tasks: BackgroundTasks,
+    admin: User = Depends(get_current_admin),
+):
+    """Admin — voids an approved/overdue claim, superseding its active Pix
+    charge so it can't be paid later by mistake."""
+    return claim_service.cancel_claim(claim_id, data.reason, admin, background_tasks)
 
 
 @router.patch("/claims/{claim_id}/reject", response_model=ClaimResponse)
@@ -90,6 +116,6 @@ def mark_claim_paid(
     background_tasks: BackgroundTasks,
     admin: User = Depends(get_current_admin),
 ):
-    """Admin — confirms the approved amount was actually transferred to the
-    owner outside the platform (no automated payout exists for this)."""
+    """Admin — manual fallback for a stuck/missed Pix webhook. The happy
+    path marks a claim paid automatically once its charge is confirmed."""
     return claim_service.mark_claim_paid(claim_id, admin, background_tasks)

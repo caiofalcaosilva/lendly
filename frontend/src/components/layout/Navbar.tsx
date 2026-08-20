@@ -2,7 +2,7 @@
 import { Link, usePathname, useRouter } from '@/i18n/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Menu, X, Plus, MailWarning, Sun, Moon, ShieldQuestion, Megaphone, Eye } from 'lucide-react'
+import { Menu, X, Plus, MailWarning, Sun, Moon, ShieldQuestion, ShieldAlert, Megaphone, Eye } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { platformSettingsService } from '@/services/platformSettings'
@@ -118,6 +118,15 @@ export default function Navbar() {
           <span>{t('verifyEmail')}</span>
           <Link href="/profile#email-verification" className="font-semibold underline hover:opacity-75">
             {t('resendLink')}
+          </Link>
+        </div>
+      )}
+      {isAuthenticated && user && user.is_restricted && (
+        <div className="bg-danger-subtle border-b border-danger/30 px-4 py-2 flex items-center justify-center gap-2 text-danger text-xs">
+          <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0" />
+          <span>{t('accountRestricted')}</span>
+          <Link href="/dashboard" className="font-semibold underline hover:opacity-75">
+            {t('accountRestrictedPay')}
           </Link>
         </div>
       )}

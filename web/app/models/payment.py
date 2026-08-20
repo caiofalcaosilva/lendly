@@ -10,8 +10,8 @@ from mongoengine import (
 
 from app.utils.time import utcnow
 
-PAYMENT_STATUSES = ["pending", "held", "released", "refunded", "failed"]
-PAYMENT_KINDS = ["rental", "extension"]
+PAYMENT_STATUSES = ["pending", "held", "released", "refunded", "failed", "superseded"]
+PAYMENT_KINDS = ["rental", "extension", "claim", "claim_debt"]
 
 
 class PixCharge(EmbeddedDocument):
@@ -37,9 +37,22 @@ class Payment(Document):
     extra days on an approved prorrogação — a LoanRequest can accumulate
     several of these over its lifetime (nothing stops asking for another
     extension after a previous one was approved), so `loan_request` is
-    NOT unique here."""
+    NOT unique here. `kind="claim"` charges the requester on behalf of a
+    Claim, payee=the item's owner, no platform_fee/guarantee_fee (see
+    claim_service/payment_service.create_payment_for_claim). `kind=
+    "claim_debt"` is the same idea but payee=the platform's own system
+    account (see system_account_service) and seller_access_token is
+    settings.MP_ACCESS_TOKEN directly rather than an OAuth'd seller's —
+    used only when the platform manually advanced a claim's owner and
+    now needs to collect that back from the requester, plus a late fee
+    (see claim_service.advance_paid_by_lendly). `claim`/`claim_debt`
+    Payments reference the Claim they belong to (see `claim` field
+    below); a Claim can accumulate more than one over time (the original
+    charge gets superseded if the platform ends up advancing the owner),
+    so — same as loan_request above — `claim` is NOT unique here."""
 
     loan_request = ReferenceField("LoanRequest", required=True)
+    claim = ReferenceField("Claim")
     kind = StringField(default="rental", choices=PAYMENT_KINDS)
     payer = ReferenceField("User", required=True)
     payee = ReferenceField("User", required=True)
@@ -66,5 +79,6 @@ class Payment(Document):
             "status",
             "payer",
             {"fields": ["loan_request", "kind"]},
+            {"fields": ["claim", "kind"]},
         ],
     }

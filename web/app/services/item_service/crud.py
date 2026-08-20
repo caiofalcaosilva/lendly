@@ -106,6 +106,12 @@ def create_item(
         raise errors.bad_request(
             "Reative sua conta antes de cadastrar um novo item",
         )
+    # Deferred import to avoid a module-level cycle (claim_service pulls
+    # in loan_request_service's __init__.py, which this module's own
+    # reserved_quantity import already touches).
+    from app.services.claim_service import assert_not_restricted
+
+    assert_not_restricted(current_user)
 
     if data.availability_type.value == "paid" and settings.FREE_LENDING_ONLY:
         raise errors.bad_request(

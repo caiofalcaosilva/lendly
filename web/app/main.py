@@ -36,6 +36,7 @@ from app.routers import (
 from app.schemas.category import CategoryResponse
 from app.schemas.platform_settings import AnnouncementResponse
 from app.services import category_service, platform_settings_service
+from app.services.claim_overdue_service import process_overdue_claims
 from app.services.review_reminder_service import send_pending_review_reminders
 from app.utils.security import decode_token
 from app.ws_manager import set_main_loop
@@ -63,6 +64,11 @@ async def lifespan(app: FastAPI):
         send_pending_review_reminders,
         CronTrigger(hour=9, minute=0),
         id="review_reminders",
+    )
+    scheduler.add_job(
+        process_overdue_claims,
+        CronTrigger(hour=9, minute=30),
+        id="claim_overdue",
     )
     scheduler.start()
 

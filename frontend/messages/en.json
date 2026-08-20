@@ -30,6 +30,8 @@
       "closeMenu": "Close menu",
       "verifyEmail": "Verify your email to activate your account.",
       "resendLink": "Resend link",
+      "accountRestricted": "Your account is restricted by a pending claim.",
+      "accountRestrictedPay": "Settle payment",
       "identityPending": "Your identity verification is under review.",
       "identityRejected": "Your identity verification was not approved.",
       "identityNone": "Verify your identity to access items that require it.",
@@ -295,9 +297,17 @@
       "accept": "Accept",
       "refuse": "Refuse",
       "fileClaim": "Report damage/loss",
+      "anyProblemWithItem": "Any problem with the item?",
+      "noProblem": "No, all good",
+      "yesProblem": "Yes, there was a problem",
+      "payClaimCharge": "Pay the claim to settle it",
+      "payClaimDebt": "You owe this amount to Lendly",
       "claimStatus": {
         "pending": "Claim under review",
-        "approved": "Claim approved",
+        "approved": "Claim approved — payment pending",
+        "overdue": "Claim overdue",
+        "advanced_by_lendly": "Lendly paid the claim — you owe Lendly",
+        "cancelled": "Claim cancelled",
         "rejected": "Claim rejected",
         "paid": "Claim paid"
       }
@@ -753,12 +763,18 @@
       "status": {
         "pending": "Pending",
         "approved": "Approved",
+        "overdue": "Overdue",
+        "advanced_by_lendly": "Advanced",
+        "cancelled": "Cancelled",
         "rejected": "Rejected",
         "paid": "Paid"
       },
       "statusBadge": {
         "pending": "Pending",
-        "approved": "Approved",
+        "approved": "Approved — payment pending",
+        "overdue": "Overdue",
+        "advanced_by_lendly": "Advanced by Lendly",
+        "cancelled": "Cancelled",
         "rejected": "Rejected",
         "paid": "Paid"
       },
@@ -768,14 +784,18 @@
       "ceiling": "Ceiling (replacement value):",
       "approvedAmount": "Approved amount:",
       "rejectionReason": "Rejection reason:",
+      "cancellationReason": "Cancellation reason:",
       "reviewedBy": "Reviewed by {name} on <d>{date}</d>",
       "approvedAmountLabel": "Amount to approve (R$)",
       "rejectReasonLabel": "Rejection reason",
+      "cancelReasonLabel": "Cancellation reason",
       "approve": "Approve",
       "reject": "Reject",
       "confirm": "Confirm",
       "cancel": "Cancel",
-      "markPaid": "Mark as paid",
+      "markPaid": "Mark as paid manually",
+      "advancePaid": "Confirm Lendly's advance",
+      "cancelClaim": "Cancel claim",
       "error": "Couldn't complete the action."
     },
     "Settings": {
@@ -797,7 +817,10 @@
         "password_reset_rate_limit_per_minute": { "label": "Password reset request limit per minute", "helper": "Per IP — protects \"forgot my password\" against abuse." },
         "group_create_rate_limit_per_minute": { "label": "Group creation limit per minute", "helper": "Per user — protects against group spam." },
         "group_post_rate_limit_per_minute": { "label": "Mural post limit per minute", "helper": "Per user — protects each group's mural against flooding." },
-        "handoff_confirmation_grace_hours": { "label": "Grace period to force pickup/return confirmation (hours)", "helper": "After this period since the owner's confirmation, they can force it even without the requester confirming." }
+        "handoff_confirmation_grace_hours": { "label": "Grace period to force pickup/return confirmation (hours)", "helper": "After this period since the owner's confirmation, they can force it even without the requester confirming." },
+        "claim_filing_window_hours": { "label": "Claim filing window (hours)", "helper": "From the moment the owner confirms the return — after that, a claim can no longer be filed." },
+        "claim_payment_deadline_days": { "label": "Claim payment deadline (days)", "helper": "Once approved, how long the requester has to pay before their account gets restricted." },
+        "claim_late_fee_percent": { "label": "Late fee (fraction, e.g. 0.05 = 5%)", "helper": "Applied only when Lendly advances the owner and starts collecting the debt back from the requester." }
       },
       "announcement": "Platform announcement",
       "announcementHint": "Banner visible to all visitors, logged in or not (e.g. scheduled maintenance).",
@@ -1368,6 +1391,14 @@
       },
       "report": {
         "filed": "You reported {resource}"
+      },
+      "claim": {
+        "filed": "You filed a claim for {resource}",
+        "approved": "Your claim for {resource} was approved",
+        "rejected": "Your claim for {resource} was rejected",
+        "paid": "The claim for {resource} was paid",
+        "advanced_by_lendly": "Lendly advanced the claim payment for {resource}",
+        "cancelled": "The claim for {resource} was cancelled"
       },
       "account": {
         "new_login": "New login detected",

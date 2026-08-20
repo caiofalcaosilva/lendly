@@ -81,6 +81,7 @@ def user_to_response(user: User) -> UserResponse:
         totp_enabled=user.totp_enabled or False,
         is_admin=user.is_admin or False,
         is_paused=user.is_paused or False,
+        is_restricted=user.is_restricted or False,
         cpf=user.cpf,
         identity_status=user.identity_status or "none",
         average_rating=user.reputation.average_rating,

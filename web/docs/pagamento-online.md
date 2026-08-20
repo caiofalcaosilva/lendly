@@ -110,3 +110,37 @@ Se a chamada ao Mercado Pago em `accept_request` falhar (gateway fora do ar, cre
 Não existe esse mesmo retry para um pagamento que ficou parado em `processing` — ou seja, a cobrança foi criada com sucesso, mas o webhook de confirmação nunca chegou (Mercado Pago fora do ar na hora de notificar, webhook mal configurado, etc.). Hoje o único jeito de destravar é consultar `mercadopago_gateway.get_payment_status` manualmente. Não é um problema no dia a dia (o webhook é bem confiável), mas é o primeiro lugar a olhar se um pedido pago ficar preso em `accepted`/`processing` por muito tempo.
 
 Prorrogação tem a mesma limitação, sem nenhum retry: se a chamada ao Mercado Pago dentro de `approve_extension` falhar, a extensão já foi aprovada (a data de devolução já mudou) mas nenhuma cobrança existe — hoje isso fica pra resolução manual, não há um mecanismo de nova tentativa como o de `get_payment_for_request`.
+
+## Cobrança em nome da própria plataforma (sinistros — dívida com a Lendly)
+
+`create_pix_charge` recebe `seller_access_token` como parâmetro solto —
+nada no SDK exige que seja o token OAuth de um vendedor conectado.
+**Confirmado contra o sandbox em 2026-08-20**: passar
+`settings.MP_ACCESS_TOKEN` (o token da própria aplicação, hoje usado só
+no fluxo OAuth) como `seller_access_token`, com `marketplace_fee_amount=0`,
+cria uma Order Pix normalmente (`status: action_required`, QR code válido
+gerado) — ou seja, dá pra cobrar alguém em nome da própria Lendly sem
+nenhuma integração nova, reaproveitando a função exatamente como está.
+Usado pela cobrança de dívida quando a Lendly adianta o valor de um
+sinistro ao dono e precisa cobrar quem pegou emprestado de volta (ver
+`payment_service.py::create_payment_for_claim_debt`). Como é um token de
+aplicação estático (não um OAuth de vendedor com refresh), esse fluxo
+**não passa por `mp_connect_service.get_valid_access_token`** — usa
+`settings.MP_ACCESS_TOKEN` direto em todo lugar que precisa do token
+(criação, consulta de status no webhook, estorno).
+
+## Limitação conhecida: cobrança de sinistro "superseded" paga depois
+
+Quando a Lendly adianta o dono de um sinistro vencido (`claim_service.py::
+advance_paid_by_lendly`) ou um admin cancela um sinistro
+(`cancel_claim`), a cobrança Pix ativa até então (`Payment.status`) vira
+`"superseded"` — mas isso é só bookkeeping local. O QR code em si continua
+válido e pagável do lado do Mercado Pago; nada no nosso sistema cancela a
+Order de verdade (`mercadopago_gateway.py` não tem `cancel_order`, só
+`refund_payment`). Se quem pegou o item emprestado pagar essa cobrança
+"superseded" depois — por exemplo, sem saber que a Lendly já cobriu o
+valor — o dinheiro cai normalmente na conta do dono (que já recebeu o
+adiantamento), e nosso `handle_webhook` só loga um aviso
+(`"webhook fired for a superseded payment"`) em vez de processar
+automaticamente. Não existe reconciliação automática pra esse caso —
+fica pra um admin resolver manualmente ao ver o log.

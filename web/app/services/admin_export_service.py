@@ -47,7 +47,7 @@ def export_users_csv() -> str:
             u.reputation.finished_loans_count or 0,
             u.created_at.isoformat(),
         ]
-        for u in User.objects().order_by("created_at")
+        for u in User.objects(is_system_account__ne=True).order_by("created_at")
     ]
     return _write_csv(header, rows)
 

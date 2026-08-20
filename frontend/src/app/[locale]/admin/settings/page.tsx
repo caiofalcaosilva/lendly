@@ -21,7 +21,8 @@ const FIELD_KEYS: (keyof PlatformSettings)[] = [
   'phone_verification_expire_minutes', 'phone_verification_rate_limit_per_minute',
   'chat_message_rate_limit_per_minute', 'password_reset_rate_limit_per_minute',
   'group_create_rate_limit_per_minute', 'group_post_rate_limit_per_minute',
-  'handoff_confirmation_grace_hours',
+  'handoff_confirmation_grace_hours', 'claim_filing_window_hours',
+  'claim_payment_deadline_days',
 ]
 
 export default function AdminSettingsPage() {
@@ -74,6 +75,9 @@ export default function AdminSettingsPage() {
         group_create_rate_limit_per_minute: settings.group_create_rate_limit_per_minute,
         group_post_rate_limit_per_minute: settings.group_post_rate_limit_per_minute,
         handoff_confirmation_grace_hours: settings.handoff_confirmation_grace_hours,
+        claim_filing_window_hours: settings.claim_filing_window_hours,
+        claim_payment_deadline_days: settings.claim_payment_deadline_days,
+        claim_late_fee_percent: settings.claim_late_fee_percent,
         announcement_message: settings.announcement_message ?? '',
         announcement_active: settings.announcement_active,
       })
@@ -122,6 +126,16 @@ export default function AdminSettingsPage() {
               onChange={(e) => setField(key, Number(e.target.value))}
             />
           ))}
+
+          <Input
+            label={t('fields.claim_late_fee_percent.label')}
+            helper={t('fields.claim_late_fee_percent.helper')}
+            type="number"
+            step="0.01"
+            min={0}
+            value={settings.claim_late_fee_percent}
+            onChange={(e) => setField('claim_late_fee_percent', Number(e.target.value))}
+          />
 
           <div className="pt-2 border-t border-border space-y-3">
             <div className="flex items-center gap-2">

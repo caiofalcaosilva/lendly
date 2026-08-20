@@ -44,6 +44,11 @@ gravada (não tem preferência que desliga) e nunca editada — serve como hist�
 | `group.member_removed` | `group_service.py::remove_member` (criador ou moderador) | Membro removido |
 | `group.item_shared` | `item_service/crud.py::create_item`/`update_item` (item compartilhado com um grupo, na criação ou depois) | Cada membro do grupo, exceto quem compartilhou. `resource_type="group"` (não `"item"`) de propósito — é o que faz esse evento aparecer no feed de atividades do próprio grupo |
 | `report.filed` | `report_service.py::create_report` | O próprio reporter |
+| `claim.filed` | `claim_service.py::create_claim` | O próprio dono (recipient é sempre `claim.owner`, mesmo quando o ator é outro admin nos eventos seguintes) |
+| `claim.approved` / `rejected` | `claim_service.py::approve_claim` / `reject_claim` | Dono do item |
+| `claim.paid` | `claim_service.py::mark_claim_paid` (manual) / `mark_claim_paid_by_payment` (automático, via webhook do Pix) | Dono do item |
+| `claim.advanced_by_lendly` | `claim_service.py::advance_paid_by_lendly` | Dono do item |
+| `claim.cancelled` | `claim_service.py::cancel_claim` | Dono do item |
 | `account.new_login` | `auth_service/session.py::login_user` / `complete_2fa` (só dispositivo não confiável) | O próprio usuário |
 | `account.password_changed` | `auth_service/account.py::change_password` | O próprio usuário |
 | `account.email_changed` | `account.py::change_email` | O próprio usuário |

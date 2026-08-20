@@ -19,6 +19,7 @@ export interface User {
   totp_enabled: boolean
   is_admin: boolean
   is_paused: boolean
+  is_restricted: boolean
   cpf?: string | null
   identity_status: 'none' | 'pending' | 'approved' | 'rejected'
   average_rating: number
@@ -114,6 +115,8 @@ export const ACTIVITY_EVENTS = [
   'group.moderator_added', 'group.moderator_removed', 'group.member_removed',
   'group.item_shared', 'group.ownership_transferred',
   'report.filed',
+  'claim.filed', 'claim.approved', 'claim.rejected', 'claim.paid',
+  'claim.advanced_by_lendly', 'claim.cancelled',
   'account.new_login', 'account.password_changed', 'account.email_changed',
   'account.paused', 'account.resumed', 'account.2fa_enabled',
   'account.2fa_disabled', 'account.password_reset', 'account.session_revoked',
@@ -398,6 +401,9 @@ export interface PlatformSettings {
   group_create_rate_limit_per_minute: number
   group_post_rate_limit_per_minute: number
   handoff_confirmation_grace_hours: number
+  claim_filing_window_hours: number
+  claim_payment_deadline_days: number
+  claim_late_fee_percent: number
   announcement_message?: string | null
   announcement_active: boolean
   updated_by_name?: string | null
@@ -647,13 +653,21 @@ export interface LoanRequest {
   updated_at: string
 }
 
-export type ClaimStatus = 'pending' | 'approved' | 'rejected' | 'paid'
+export type ClaimStatus =
+  | 'pending'
+  | 'approved'
+  | 'overdue'
+  | 'advanced_by_lendly'
+  | 'cancelled'
+  | 'rejected'
+  | 'paid'
 
 export interface Claim {
   id: string
   loan_request_id: string
   item_id: string
   item_title: string
+  item_availability_type: 'free' | 'paid'
   owner_id: string
   owner_name: string
   requester_id: string
@@ -668,6 +682,9 @@ export interface Claim {
   reviewed_by_name?: string | null
   reviewed_at?: string | null
   paid_at?: string | null
+  advanced_at?: string | null
+  cancelled_at?: string | null
+  cancellation_reason?: string | null
   created_at: string
 }
 
@@ -680,8 +697,8 @@ export interface FundSummary {
 export interface Payment {
   id: string
   loan_request_id: string
-  kind: 'rental' | 'extension'
-  status: 'pending' | 'held' | 'released' | 'refunded' | 'failed'
+  kind: 'rental' | 'extension' | 'claim' | 'claim_debt'
+  status: 'pending' | 'held' | 'released' | 'refunded' | 'failed' | 'superseded'
   gross_amount: number
   platform_fee_amount: number
   guarantee_fee_amount: number

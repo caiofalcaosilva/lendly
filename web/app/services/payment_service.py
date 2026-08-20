@@ -1,7 +1,10 @@
 import logging
 import secrets
 
+from fastapi import BackgroundTasks
+
 from app.config import settings
+from app.models.claim import Claim
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
 from app.models.payment import Payment, PixCharge
@@ -41,8 +44,15 @@ def _record_payment_activity(payment: Payment, event: str) -> None:
     """One Activity per side of the payment (payer + payee) — actor is
     always None here, since every transition is either a webhook
     confirmation or a system-driven consequence of a LoanRequest state
-    change, not a single user's direct action."""
-    for recipient in (payment.payer, payment.payee):
+    change, not a single user's direct action. Skips the payee side for
+    kind="claim_debt": that's the system sentinel account (see
+    system_account_service), nobody ever looks at its activity feed."""
+    recipients = (
+        (payment.payer,)
+        if payment.kind == "claim_debt"
+        else (payment.payer, payment.payee)
+    )
+    for recipient in recipients:
         activity_service.record(
             recipient=recipient,
             event=event,
@@ -215,6 +225,102 @@ def create_payment_for_extension(req: LoanRequest, additional_days: int) -> Paym
     return payment
 
 
+def create_payment_for_claim(claim: Claim) -> Payment:
+    """Called from claim_service.approve_claim — charges the requester the
+    approved amount, straight to the owner's connected account, no
+    platform_fee/guarantee_fee withheld (there's no Lendly cut on this
+    transaction, see the claims/garantia rework notes in the backlog).
+    Released automatically as soon as Mercado Pago confirms the Pix (see
+    handle_webhook) — same reasoning as create_payment_for_extension,
+    there's no handoff event left to gate it on."""
+    try:
+        seller_access_token = mp_connect_service.get_valid_access_token(claim.owner)
+        result = mercadopago_gateway.create_pix_charge(
+            external_reference=f"{claim.id}-claim-{secrets.token_hex(4)}",
+            payer_email=claim.requester.email,
+            gross_amount=to_reais_required(claim.approved_amount_cents),
+            marketplace_fee_amount=0,
+            seller_access_token=seller_access_token,
+        )
+    except MercadoPagoError as e:
+        raise errors.bad_gateway(
+            f"Não foi possível gerar a cobrança do sinistro agora ({e}). "
+            "Tente novamente em instantes."
+        ) from e
+
+    payment = Payment(
+        loan_request=claim.loan_request,
+        claim=claim,
+        kind="claim",
+        payer=claim.requester,
+        payee=claim.owner,
+        gross_amount_cents=claim.approved_amount_cents,
+        platform_fee_amount_cents=0,
+        guarantee_fee_amount_cents=0,
+        status="pending",
+        pix_charge=PixCharge(
+            mp_payment_id=result["mp_payment_id"],
+            qr_code=result["pix_qr_code"],
+            qr_code_base64=result["pix_qr_code_base64"],
+        ),
+    )
+    payment.save()
+    return payment
+
+
+def create_payment_for_claim_debt(claim: Claim) -> Payment:
+    """Called from claim_service.advance_paid_by_lendly, after the
+    platform has manually transferred the owner outside the platform for
+    an overdue paid-item claim — charges the requester back, now owed to
+    the platform instead of the owner, plus a late fee
+    (platform_settings.claim_late_fee_percent). Runs as the platform's
+    OWN account (settings.MP_ACCESS_TOKEN), not an OAuth'd seller's —
+    confirmed against the sandbox that create_pix_charge works this way
+    with marketplace_fee_amount=0 (see docs/pagamento-online.md). Doesn't
+    go through mp_connect_service at all: that's for refreshing a
+    connected seller's OAuth token, and this is a static application
+    token, not a per-seller one."""
+    from app.services.platform_settings_service import get_settings
+    from app.services.system_account_service import get_system_account
+
+    late_fee_percent = get_settings().claim_late_fee_percent
+    gross_amount_cents = round(claim.approved_amount_cents * (1 + late_fee_percent))
+    system_account = get_system_account()
+
+    try:
+        result = mercadopago_gateway.create_pix_charge(
+            external_reference=f"{claim.id}-claimdebt-{secrets.token_hex(4)}",
+            payer_email=claim.requester.email,
+            gross_amount=to_reais_required(gross_amount_cents),
+            marketplace_fee_amount=0,
+            seller_access_token=settings.MP_ACCESS_TOKEN,
+        )
+    except MercadoPagoError as e:
+        raise errors.bad_gateway(
+            f"Não foi possível gerar a cobrança da dívida agora ({e}). "
+            "Tente novamente em instantes."
+        ) from e
+
+    payment = Payment(
+        loan_request=claim.loan_request,
+        claim=claim,
+        kind="claim_debt",
+        payer=claim.requester,
+        payee=system_account,
+        gross_amount_cents=gross_amount_cents,
+        platform_fee_amount_cents=0,
+        guarantee_fee_amount_cents=0,
+        status="pending",
+        pix_charge=PixCharge(
+            mp_payment_id=result["mp_payment_id"],
+            qr_code=result["pix_qr_code"],
+            qr_code_base64=result["pix_qr_code_base64"],
+        ),
+    )
+    payment.save()
+    return payment
+
+
 def _get_payment(req: LoanRequest, kind: str = "rental") -> Payment:
     payment = (
         Payment.objects(loan_request=req, kind=kind).order_by("-created_at").first()
@@ -244,6 +350,34 @@ def get_payment_for_request(request_id: str, current_user: User) -> PaymentRespo
         # Self-healing retry: the charge at accept_request time must have failed.
         payment = create_payment_for_request(req)
 
+    if not payment:
+        raise errors.not_found("Payment not found")
+    return _to_response(payment)
+
+
+def get_claim_payment_for_request(
+    request_id: str, current_user: User
+) -> PaymentResponse:
+    """The active claim charge for this request, if any — either the
+    original requester -> owner charge, or (once the platform has
+    advanced the owner for an overdue paid-item claim) the requester ->
+    platform debt charge. No self-healing retry here, same reasoning as
+    get_extension_payment_for_request — claim charges are only ever
+    created from an explicit admin action, not automatically."""
+    req = LoanRequest.objects(id=request_id).first()
+    if not req:
+        raise errors.not_found("Request not found")
+    is_participant = str(req.requester.id) == str(current_user.id) or str(
+        req.owner.id
+    ) == str(current_user.id)
+    if not is_participant:
+        raise errors.forbidden("Access denied")
+
+    payment = (
+        Payment.objects(loan_request=req, kind__in=["claim", "claim_debt"])
+        .order_by("-created_at")
+        .first()
+    )
     if not payment:
         raise errors.not_found("Payment not found")
     return _to_response(payment)
@@ -317,7 +451,12 @@ def refund_payment(req: LoanRequest) -> None:
     _record_payment_activity(payment, "payment.refunded")
 
 
-def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
+def handle_webhook(
+    payload: dict,
+    x_signature: str,
+    x_request_id: str,
+    background_tasks: BackgroundTasks,
+) -> None:
     """Mercado Pago webhooks are thin notifications ("something with this id
     changed") — we re-fetch the authoritative status from their API rather
     than trusting anything in the notification body itself, so a forged
@@ -337,12 +476,31 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
         raise errors.unauthorized("Invalid webhook signature")
 
     payment = Payment.objects(pix_charge__mp_payment_id=data_id).first()
+    if payment and payment.status == "superseded":
+        # The requester paid a claim charge the platform already replaced
+        # (see claim_service.advance_paid_by_lendly/cancel_claim) — Mercado
+        # Pago still settles the money at their end regardless of our own
+        # bookkeeping, so this is a real reconciliation gap, not a no-op.
+        # No automated fix exists for it (see docs/pagamento-online.md) —
+        # logged so an admin can find and resolve it manually.
+        logger.warning(
+            "webhook fired for a superseded payment — needs manual reconciliation",
+            extra={"mp_payment_id": data_id, "payment_id": str(payment.id)},
+        )
+        return
     if not payment or payment.status != "pending":
         # Not ours, or already processed — webhooks can be redelivered.
         return
 
     try:
-        seller_access_token = mp_connect_service.get_valid_access_token(payment.payee)
+        # claim_debt runs as the platform's own static token — never an
+        # OAuth'd seller's, so it can't go through get_valid_access_token
+        # (there's no real mp_connection on the system sentinel account).
+        seller_access_token = (
+            settings.MP_ACCESS_TOKEN
+            if payment.kind == "claim_debt"
+            else mp_connect_service.get_valid_access_token(payment.payee)
+        )
         remote_status = mercadopago_gateway.get_payment_status(
             data_id, seller_access_token
         )
@@ -376,6 +534,17 @@ def handle_webhook(payload: dict, x_signature: str, x_request_id: str) -> None:
             # [see mercadopago_gateway's module docstring], but the
             # LoanRequest-level gate/UX still tracks pickup, unchanged.)
             _release_payment_doc(payment)
+        elif payment.kind in ("claim", "claim_debt"):
+            # Same reasoning as extension — released the moment Mercado
+            # Pago confirms it, nothing left to gate on. Claim-specific
+            # bookkeeping (status, clearing User.is_restricted) lives in
+            # claim_service — deferred import here to avoid a module-level
+            # circular import (claim_service already imports this module
+            # for create_payment_for_claim/create_payment_for_claim_debt).
+            _release_payment_doc(payment)
+            from app.services import claim_service
+
+            claim_service.mark_claim_paid_by_payment(payment, background_tasks)
     elif remote_status in ("failed", "rejected", "cancelled"):
         payment.update(status="failed", updated_at=utcnow())
         if payment.kind == "rental":

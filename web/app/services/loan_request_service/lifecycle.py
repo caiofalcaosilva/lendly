@@ -81,6 +81,13 @@ def create_request(
         raise errors.bad_request(
             "Contas administrativas não podem solicitar itens",
         )
+    # Deferred import — claim_service pulls in this package's own
+    # __init__.py (via loan_request_service._common), so importing it at
+    # module level here would be circular. See claim_service.
+    # assert_not_restricted's docstring for what this checks.
+    from app.services.claim_service import assert_not_restricted
+
+    assert_not_restricted(current_user)
 
     item = Item.objects(id=data.item_id, is_active=True, is_available=True).first()
     if not item:
@@ -180,6 +187,9 @@ def accept_request(
     request_id: str, current_user: User, background_tasks: BackgroundTasks
 ) -> LoanRequestResponse:
     req = get_as_owner(request_id, current_user)
+    from app.services.claim_service import assert_not_restricted
+
+    assert_not_restricted(current_user)
     assert_status(req, "pending")
     updates = {"status": "accepted", "responded_at": utcnow(), "updated_at": utcnow()}
     if req.fulfillment_method == "delivery":

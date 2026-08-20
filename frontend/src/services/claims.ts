@@ -27,5 +27,11 @@ export const claimsService = {
   markPaid: (claimId: string) =>
     api.patch<Claim>(`/claims/${claimId}/mark-paid`).then((r) => r.data),
 
+  advancePaid: (claimId: string) =>
+    api.patch<Claim>(`/claims/${claimId}/advance-paid`).then((r) => r.data),
+
+  cancel: (claimId: string, reason: string) =>
+    api.patch<Claim>(`/claims/${claimId}/cancel`, { reason }).then((r) => r.data),
+
   fundSummary: () => api.get<FundSummary>('/claims/fund-summary').then((r) => r.data),
 }

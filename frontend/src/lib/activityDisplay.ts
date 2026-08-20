@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   HeartHandshake,
   Flag,
+  HandCoins,
   Lock,
   Shield,
 } from 'lucide-react'
@@ -23,6 +24,7 @@ export const ACTIVITY_DOMAIN_ICONS: Record<string, typeof History> = {
   verification: ShieldCheck,
   group: HeartHandshake,
   report: Flag,
+  claim: HandCoins,
   account: Lock,
   admin: Shield,
 }

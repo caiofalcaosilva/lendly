@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { RequestStatus } from '@/types'
+import { ClaimStatus, RequestStatus } from '@/types'
 
 type Variant = 'green' | 'blue' | 'yellow' | 'red' | 'gray' | 'purple' | 'business' | 'clay'
 
@@ -35,6 +35,20 @@ export const STATUS_COLORS: Record<RequestStatus, Variant> = {
   in_progress: 'blue',
   finished: 'gray',
   cancelled: 'red',
+}
+
+// Single source for claim status -> badge color, shared by RequestCard
+// (the owner/requester-facing badge) and admin/claims (the review
+// queue) — `Record<ClaimStatus, Variant>` so the compiler catches a
+// forgotten status instead of it silently rendering an undefined color.
+export const CLAIM_STATUS_COLORS: Record<ClaimStatus, Variant> = {
+  pending: 'yellow',
+  approved: 'blue',
+  overdue: 'red',
+  advanced_by_lendly: 'red',
+  cancelled: 'gray',
+  rejected: 'red',
+  paid: 'green',
 }
 
 interface Props {

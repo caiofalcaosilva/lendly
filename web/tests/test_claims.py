@@ -1,6 +1,8 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from fastapi import BackgroundTasks
+
 from app.models.loan_request import LoanRequest
 from app.models.user import User
 from app.services import payment_service
@@ -81,6 +83,7 @@ def _finished_paid_request(client, register_user, suffix, declared_value=800.0):
             {"data": {"id": _MOCK_CHARGE_RESULT["mp_payment_id"]}},
             x_signature="sig",
             x_request_id="req-id",
+            background_tasks=BackgroundTasks(),
         )
 
     # release_payment is pure bookkeeping now — no gateway call to mock
@@ -216,7 +219,7 @@ def test_duplicate_pending_claim_rejected(client, register_user):
 def test_claim_outside_window_rejected(client, register_user):
     ctx = _finished_paid_request(client, register_user, "6")
     LoanRequest.objects(id=ctx["request_id"]).update(
-        actual_return_date=utcnow() - timedelta(days=10)
+        set__return_confirmation__confirmed_by_owner_at=utcnow() - timedelta(hours=10)
     )
     resp = client.post(
         f"/requests/{ctx['request_id']}/claims",
@@ -239,11 +242,16 @@ def test_admin_approve_and_mark_paid_flow(client, register_user):
     _make_admin(admin_id)
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
-    approve = client.patch(
-        f"/claims/{claim_id}/approve",
-        json={"approved_amount": 250.0},
-        headers=admin_headers,
-    )
+    with patch.object(
+        payment_service.mercadopago_gateway,
+        "create_pix_charge",
+        return_value={**_MOCK_CHARGE_RESULT, "mp_payment_id": "claim-7"},
+    ):
+        approve = client.patch(
+            f"/claims/{claim_id}/approve",
+            json={"approved_amount": 250.0},
+            headers=admin_headers,
+        )
     assert approve.status_code == 200, approve.text
     assert approve.json()["status"] == "approved"
     assert approve.json()["approved_amount"] == 250.0

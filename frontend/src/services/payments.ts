@@ -7,6 +7,9 @@ export const paymentsService = {
   getExtensionPaymentForRequest: (requestId: string) =>
     api.get<Payment>(`/requests/${requestId}/extension-payment`).then((r) => r.data),
 
+  getClaimPaymentForRequest: (requestId: string) =>
+    api.get<Payment>(`/requests/${requestId}/claim-payment`).then((r) => r.data),
+
   getMercadoPagoConnectUrl: () =>
     api.get<{ authorization_url: string }>('/users/me/mercadopago/connect').then((r) => r.data),
 

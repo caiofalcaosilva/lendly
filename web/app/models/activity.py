@@ -45,6 +45,8 @@ ACTIVITY_EVENTS = [
     "claim.approved",
     "claim.rejected",
     "claim.paid",
+    "claim.advanced_by_lendly",
+    "claim.cancelled",
     "account.new_login",
     "account.password_changed",
     "account.email_changed",
