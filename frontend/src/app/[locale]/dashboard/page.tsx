@@ -281,7 +281,14 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.id} className="bg-surface rounded-panel border border-border p-4 flex items-center justify-between gap-4">
+                    <div
+                      key={item.id}
+                      onClick={() => router.push(`/items/${item.id}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/items/${item.id}`) }}
+                      className="bg-surface rounded-panel border border-border p-4 flex items-center justify-between gap-4 cursor-pointer hover:border-border-strong transition-colors"
+                    >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-ink truncate">{item.title}</span>
@@ -304,7 +311,7 @@ export default function DashboardPage() {
                             variant="ghost"
                             loading={featuring === item.id}
                             disabled={!(user?.featured_item_ids ?? []).includes(item.id) && (user?.featured_item_ids?.length ?? 0) >= MAX_FEATURED}
-                            onClick={() => toggleFeatured(item)}
+                            onClick={(e) => { e.stopPropagation(); toggleFeatured(item) }}
                             aria-label={(user?.featured_item_ids ?? []).includes(item.id) ? t('removeFromFeatured') : t('featureOnProfile', { max: MAX_FEATURED })}
                           >
                             <Star className={`w-4 h-4 ${(user?.featured_item_ids ?? []).includes(item.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
@@ -315,13 +322,13 @@ export default function DashboardPage() {
                             size="sm"
                             variant="ghost"
                             loading={toggling === item.id}
-                            onClick={() => toggleAvailability(item)}
+                            onClick={(e) => { e.stopPropagation(); toggleAvailability(item) }}
                             aria-label={item.is_available ? t('deactivate') : t('activate')}
                           >
                             {item.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </Button>
                         </Tooltip>
-                        <Link href={`/items/${item.id}/edit`}>
+                        <Link href={`/items/${item.id}/edit`} onClick={(e) => e.stopPropagation()}>
                           <Button size="sm" variant="outline" aria-label={t('editItem')}>
                             <Edit className="w-4 h-4" />
                           </Button>
