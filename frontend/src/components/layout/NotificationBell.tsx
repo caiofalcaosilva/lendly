@@ -111,9 +111,9 @@ export default function NotificationBell({ className }: { className?: string }) 
           {/* TEMPORARY — Badging API diagnostic while investigating the
               Android app-icon badge. Remove once closed, along with
               badgeDebug in NotificationsContext.tsx. */}
-          {user?.email === 'caiofalcaosilva@gmail.com' && badgeDebug && (
-            <p className="px-3.5 py-2 text-[10px] font-mono text-ink-subtle border-t border-border break-all flex-shrink-0">
-              {badgeDebug}
+          {user?.email === 'caiofalcaosilva@gmail.com' && (
+            <p className="px-3.5 py-3 text-xs font-mono text-white bg-black border-t-4 border-yellow-400 break-all flex-shrink-0">
+              DEBUG: {badgeDebug || '(vazio — effect ainda não rodou)'}
             </p>
           )}
         </div>
