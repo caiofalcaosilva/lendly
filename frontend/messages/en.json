@@ -70,6 +70,7 @@
       "tagline": "Share with your neighbors. Reduce consumption. Strengthen your community.",
       "about": "About",
       "explore": "Browse",
+      "faq": "FAQ",
       "dashboard": "Dashboard",
       "createAccount": "Sign up",
       "terms": "Terms of use",
@@ -1081,6 +1082,10 @@
         "desc": "Nothing new ships to everyone at once — we test, adjust, and only then expand."
       }
     },
+    "team": {
+      "title": "Who's behind Lendly",
+      "caption": "A small team building this for a real neighborhood."
+    },
     "ctaTitle": "Be part of the neighborhood",
     "ctaSubtitle": "Lend, borrow, or list what your business rents out — all in one place.",
     "ctaCreateAccount": "Create a free account",
@@ -1713,5 +1718,33 @@
     "description": "We hit an unexpected error. You can try again, or go back to home.",
     "retry": "Try again",
     "backHome": "Back to home"
+  },
+  "Faq": {
+    "metaTitle": "Frequently Asked Questions",
+    "metaDescription": "Answers to common questions about lending, borrowing, and renting items with your neighbors on Lendly.",
+    "title": "Frequently asked questions",
+    "subtitle": "The most common questions about how Lendly works.",
+    "items": {
+      "howItWorks": {
+        "question": "How does Lendly work?",
+        "answer": "You list things you own but don't use all the time — a drill, a camping tent, a set of good cutlery — and neighbors or local businesses borrow or rent them when they need to. It works the other way too: before buying something you'll only use once, take a look at what's already nearby."
+      },
+      "safety": {
+        "question": "Is it safe to lend or borrow from a stranger?",
+        "answer": "Lendly has several layers of trust: optional identity verification (ID + selfie), mutual reviews after every loan, phone numbers only shared once a request is accepted, and the option to restrict an item to a closed group (your building or your street) instead of the general public."
+      },
+      "payment": {
+        "question": "How does payment work for rented items?",
+        "answer": "Most items are lent for free. When an owner charges rent, payment happens via Pix inside the app itself, charged as soon as the request is accepted — no need for cash at pickup."
+      },
+      "damage": {
+        "question": "What happens if an item gets damaged or isn't returned?",
+        "answer": "The owner can file a claim right when confirming the return, describing what happened. If approved by the Lendly team, the borrower is charged directly for the agreed amount — no need to sort it out outside the app."
+      },
+      "cost": {
+        "question": "Do I have to pay to use Lendly?",
+        "answer": "No — creating an account, listing items, and borrowing are always free. You only pay when you rent a paid item, and even then most of that amount goes straight to the owner."
+      }
+    }
   }
 }

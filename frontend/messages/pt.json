@@ -70,6 +70,7 @@
       "tagline": "Compartilhe com seus vizinhos. Reduza o consumo. Fortaleça a comunidade.",
       "about": "Sobre",
       "explore": "Explorar",
+      "faq": "Perguntas frequentes",
       "dashboard": "Painel",
       "createAccount": "Criar conta",
       "terms": "Termos de uso",
@@ -1081,6 +1082,10 @@
         "desc": "Nenhuma novidade chega pronta pra todo mundo de uma vez — testamos, ajustamos, só depois expandimos."
       }
     },
+    "team": {
+      "title": "Quem faz a Lendly acontecer",
+      "caption": "Um time pequeno, construindo isso pra vizinhança de verdade."
+    },
     "ctaTitle": "Faz parte da vizinhança",
     "ctaSubtitle": "Empreste, peça emprestado, ou anuncie o que sua loja aluga — tudo no mesmo lugar.",
     "ctaCreateAccount": "Criar conta grátis",
@@ -1713,5 +1718,33 @@
     "description": "Encontramos um erro inesperado. Você pode tentar de novo, ou voltar ao início.",
     "retry": "Tentar de novo",
     "backHome": "Voltar ao início"
+  },
+  "Faq": {
+    "metaTitle": "Perguntas frequentes",
+    "metaDescription": "Tire suas dúvidas sobre como emprestar, pegar emprestado e alugar itens com seus vizinhos no Lendly.",
+    "title": "Perguntas frequentes",
+    "subtitle": "As dúvidas mais comuns sobre como o Lendly funciona.",
+    "items": {
+      "howItWorks": {
+        "question": "Como funciona o Lendly?",
+        "answer": "Você anuncia objetos que tem mas não usa o tempo todo — uma furadeira, uma barraca de camping, um jogo de talheres — e vizinhos ou negócios locais pedem emprestado ou alugam quando precisam. O mesmo vale ao contrário: antes de comprar algo que você só vai usar uma vez, dá uma olhada no que já existe perto de você."
+      },
+      "safety": {
+        "question": "É seguro emprestar ou pegar emprestado de um desconhecido?",
+        "answer": "O Lendly tem várias camadas de confiança: verificação de identidade opcional (documento + selfie), avaliações mútuas depois de cada empréstimo, telefone liberado só depois que o pedido é aceito, e a opção de restringir um item só a grupos fechados (seu condomínio ou sua rua), não pro público em geral."
+      },
+      "payment": {
+        "question": "Como funciona o pagamento nos itens de aluguel?",
+        "answer": "A maioria dos itens é emprestada de graça. Quando o dono cobra aluguel, o pagamento é feito via Pix dentro do próprio app, cobrado assim que o pedido é aceito — sem precisar de dinheiro na hora da entrega."
+      },
+      "damage": {
+        "question": "O que acontece se o item for danificado ou não for devolvido?",
+        "answer": "O dono pode registrar um sinistro no momento em que confirma a devolução, descrevendo o problema. Se aprovado pela equipe do Lendly, quem pegou emprestado é cobrado diretamente pelo valor combinado — sem precisar resolver por fora."
+      },
+      "cost": {
+        "question": "Preciso pagar para usar o Lendly?",
+        "answer": "Não — cadastrar conta, anunciar itens e pedir emprestado é sempre gratuito. Você só paga quando aluga um item pago, e mesmo aí a maior parte do valor vai direto pro dono."
+      }
+    }
   }
 }

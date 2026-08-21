@@ -28,6 +28,7 @@ export default function Footer() {
         <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-ink-muted">
           <Link href="/sobre" className="hover:text-ink transition-colors">{t('about')}</Link>
           <Link href="/items" className="hover:text-ink transition-colors">{t('explore')}</Link>
+          <Link href="/faq" className="hover:text-ink transition-colors">{t('faq')}</Link>
           {isAuthenticated ? (
             <Link href="/dashboard" className="hover:text-ink transition-colors">{t('dashboard')}</Link>
           ) : (

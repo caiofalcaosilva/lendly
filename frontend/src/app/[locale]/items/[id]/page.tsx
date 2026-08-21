@@ -43,6 +43,10 @@ export async function generateMetadata({
     : `${formatCurrency(item.daily_rate ?? 0, locale as 'pt' | 'en')}${t('perDay')}`
   const description = item.description?.trim() || t('metaFallbackDescription', { price: priceLine, category: getCategoryLabel(categories, item.category) })
   const photo = item.photos?.[0]
+  // Next doesn't deep-merge `openGraph` across segments — a route that
+  // returns its own openGraph object replaces the root layout's entirely,
+  // fallback image included. Falling back to it explicitly here instead.
+  const ogImage = photo || '/og-image.jpg'
 
   return {
     title: `${item.title} | Lendly`,
@@ -54,13 +58,13 @@ export async function generateMetadata({
       siteName: 'Lendly',
       locale: locale === 'en' ? 'en_US' : 'pt_BR',
       type: 'website',
-      ...(photo ? { images: [{ url: photo }] } : {}),
+      images: [{ url: ogImage }],
     },
     twitter: {
-      card: photo ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title: item.title,
       description,
-      ...(photo ? { images: [photo] } : {}),
+      images: [ogImage],
     },
   }
 }

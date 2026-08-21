@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { notFound } from 'next/navigation'
+import Script from 'next/script'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
 import '../globals.css'
@@ -25,6 +26,17 @@ export async function generateMetadata({ params: { locale } }: { params: { local
     alternates: {
       languages: { pt: '/', en: '/en' },
     },
+    // Site-wide fallback — item/user pages override this with the item's
+    // own photo/avatar via their own generateMetadata when one exists.
+    // /public/og-image.jpg is a placeholder; swap the file for real 1200×630
+    // art whenever it's ready, no code change needed.
+    openGraph: {
+      images: [{ url: '/og-image.jpg', width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: ['/og-image.jpg'],
+    },
   }
 }
 
@@ -43,6 +55,11 @@ const themeInitScript = `
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
 }
+
+// Blank until a measurement ID exists (see NEXT_PUBLIC_GA_MEASUREMENT_ID
+// in .env) — same "inert until configured" pattern as every other
+// external integration in this codebase. No script loads at all without it.
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export default async function RootLayout({
   children,
@@ -63,6 +80,22 @@ export default async function RootLayout({
     <html lang={locale === 'en' ? 'en' : 'pt-BR'}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </head>
       <body className={`${inter.className} ${jetbrainsMono.variable} bg-bg text-ink min-h-screen flex flex-col transition-colors`}>
         <a href="#main-content" className="skip-link bg-primary text-primary-on px-4 py-2 rounded-control text-sm font-medium">

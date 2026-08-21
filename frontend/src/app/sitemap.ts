@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
 
-const PUBLIC_PATHS = ['', '/items', '/groups/discover', '/empresas', '/sobre', '/login', '/register']
+const PUBLIC_PATHS = ['', '/items', '/groups/discover', '/empresas', '/sobre', '/faq', '/login', '/register']
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'

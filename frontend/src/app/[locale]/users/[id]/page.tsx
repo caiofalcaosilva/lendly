@@ -29,6 +29,10 @@ export async function generateMetadata({
   const location = [user.neighborhood, user.city].filter(Boolean).join(', ')
   const description = user.bio?.trim()
     || (location ? t('metaDescriptionWithLocation', { name, location }) : t('metaDescriptionNoLocation', { name }))
+  // Next doesn't deep-merge `openGraph` across segments — a route that
+  // returns its own openGraph object replaces the root layout's entirely,
+  // fallback image included. Falling back to it explicitly here instead.
+  const ogImage = user.avatar_url || '/og-image.jpg'
 
   return {
     title: `${name} | Lendly`,
@@ -40,13 +44,13 @@ export async function generateMetadata({
       siteName: 'Lendly',
       locale: params.locale === 'en' ? 'en_US' : 'pt_BR',
       type: 'profile',
-      ...(user.avatar_url ? { images: [{ url: user.avatar_url }] } : {}),
+      images: [{ url: ogImage }],
     },
     twitter: {
-      card: user.avatar_url ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title: name,
       description,
-      ...(user.avatar_url ? { images: [user.avatar_url] } : {}),
+      images: [ogImage],
     },
   }
 }

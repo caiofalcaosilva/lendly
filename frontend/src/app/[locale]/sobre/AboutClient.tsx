@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { Leaf, ArrowRight, Users, ShieldCheck, ToggleLeft } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -53,6 +54,18 @@ export default function AboutClient() {
               )
             })}
           </div>
+        </div>
+      </section>
+
+      {/* Team */}
+      <section className="py-20 bg-surface">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <h2 className="text-2xl font-extrabold tracking-tight text-ink mb-6">{t('team.title')}</h2>
+          <div className="relative aspect-[2/1] rounded-panel overflow-hidden mb-4">
+            {/* Placeholder — swap /public/team-photo.jpg for a real photo, no code change needed. */}
+            <Image src="/team-photo.jpg" alt={t('team.title')} fill className="object-cover" />
+          </div>
+          <p className="text-sm text-ink-muted">{t('team.caption')}</p>
         </div>
       </section>
 

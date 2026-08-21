@@ -29,5 +29,9 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
+  // Excludes anything with a file extension (robots.txt, sitemap.xml, and
+  // any static asset under public/ — og-image.jpg, team-photo.jpg, future
+  // additions) in addition to the framework's own internals. Pages never
+  // have a dot in their path, so this is safe for real routes.
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 }
