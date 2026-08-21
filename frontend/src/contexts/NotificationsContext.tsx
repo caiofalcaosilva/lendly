@@ -30,6 +30,9 @@ interface NotificationsContextType {
   /** TEMPORARY — Badging API diagnostic, see NotificationBell's debug block.
    * Remove both once the Android app-icon-badge investigation is closed. */
   badgeDebug: string
+  /** TEMPORARY — persisted separately since opening the bell (which is
+   * the only place badgeDebug is shown) always zeroes unreadCount first. */
+  lastNonzeroBadgeDebug: string
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null)
@@ -123,6 +126,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   // (installed PWA only) — Badging API, unsupported browsers just no-op.
   // Only reflects reality while this tab's WebSocket is connected; there's
   // no push channel to update it once the app is closed.
+  // Reading this by opening the bell always clears unreadCount first
+  // (markAllRead above), so a live value here can never actually show a
+  // >0 attempt — it's always already been zeroed by the time it's read.
+  // Persisting the last >0 attempt to localStorage sidesteps that: it
+  // survives both the immediate clear and the app being backgrounded/
+  // reopened, so it still shows what really happened at notification time.
   const [badgeDebug, setBadgeDebug] = useState('')
   useEffect(() => {
     const supported = 'setAppBadge' in navigator
@@ -134,8 +143,16 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     }
     const call = unreadCount > 0 ? navigator.setAppBadge(unreadCount) : navigator.clearAppBadge()
     call
-      .then(() => setBadgeDebug(`${base} | setAppBadge(${unreadCount}) OK`))
-      .catch((e) => setBadgeDebug(`${base} | setAppBadge(${unreadCount}) ERROR: ${e}`))
+      .then(() => {
+        const result = `${base} | ${unreadCount > 0 ? 'setAppBadge' : 'clearAppBadge'}(${unreadCount}) OK @ ${new Date().toLocaleTimeString()}`
+        if (unreadCount > 0) localStorage.setItem('lendly_badge_debug_last_nonzero', result)
+        setBadgeDebug(result)
+      })
+      .catch((e) => {
+        const result = `${base} | ${unreadCount > 0 ? 'setAppBadge' : 'clearAppBadge'}(${unreadCount}) ERROR: ${e} @ ${new Date().toLocaleTimeString()}`
+        if (unreadCount > 0) localStorage.setItem('lendly_badge_debug_last_nonzero', result)
+        setBadgeDebug(result)
+      })
   }, [unreadCount])
 
   const markAllRead = useCallback(() => {
@@ -171,7 +188,17 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   return (
     <NotificationsContext.Provider
-      value={{ notifications, unreadCount, markAllRead, markRead, deleteNotification, clearRead, badgeDebug }}
+      value={{
+        notifications,
+        unreadCount,
+        markAllRead,
+        markRead,
+        deleteNotification,
+        clearRead,
+        badgeDebug,
+        lastNonzeroBadgeDebug:
+          typeof window !== 'undefined' ? localStorage.getItem('lendly_badge_debug_last_nonzero') || '(nenhuma ainda)' : '',
+      }}
     >
       {children}
     </NotificationsContext.Provider>

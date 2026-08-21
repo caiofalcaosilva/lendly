@@ -10,7 +10,7 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { cn } from '@/lib/utils'
 
 export default function NotificationBell({ className }: { className?: string }) {
-  const { notifications, unreadCount, markAllRead, badgeDebug } = useNotifications()
+  const { notifications, unreadCount, markAllRead, badgeDebug, lastNonzeroBadgeDebug } = useNotifications()
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -110,11 +110,12 @@ export default function NotificationBell({ className }: { className?: string }) 
 
           {/* TEMPORARY — Badging API diagnostic while investigating the
               Android app-icon badge. Remove once closed, along with
-              badgeDebug in NotificationsContext.tsx. */}
+              badgeDebug/lastNonzeroBadgeDebug in NotificationsContext.tsx. */}
           {user?.email === 'caiofalcaosilva@gmail.com' && (
-            <p className="px-3.5 py-3 text-xs font-mono text-white bg-black border-t-4 border-yellow-400 break-all flex-shrink-0">
-              DEBUG: {badgeDebug || '(vazio — effect ainda não rodou)'}
-            </p>
+            <div className="px-3.5 py-3 text-xs font-mono text-white bg-black border-t-4 border-yellow-400 break-all flex-shrink-0 space-y-2">
+              <p>LIVE: {badgeDebug || '(vazio — effect ainda não rodou)'}</p>
+              <p className="text-yellow-300">ÚLTIMA COM CONTAGEM &gt; 0: {lastNonzeroBadgeDebug}</p>
+            </div>
           )}
         </div>
       )}
