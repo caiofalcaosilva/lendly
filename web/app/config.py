@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_FROM_NUMBER: str = ""
+    # Cloudflare Turnstile (see app/services/turnstile_gateway.py) — same
+    # "blank until configured" pattern as above. With this blank, bot-check
+    # verification is skipped entirely (the frontend also doesn't render
+    # the widget without its own NEXT_PUBLIC_TURNSTILE_SITE_KEY).
+    TURNSTILE_SECRET_KEY: str = ""
     # Lendly's cut of every paid loan, taken from the seller's payout.
     PLATFORM_FEE_PERCENT: float = 0.05
     # Guarantee pool fee — charged on top of gross_amount (paid by the

@@ -88,7 +88,6 @@ export default function ItemCard({ item, distanceKm, onFavoriteChange, onLocate 
               alt={item.title}
               fill
               className="object-cover motion-safe:group-hover:scale-105 transition-transform duration-300"
-              unoptimized
             />
           ) : (
             <div className={`absolute inset-0 flex items-center justify-center ${categoryColor}`}>

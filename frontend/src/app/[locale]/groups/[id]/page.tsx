@@ -429,7 +429,7 @@ export default function GroupDetailPage() {
             <div className="relative flex-shrink-0">
               {group.photo_url ? (
                 <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                  <NextImage src={group.photo_url} alt={group.name} fill unoptimized className="object-cover" />
+                  <NextImage src={group.photo_url} alt={group.name} fill className="object-cover" />
                 </div>
               ) : (
                 <div className="w-12 h-12 rounded-full bg-primary-subtle flex items-center justify-center">
@@ -580,7 +580,7 @@ export default function GroupDetailPage() {
                 className="relative w-7 h-7 rounded-full overflow-hidden border-2 border-surface flex-shrink-0"
               >
                 {m.avatar_url ? (
-                  <NextImage src={m.avatar_url} alt={m.name} fill unoptimized className="object-cover" />
+                  <NextImage src={m.avatar_url} alt={m.name} fill className="object-cover" />
                 ) : (
                   <div className="w-full h-full bg-primary-subtle flex items-center justify-center">
                     <span className="text-[10px] font-bold text-primary">{m.name.charAt(0).toUpperCase()}</span>
@@ -718,7 +718,7 @@ export default function GroupDetailPage() {
                   >
                     {m.avatar_url ? (
                       <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                        <NextImage src={m.avatar_url} alt={m.name} fill unoptimized className="object-cover" />
+                        <NextImage src={m.avatar_url} alt={m.name} fill className="object-cover" />
                       </div>
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-primary-subtle flex items-center justify-center flex-shrink-0">

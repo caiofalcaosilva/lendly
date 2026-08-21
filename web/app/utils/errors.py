@@ -29,3 +29,7 @@ def conflict(detail: str) -> HTTPException:
 
 def bad_gateway(detail: str) -> HTTPException:
     return _error(status.HTTP_502_BAD_GATEWAY, detail)
+
+
+def too_many_requests(detail: str) -> HTTPException:
+    return _error(status.HTTP_429_TOO_MANY_REQUESTS, detail)

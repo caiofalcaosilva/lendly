@@ -24,6 +24,7 @@ class TotpDisable(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+    turnstile_token: str | None = None
 
 
 class ResetPasswordRequest(BaseModel):

@@ -162,7 +162,6 @@ export default function ItemDetailClient() {
                 alt={item.title}
                 fill
                 className="object-cover cursor-zoom-in"
-                unoptimized
                 onClick={() => setLightboxOpen(true)}
               />
             ) : (
@@ -210,7 +209,7 @@ export default function ItemDetailClient() {
                   onClick={() => setActivePhoto(i)}
                   className={`relative w-16 h-16 rounded-control overflow-hidden border-2 transition-colors ${i === activePhoto ? 'border-primary' : 'border-transparent'}`}
                 >
-                  <Image src={photo} alt={`${item.title} (foto ${i + 1})`} fill className="object-cover" unoptimized />
+                  <Image src={photo} alt={`${item.title} (foto ${i + 1})`} fill className="object-cover" />
                 </button>
               ))}
             </div>

@@ -25,7 +25,7 @@ from app.schemas.user import (
     UserLogin,
     UserResponse,
 )
-from app.services import google_oauth_gateway
+from app.services import google_oauth_gateway, turnstile_gateway
 from app.services.auth_service import (
     complete_2fa,
     disable_totp,
@@ -57,6 +57,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def register(request: Request, data: UserCreate, background_tasks: BackgroundTasks):
     """Creates an account and sends a verification email. Returns tokens
     right away, but most endpoints stay off-limits until is_verified."""
+    if not turnstile_gateway.verify(data.turnstile_token or ""):
+        raise errors.bad_request("Verificação de segurança falhou. Tente novamente.")
     return register_user(data, background_tasks, request)
 
 
@@ -65,6 +67,8 @@ def register(request: Request, data: UserCreate, background_tasks: BackgroundTas
 def login(request: Request, data: UserLogin, background_tasks: BackgroundTasks):
     """Password login. If 2FA is enabled and the device isn't trusted,
     returns requires_2fa=True with a temp_token instead of real tokens."""
+    if not turnstile_gateway.verify(data.turnstile_token or ""):
+        raise errors.bad_request("Verificação de segurança falhou. Tente novamente.")
     return login_user(data, request, background_tasks)
 
 
@@ -175,6 +179,8 @@ def forgot_password(
     """Sends a password reset link if the email is registered — responds
     the same either way, so this can't be used to check which emails have
     an account."""
+    if not turnstile_gateway.verify(data.turnstile_token or ""):
+        raise errors.bad_request("Verificação de segurança falhou. Tente novamente.")
     return request_password_reset(data, background_tasks)
 
 

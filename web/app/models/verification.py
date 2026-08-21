@@ -7,7 +7,9 @@ VERIFICATION_STATUSES = ["pending", "approved", "rejected"]
 
 class VerificationSubmission(Document):
     user = ReferenceField("User", required=True)
-    cpf = StringField(required=True, max_length=14)
+    # Encrypted at rest (app/utils/crypto.py) — same PII as User.cpf. Never
+    # queried by value (always reached via .user/.id), so no hash needed.
+    cpf = StringField(required=True)
     # Filesystem paths, not public URLs — served only via an admin endpoint.
     selfie_path = StringField(required=True)
     document_path = StringField(required=True)

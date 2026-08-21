@@ -15,6 +15,7 @@ from app.services.auth_service._common import (
 )
 from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils import errors
+from app.utils.crypto import digits_hash, encrypt
 from app.utils.security import hash_password
 from app.utils.time import utcnow
 from app.utils.validators import normalize_digits
@@ -35,7 +36,7 @@ def register_user(
     if data.account_type == "business":
         assert data.cnpj is not None  # enforced by UserCreate's model_validator
         cnpj_digits = "".join(c for c in data.cnpj if c.isdigit())
-        if User.objects(business_profile__cnpj=cnpj_digits).first():
+        if User.objects(business_profile__cnpj_hash=digits_hash(cnpj_digits)).first():
             raise errors.conflict("CNPJ already registered")
 
     verification_token = secrets.token_urlsafe(32)
@@ -68,7 +69,8 @@ def register_user(
         business_profile=BusinessProfile(
             company_name=data.company_name,
             trade_name=data.trade_name,
-            cnpj=cnpj_digits,
+            cnpj=encrypt(cnpj_digits) if cnpj_digits else None,
+            cnpj_hash=digits_hash(cnpj_digits) if cnpj_digits else None,
             business_category=data.business_category,
             business_phone=normalize_digits(data.business_phone)
             if data.business_phone

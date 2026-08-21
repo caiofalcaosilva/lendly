@@ -19,6 +19,10 @@ class PlatformSettings(Document):
     refresh_token_expire_days = IntField(default=30, min_value=1)
     email_verification_expire_hours = IntField(default=24, min_value=1)
     login_rate_limit_per_minute = IntField(default=5, min_value=1)
+    # Per-account lockout — separate from the IP-based rate limit above,
+    # which a distributed attacker can just route around.
+    login_max_attempts = IntField(default=5, min_value=1)
+    login_lockout_minutes = IntField(default=15, min_value=1)
     register_rate_limit_per_minute = IntField(default=5, min_value=1)
     complete_2fa_rate_limit_per_minute = IntField(default=5, min_value=1)
     refresh_rate_limit_per_minute = IntField(default=10, min_value=1)

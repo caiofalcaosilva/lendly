@@ -7,6 +7,7 @@ from app.models.verification import VerificationSubmission
 from app.schemas.verification import VerificationResponse
 from app.services import activity_service, email_service, notification_service, storage
 from app.utils import errors
+from app.utils.crypto import decrypt, digits_hash, encrypt
 from app.utils.images import load_and_resize
 from app.utils.notifications import should_notify
 from app.utils.time import utcnow
@@ -18,7 +19,7 @@ def _to_response(sub: VerificationSubmission) -> VerificationResponse:
         id=str(sub.id),
         user_id=str(sub.user.id),
         user_name=sub.user.name,
-        cpf=sub.cpf,
+        cpf=decrypt(sub.cpf),
         status=sub.status,
         rejection_reason=sub.rejection_reason,
         reviewed_by_name=sub.reviewed_by.name if sub.reviewed_by else None,
@@ -45,7 +46,8 @@ async def submit_verification(
             "Você já tem uma verificação pendente ou aprovada",
         )
 
-    existing_owner = User.objects(cpf=cpf, id__ne=current_user.id).first()
+    cpf_hash = digits_hash(cpf)
+    existing_owner = User.objects(cpf_hash=cpf_hash, id__ne=current_user.id).first()
     if existing_owner:
         raise errors.conflict("Este CPF já está em uso")
 
@@ -53,11 +55,14 @@ async def submit_verification(
     document_path = await _save_photo(document, str(current_user.id), "document")
 
     sub = VerificationSubmission(
-        user=current_user, cpf=cpf, selfie_path=selfie_path, document_path=document_path
+        user=current_user,
+        cpf=encrypt(cpf),
+        selfie_path=selfie_path,
+        document_path=document_path,
     )
     sub.save()
 
-    current_user.update(cpf=cpf, identity_status="pending")
+    current_user.update(cpf=encrypt(cpf), cpf_hash=cpf_hash, identity_status="pending")
     activity_service.record(
         recipient=current_user,
         event="verification.submitted",

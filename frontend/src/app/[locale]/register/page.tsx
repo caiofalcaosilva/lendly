@@ -17,6 +17,7 @@ import AddressFields from '@/components/ui/AddressFields'
 import { LogoMark } from '@/components/ui/Logo'
 import Checkbox from '@/components/ui/Checkbox'
 import GoogleButton from '@/components/auth/GoogleButton'
+import Turnstile from '@/components/ui/Turnstile'
 
 const opt = z.string().optional().or(z.literal(''))
 
@@ -28,6 +29,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   const schema = z
     .object({
@@ -111,7 +113,7 @@ export default function RegisterPage() {
       const payload = Object.fromEntries(
         Object.entries(data).map(([k, v]) => [k, v || undefined]),
       ) as any
-      await registerUser(payload)
+      await registerUser({ ...payload, turnstile_token: turnstileToken || undefined })
       router.push('/dashboard')
     } catch (e: any) {
       setError(e.response?.data?.detail || t('errors.genericError'))
@@ -313,6 +315,8 @@ export default function RegisterPage() {
                   <p className="text-danger text-xs mt-1">{errors.accepted_terms.message}</p>
                 )}
               </div>
+
+              <Turnstile onToken={setTurnstileToken} />
 
               <div className="flex gap-3 pt-2">
                 <Button

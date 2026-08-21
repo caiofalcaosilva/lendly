@@ -19,15 +19,21 @@ export interface RegisterData {
   cnpj?: string
   business_category?: string
   accepted_terms: boolean
+  turnstile_token?: string
 }
 
 export const authService = {
   register: (data: RegisterData) =>
     api.post<TokenResponse>('/auth/register', data).then((r) => r.data),
 
-  login: (email: string, password: string, deviceToken?: string | null) =>
+  login: (email: string, password: string, deviceToken?: string | null, turnstileToken?: string) =>
     api
-      .post<LoginResponse>('/auth/login', { email, password, device_token: deviceToken ?? undefined })
+      .post<LoginResponse>('/auth/login', {
+        email,
+        password,
+        device_token: deviceToken ?? undefined,
+        turnstile_token: turnstileToken,
+      })
       .then((r) => r.data),
 
   completeTwoFactor: (tempToken: string, code: string, trustDevice = true) =>
@@ -46,8 +52,13 @@ export const authService = {
 
   resendVerification: () => api.post('/auth/resend-verification').then((r) => r.data),
 
-  forgotPassword: (email: string) =>
-    api.post<{ detail: string }>('/auth/forgot-password', { email }).then((r) => r.data),
+  forgotPassword: (email: string, turnstileToken?: string) =>
+    api
+      .post<{ detail: string }>('/auth/forgot-password', {
+        email,
+        turnstile_token: turnstileToken,
+      })
+      .then((r) => r.data),
 
   resetPassword: (token: string, newPassword: string) =>
     api

@@ -11,6 +11,7 @@ from app.schemas.user import (
     UserResponse,
 )
 from app.services.platform_settings_service import get_settings as get_platform_settings
+from app.utils.crypto import decrypt
 from app.utils.security import create_access_token, hash_refresh_token
 from app.utils.time import utcnow
 
@@ -82,7 +83,7 @@ def user_to_response(user: User) -> UserResponse:
         is_admin=user.is_admin or False,
         is_paused=user.is_paused or False,
         is_restricted=user.is_restricted or False,
-        cpf=user.cpf,
+        cpf=decrypt(user.cpf) if user.cpf else None,
         identity_status=user.identity_status or "none",
         average_rating=user.reputation.average_rating,
         rating_count=user.reputation.rating_count,
@@ -97,7 +98,11 @@ def user_to_response(user: User) -> UserResponse:
         if user.business_profile
         else None,
         trade_name=user.business_profile.trade_name if user.business_profile else None,
-        cnpj=user.business_profile.cnpj if user.business_profile else None,
+        cnpj=(
+            decrypt(user.business_profile.cnpj)
+            if user.business_profile and user.business_profile.cnpj
+            else None
+        ),
         business_category=(
             user.business_profile.business_category if user.business_profile else None
         ),

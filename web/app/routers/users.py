@@ -59,6 +59,7 @@ from app.services.auth_service import (
 )
 from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils import errors
+from app.utils.crypto import digits_hash, encrypt
 from app.utils.time import utcnow
 from app.utils.validators import normalize_digits
 
@@ -104,12 +105,14 @@ def update_profile(data: UserUpdate, current_user: User = Depends(get_current_us
             k: updates.pop(k) for k in list(updates) if k in _BUSINESS_PROFILE_FIELDS
         }
         if business_updates:
-            current_user.update(
-                **{
-                    f"set__business_profile__{k}": v
-                    for k, v in business_updates.items()
-                }
-            )
+            dotted_updates = {}
+            for k, v in business_updates.items():
+                if k == "cnpj":
+                    dotted_updates["set__business_profile__cnpj"] = encrypt(v)
+                    dotted_updates["set__business_profile__cnpj_hash"] = digits_hash(v)
+                else:
+                    dotted_updates[f"set__business_profile__{k}"] = v
+            current_user.update(**dotted_updates)
         updates["updated_at"] = utcnow()
         current_user.update(**updates)
         current_user.reload()

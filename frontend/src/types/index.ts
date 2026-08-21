@@ -390,6 +390,8 @@ export interface PlatformSettings {
   refresh_token_expire_days: number
   email_verification_expire_hours: number
   login_rate_limit_per_minute: number
+  login_max_attempts: number
+  login_lockout_minutes: number
   register_rate_limit_per_minute: number
   complete_2fa_rate_limit_per_minute: number
   refresh_rate_limit_per_minute: number

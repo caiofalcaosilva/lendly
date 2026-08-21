@@ -9,7 +9,11 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<{ requires_2fa: boolean; temp_token?: string }>
+  login: (
+    email: string,
+    password: string,
+    turnstileToken?: string,
+  ) => Promise<{ requires_2fa: boolean; temp_token?: string }>
   register: (data: RegisterData) => Promise<void>
   completeTwoFactor: (tempToken: string, code: string, trustDevice?: boolean) => Promise<void>
   loginWithTokens: (accessToken: string, refreshToken: string, user: User, deviceToken: string) => void
@@ -98,9 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, turnstileToken?: string) => {
     const deviceToken = localStorage.getItem('lendly_device')
-    const data = await authService.login(email, password, deviceToken)
+    const data = await authService.login(email, password, deviceToken, turnstileToken)
 
     if (data.requires_2fa) {
       return { requires_2fa: true, temp_token: data.temp_token }

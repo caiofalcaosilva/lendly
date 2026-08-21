@@ -49,13 +49,21 @@ class TermsAcceptance(EmbeddedDocument):
 
 class BusinessProfile(EmbeddedDocument):
     """Only present when account_type="business" — an individual account
-    has no business_profile at all, not one with blank fields. cnpj's
-    unique+sparse index lives on User.meta['indexes'] as a nested path,
-    same reason as GoogleConnection.google_id."""
+    has no business_profile at all, not one with blank fields.
+
+    cnpj is encrypted at rest (app/utils/crypto.py) — LGPD-sensitive PII,
+    same treatment as User.cpf. Fernet ciphertext isn't deterministic (two
+    encryptions of the same CNPJ differ), so it can't carry the uniqueness
+    constraint itself: cnpj_hash (a deterministic SHA-256 blind index, see
+    app/utils/crypto.py::digits_hash) does that instead, and is what
+    every exact-match lookup filters on. Its unique+sparse index lives on
+    User.meta['indexes'] as a nested path, same reason as
+    GoogleConnection.google_id."""
 
     company_name = StringField(max_length=150)
     trade_name = StringField(max_length=150)
-    cnpj = StringField(max_length=18)
+    cnpj = StringField()
+    cnpj_hash = StringField()
     business_category = StringField(max_length=100)
     business_phone = StringField(max_length=20)
     business_hours = StringField(max_length=200)
@@ -104,6 +112,16 @@ class ReputationStats(EmbeddedDocument):
     avg_response_minutes = FloatField()
     response_count = IntField(default=0)
     finished_loans_count = IntField(default=0)
+
+
+class LoginLockout(EmbeddedDocument):
+    """Per-account brute-force guard, separate from the IP-based rate
+    limit on POST /auth/login (which a distributed attacker can just
+    route around) — failed_attempts resets to 0 on any successful login;
+    locked_until is only set once the platform-configured max is hit."""
+
+    failed_attempts = IntField(default=0)
+    locked_until = DateTimeField()
 
 
 class NotificationPreferences(EmbeddedDocument):
@@ -188,7 +206,11 @@ class User(Document):
     admin_status_changed_at = DateTimeField()
     account_type = StringField(default="individual", choices=["individual", "business"])
     business_profile = EmbeddedDocumentField(BusinessProfile)
-    cpf = StringField(max_length=14, sparse=True, unique=True)
+    # Encrypted at rest, same reasoning/pattern as BusinessProfile.cnpj —
+    # cpf_hash (below, in meta.indexes) carries the unique+sparse
+    # constraint and every exact-match lookup instead.
+    cpf = StringField(sparse=True)
+    cpf_hash = StringField(sparse=True, unique=True)
     identity_status = StringField(
         default="none", choices=["none", "pending", "approved", "rejected"]
     )
@@ -211,6 +233,7 @@ class User(Document):
     )
     favorites = ListField(ReferenceField("Item"), default=list)
     reputation = EmbeddedDocumentField(ReputationStats, default=ReputationStats)
+    login_lockout = EmbeddedDocumentField(LoginLockout, default=LoginLockout)
     created_at = DateTimeField(default=utcnow)
     updated_at = DateTimeField(default=utcnow)
 
@@ -233,7 +256,7 @@ class User(Document):
                 "sparse": True,
             },
             {
-                "fields": ["business_profile.cnpj"],
+                "fields": ["business_profile.cnpj_hash"],
                 "unique": True,
                 "sparse": True,
             },

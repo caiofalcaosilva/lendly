@@ -8,6 +8,8 @@ class PlatformSettingsUpdate(BaseModel):
     refresh_token_expire_days: int | None = Field(None, ge=1)
     email_verification_expire_hours: int | None = Field(None, ge=1)
     login_rate_limit_per_minute: int | None = Field(None, ge=1)
+    login_max_attempts: int | None = Field(None, ge=1)
+    login_lockout_minutes: int | None = Field(None, ge=1)
     register_rate_limit_per_minute: int | None = Field(None, ge=1)
     complete_2fa_rate_limit_per_minute: int | None = Field(None, ge=1)
     refresh_rate_limit_per_minute: int | None = Field(None, ge=1)
@@ -31,6 +33,8 @@ class PlatformSettingsResponse(BaseModel):
     refresh_token_expire_days: int
     email_verification_expire_hours: int
     login_rate_limit_per_minute: int
+    login_max_attempts: int
+    login_lockout_minutes: int
     register_rate_limit_per_minute: int
     complete_2fa_rate_limit_per_minute: int
     refresh_rate_limit_per_minute: int

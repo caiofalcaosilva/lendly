@@ -31,6 +31,7 @@ class UserCreate(BaseModel):
     instagram: str | None = Field(None, max_length=100)
     whatsapp: str | None = Field(None, max_length=20)
     accepted_terms: bool = False
+    turnstile_token: str | None = None
 
     @model_validator(mode="after")
     def _validate_business_fields(self):
@@ -59,6 +60,7 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
     device_token: str | None = None
+    turnstile_token: str | None = None
 
 
 class AccountDeleteRequest(BaseModel):

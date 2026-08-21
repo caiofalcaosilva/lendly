@@ -16,7 +16,8 @@ import ItemsBannerSlidesManager from '@/components/admin/ItemsBannerSlidesManage
 
 const FIELD_KEYS: (keyof PlatformSettings)[] = [
   'access_token_expire_minutes', 'refresh_token_expire_days', 'email_verification_expire_hours',
-  'login_rate_limit_per_minute', 'register_rate_limit_per_minute', 'complete_2fa_rate_limit_per_minute',
+  'login_rate_limit_per_minute', 'login_max_attempts', 'login_lockout_minutes',
+  'register_rate_limit_per_minute', 'complete_2fa_rate_limit_per_minute',
   'refresh_rate_limit_per_minute', 'resend_verification_rate_limit_per_minute',
   'phone_verification_expire_minutes', 'phone_verification_rate_limit_per_minute',
   'chat_message_rate_limit_per_minute', 'password_reset_rate_limit_per_minute',
@@ -62,6 +63,8 @@ export default function AdminSettingsPage() {
         refresh_token_expire_days: settings.refresh_token_expire_days,
         email_verification_expire_hours: settings.email_verification_expire_hours,
         login_rate_limit_per_minute: settings.login_rate_limit_per_minute,
+        login_max_attempts: settings.login_max_attempts,
+        login_lockout_minutes: settings.login_lockout_minutes,
         register_rate_limit_per_minute: settings.register_rate_limit_per_minute,
         complete_2fa_rate_limit_per_minute: settings.complete_2fa_rate_limit_per_minute,
         refresh_rate_limit_per_minute: settings.refresh_rate_limit_per_minute,

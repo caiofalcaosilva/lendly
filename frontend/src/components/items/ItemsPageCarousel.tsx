@@ -52,7 +52,6 @@ export default function ItemsPageCarousel() {
       alt={t('slideAlt', { number: active + 1 })}
       fill
       className="object-cover"
-      unoptimized
       priority
     />
   )

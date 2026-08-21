@@ -10,11 +10,13 @@ import { authService } from '@/services/auth'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { LogoMark } from '@/components/ui/Logo'
+import Turnstile from '@/components/ui/Turnstile'
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
   const t = useTranslations('ForgotPassword')
 
   const schema = z.object({
@@ -30,7 +32,7 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     setError('')
     try {
-      await authService.forgotPassword(data.email)
+      await authService.forgotPassword(data.email, turnstileToken || undefined)
       setSent(true)
     } catch (e: any) {
       setError(e.response?.data?.detail || t('errors.genericError'))
@@ -75,6 +77,7 @@ export default function ForgotPasswordPage() {
                   placeholder="seu@email.com"
                   required
                 />
+                <Turnstile onToken={setTurnstileToken} />
                 <Button type="submit" loading={loading} className="w-full mt-2">
                   {t('submit')}
                 </Button>

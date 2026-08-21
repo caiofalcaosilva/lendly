@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from fastapi import BackgroundTasks, Request
 from jose import JWTError
 
@@ -25,10 +27,30 @@ from app.services.auth_service._common import (
     new_refresh_session,
     user_to_response,
 )
+from app.services.platform_settings_service import get_settings as get_platform_settings
 from app.utils import errors
 from app.utils.crypto import decrypt
 from app.utils.security import decode_token, hash_refresh_token, verify_password
 from app.utils.time import utcnow
+
+
+def _register_failed_login(user: User) -> None:
+    """Atomic increment, then a separate atomic set for the lockout itself
+    — two writes, not a read-then-write race, since two concurrent wrong
+    guesses could otherwise both read the same pre-increment count and
+    neither would trip the lockout."""
+    updated = User.objects(id=user.id).modify(
+        new=True, inc__login_lockout__failed_attempts=1
+    )
+    if not updated:
+        return
+    max_attempts = get_platform_settings().login_max_attempts
+    if updated.login_lockout.failed_attempts >= max_attempts:
+        lockout_minutes = get_platform_settings().login_lockout_minutes
+        User.objects(id=user.id).update(
+            set__login_lockout__locked_until=utcnow()
+            + timedelta(minutes=lockout_minutes)
+        )
 
 
 def login_user(
@@ -37,6 +59,17 @@ def login_user(
     background_tasks: BackgroundTasks | None = None,
 ) -> LoginResponse:
     user = User.objects(email=data.email, is_active=True).first()
+
+    # Checked before the password itself — a locked account is rejected
+    # regardless of whether the password given happens to be correct.
+    locked_until = user.login_lockout.locked_until if user else None
+    if locked_until and locked_until > utcnow():
+        wait_minutes = max(1, int((locked_until - utcnow()).total_seconds() // 60) + 1)
+        raise errors.too_many_requests(
+            f"Conta temporariamente bloqueada por excesso de tentativas. "
+            f"Tente novamente em {wait_minutes} min."
+        )
+
     # password_hash is absent for Google-only accounts (see auth_service/
     # google.py) — same generic error as a wrong password, not a hint that
     # this account has no password to check.
@@ -45,7 +78,15 @@ def login_user(
         or not user.password_hash
         or not verify_password(data.password, user.password_hash)
     ):
+        if user:
+            _register_failed_login(user)
         raise errors.unauthorized("Invalid credentials")
+
+    if user.login_lockout.failed_attempts:
+        user.update(
+            set__login_lockout__failed_attempts=0,
+            unset__login_lockout__locked_until=1,
+        )
 
     if not user.is_verified:
         raise errors.forbidden(

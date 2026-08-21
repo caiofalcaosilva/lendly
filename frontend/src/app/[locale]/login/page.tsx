@@ -14,6 +14,7 @@ import Spinner from '@/components/ui/Spinner'
 import { LogoMark } from '@/components/ui/Logo'
 import TwoFactorModal from '@/components/auth/TwoFactorModal'
 import GoogleButton from '@/components/auth/GoogleButton'
+import Turnstile from '@/components/ui/Turnstile'
 import { isSafeRedirect } from '@/lib/utils'
 
 function LoginForm() {
@@ -25,6 +26,7 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [tempToken, setTempToken] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
   const t = useTranslations('Login')
   const tGoogle = useTranslations('Common.GoogleButton')
 
@@ -48,7 +50,7 @@ function LoginForm() {
     setLoading(true)
     setError('')
     try {
-      const result = await login(data.email, data.password)
+      const result = await login(data.email, data.password, turnstileToken || undefined)
       if (result.requires_2fa && result.temp_token) {
         setTempToken(result.temp_token)
       } else {
@@ -115,6 +117,7 @@ function LoginForm() {
                 {t('forgotPassword')}
               </Link>
             </div>
+            <Turnstile onToken={setTurnstileToken} />
             <Button type="submit" loading={loading} className="w-full mt-2">
               {t('submit')}
             </Button>

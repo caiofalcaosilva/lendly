@@ -15,6 +15,8 @@ def _to_response(doc: PlatformSettings) -> PlatformSettingsResponse:
         refresh_token_expire_days=doc.refresh_token_expire_days,
         email_verification_expire_hours=doc.email_verification_expire_hours,
         login_rate_limit_per_minute=doc.login_rate_limit_per_minute,
+        login_max_attempts=doc.login_max_attempts,
+        login_lockout_minutes=doc.login_lockout_minutes,
         register_rate_limit_per_minute=doc.register_rate_limit_per_minute,
         complete_2fa_rate_limit_per_minute=doc.complete_2fa_rate_limit_per_minute,
         refresh_rate_limit_per_minute=doc.refresh_rate_limit_per_minute,

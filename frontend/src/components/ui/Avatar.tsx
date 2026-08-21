@@ -22,7 +22,7 @@ export default function Avatar({
   if (avatarUrl) {
     return (
       <div className={`relative ${sizeClasses} rounded-full overflow-hidden flex-shrink-0 ${className}`}>
-        <Image src={avatarUrl} alt={name} fill unoptimized className="object-cover" />
+        <Image src={avatarUrl} alt={name} fill className="object-cover" />
       </div>
     )
   }

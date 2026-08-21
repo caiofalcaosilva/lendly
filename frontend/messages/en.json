@@ -812,6 +812,8 @@
         "refresh_token_expire_days": { "label": "Refresh token duration (days)", "helper": "How long the user stays logged in without needing to sign in again." },
         "email_verification_expire_hours": { "label": "Email verification link expiration (hours)", "helper": "Deadline for the user to click the link before needing a new one." },
         "login_rate_limit_per_minute": { "label": "Login attempt limit per minute", "helper": "Per IP — protects against brute force." },
+        "login_max_attempts": { "label": "Max login attempts per account", "helper": "Locks the specific account after this many wrong passwords in a row." },
+        "login_lockout_minutes": { "label": "Account lockout duration (min)", "helper": "How long the account stays locked after exceeding the limit above." },
         "register_rate_limit_per_minute": { "label": "Registration limit per minute", "helper": "Per IP — protects against account-creation abuse." },
         "complete_2fa_rate_limit_per_minute": { "label": "2FA confirmation limit per minute", "helper": "Per IP — protects against brute-forcing the authenticator code." },
         "refresh_rate_limit_per_minute": { "label": "Session refresh limit per minute", "helper": "Per IP — exchanging a refresh token for a new token pair." },
@@ -1055,6 +1057,7 @@
     }
   },
   "About": {
+    "metaTitle": "About Lendly",
     "badge": "Why Lendly exists",
     "heroTitle": "So borrowing from your neighbor feels more natural than buying",
     "heroSubtitle": "Lendly connects neighbors and local businesses to share, lend, and rent things safely — neighborhood first, always.",
