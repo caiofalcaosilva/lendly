@@ -37,13 +37,6 @@ function formatDistanceLabel(km: number) {
   return km < 1 ? `${Math.round(km * 1000)} m` : `${km} km`
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  tools: '🔧', electronics: '💻', sports: '⚽', garden: '🌱',
-  kitchen: '🍳', books: '📚', toys: '🎮', clothing: '👕',
-  furniture: '🛋️', other: '📦',
-}
-const DEFAULT_CATEGORY_ICON = '📦'
-
 function FilterLabel({ children }: { children: React.ReactNode }) {
   return (
     <span className="block text-[10px] font-semibold uppercase tracking-wide text-ink-subtle mb-1.5">
@@ -128,7 +121,6 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
               <Chip
                 key={c.key}
                 selected={filters.category === c.key}
-                icon={<span className="text-sm leading-none">{CATEGORY_ICONS[c.key] ?? DEFAULT_CATEGORY_ICON}</span>}
                 onClick={() => updateCategory(filters.category === c.key ? '' : c.key)}
               >
                 {c.label}
@@ -291,7 +283,7 @@ export default function ItemFilters({ filters, onChange, userHasLocation, userHa
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-ink-subtle">{t('filters')}</span>
           {filters.category && (() => {
-            const label = `${CATEGORY_ICONS[filters.category] ?? DEFAULT_CATEGORY_ICON} ${categories.find((c) => c.key === filters.category)?.label ?? filters.category}`
+            const label = categories.find((c) => c.key === filters.category)?.label ?? filters.category
             return (
               <Chip tone="subtle" size="xs" onRemove={() => updateCategory('')} removeLabel={t('removeFilter', { label })}>
                 {label}

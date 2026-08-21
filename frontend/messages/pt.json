@@ -1144,7 +1144,7 @@
       "request": "Faça sua primeira solicitação",
       "group": "Entre ou crie um grupo"
     },
-    "greeting": "Olá, {name} 👋",
+    "greeting": "Olá, {name}",
     "ratingCount": "{rating} ({count, plural, one {# avaliação} other {# avaliações}})",
     "listItem": "Anunciar item",
     "cannotConnect": "Não foi possível conectar ao servidor. Verifique se a API está rodando em {url}.",

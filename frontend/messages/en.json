@@ -1144,7 +1144,7 @@
       "request": "Make your first request",
       "group": "Join or create a group"
     },
-    "greeting": "Hi, {name} 👋",
+    "greeting": "Hi, {name}",
     "ratingCount": "{rating} ({count, plural, one {# review} other {# reviews}})",
     "listItem": "List an item",
     "cannotConnect": "Could not connect to the server. Check that the API is running at {url}.",

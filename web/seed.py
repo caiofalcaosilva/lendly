@@ -31,7 +31,7 @@ def post_retrying(url: str, **kwargs) -> requests.Response:
         wait = 13
         with contextlib.suppress(TypeError, ValueError):
             wait = max(wait, int(float(r.headers.get("Retry-After", wait))) + 1)
-        print(f"    ⏳ rate limited, aguardando {wait}s...")
+        print(f"    rate limited, aguardando {wait}s...")
         time.sleep(wait)
 
 
@@ -1543,7 +1543,7 @@ def seed():
         if r.status_code == 201:
             _verify_user_in_db(u["email"])
             tokens.append(r.json()["access_token"])
-            tag = "🏢" if u.get("account_type") == "business" else "  "
+            tag = "B" if u.get("account_type") == "business" else " "
             print(f"  ✓ {tag} {u['name']}")
         elif r.status_code == 409:
             _verify_user_in_db(u["email"])
@@ -1668,7 +1668,7 @@ def seed():
         )
         if r.status_code == 201:
             review_ok += 1
-            print(f"    ★ {req_rating}/5 (solicitante)")
+            print(f"    {req_rating}/5 (solicitante)")
         else:
             print(f"    ✗ review solicitante: {r.status_code} {r.text[:60]}")
 
@@ -1683,7 +1683,7 @@ def seed():
         )
         if r.status_code == 201:
             review_ok += 1
-            print(f"    ★ {owner_rating}/5 (dono)")
+            print(f"    {owner_rating}/5 (dono)")
         else:
             print(f"    ✗ review dono: {r.status_code} {r.text[:60]}")
 
