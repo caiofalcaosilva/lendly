@@ -892,6 +892,7 @@
         "verification": "Verification",
         "group": "Group",
         "report": "Report",
+        "claim": "Claim",
         "account": "Account",
         "admin": "Admin"
       },
@@ -1350,6 +1351,7 @@
       "verification": "Verification",
       "group": "Group",
       "report": "Report",
+      "claim": "Claim",
       "account": "Account",
       "admin": "Admin"
     },
