@@ -27,6 +27,9 @@ interface NotificationsContextType {
   /** Bulk-deletes every already-read notification. Unread ones are never
    * touched by this, on either side — see the backend's clear_read_notifications. */
   clearRead: () => void
+  /** TEMPORARY — Badging API diagnostic, see NotificationBell's debug block.
+   * Remove both once the Android app-icon-badge investigation is closed. */
+  badgeDebug: string
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null)
@@ -120,13 +123,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   // (installed PWA only) — Badging API, unsupported browsers just no-op.
   // Only reflects reality while this tab's WebSocket is connected; there's
   // no push channel to update it once the app is closed.
+  const [badgeDebug, setBadgeDebug] = useState('')
   useEffect(() => {
-    if (!('setAppBadge' in navigator)) return
-    if (unreadCount > 0) {
-      navigator.setAppBadge(unreadCount).catch(() => {})
-    } else {
-      navigator.clearAppBadge().catch(() => {})
+    const supported = 'setAppBadge' in navigator
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+    const base = `supported=${supported} standalone=${standalone} ua=${navigator.userAgent}`
+    if (!supported) {
+      setBadgeDebug(`${base} | not called (unsupported)`)
+      return
     }
+    const call = unreadCount > 0 ? navigator.setAppBadge(unreadCount) : navigator.clearAppBadge()
+    call
+      .then(() => setBadgeDebug(`${base} | setAppBadge(${unreadCount}) OK`))
+      .catch((e) => setBadgeDebug(`${base} | setAppBadge(${unreadCount}) ERROR: ${e}`))
   }, [unreadCount])
 
   const markAllRead = useCallback(() => {
@@ -162,7 +171,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   return (
     <NotificationsContext.Provider
-      value={{ notifications, unreadCount, markAllRead, markRead, deleteNotification, clearRead }}
+      value={{ notifications, unreadCount, markAllRead, markRead, deleteNotification, clearRead, badgeDebug }}
     >
       {children}
     </NotificationsContext.Provider>

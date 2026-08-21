@@ -4,12 +4,14 @@ import { Link } from '@/i18n/navigation'
 import { Bell } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useNotifications } from '@/contexts/NotificationsContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { formatDate } from '@/lib/utils'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { cn } from '@/lib/utils'
 
 export default function NotificationBell({ className }: { className?: string }) {
-  const { notifications, unreadCount, markAllRead } = useNotifications()
+  const { notifications, unreadCount, markAllRead, badgeDebug } = useNotifications()
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const locale = useLocale() as 'pt' | 'en'
@@ -105,6 +107,15 @@ export default function NotificationBell({ className }: { className?: string }) 
           >
             {t('viewAll')}
           </Link>
+
+          {/* TEMPORARY — Badging API diagnostic while investigating the
+              Android app-icon badge. Remove once closed, along with
+              badgeDebug in NotificationsContext.tsx. */}
+          {user?.email === 'caiofalcaosilva@gmail.com' && badgeDebug && (
+            <p className="px-3.5 py-2 text-[10px] font-mono text-ink-subtle border-t border-border break-all flex-shrink-0">
+              {badgeDebug}
+            </p>
+          )}
         </div>
       )}
     </div>
