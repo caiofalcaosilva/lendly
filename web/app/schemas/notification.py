@@ -23,3 +23,17 @@ class MarkAllReadResponse(BaseModel):
 
 class ClearReadResponse(BaseModel):
     cleared: int
+
+
+class PushSubscriptionKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscribeRequest(BaseModel):
+    endpoint: str
+    keys: PushSubscriptionKeys
+
+
+class PushUnsubscribeRequest(BaseModel):
+    endpoint: str

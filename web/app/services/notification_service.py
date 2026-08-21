@@ -1,9 +1,10 @@
 from fastapi import BackgroundTasks
 
 from app.models.notification import Notification
-from app.models.user import InAppNotificationPreferences, User
-from app.schemas.notification import NotificationResponse
+from app.models.user import InAppNotificationPreferences, PushSubscription, User
+from app.schemas.notification import NotificationResponse, PushSubscribeRequest
 from app.schemas.user import InAppNotificationPreferencesUpdate, UserResponse
+from app.services import push_service
 from app.services.auth_service import user_to_response
 from app.utils import errors
 from app.utils.notifications import is_security_category, should_notify_inapp
@@ -45,6 +46,7 @@ async def create_notification(
         str(recipient.id),
         {"kind": "notification", **_to_response(notif).model_dump(mode="json")},
     )
+    push_service.send_push(recipient, title, body, link)
 
 
 async def _broadcast_sync(user: User, payload: dict) -> None:
@@ -172,3 +174,21 @@ def update_inapp_prefs(
     current_user.update(inapp_notification_prefs=merged, updated_at=utcnow())
     current_user.reload()
     return user_to_response(current_user)
+
+
+def push_subscribe(data: PushSubscribeRequest, current_user: User) -> None:
+    """Adds this device to the user's push subscriptions, replacing any
+    existing entry with the same endpoint (the browser re-subscribing —
+    keys can rotate — rather than a genuinely new device)."""
+    kept = [s for s in current_user.push_subscriptions if s.endpoint != data.endpoint]
+    kept.append(
+        PushSubscription(
+            endpoint=data.endpoint, p256dh=data.keys.p256dh, auth=data.keys.auth
+        )
+    )
+    current_user.update(push_subscriptions=kept, updated_at=utcnow())
+
+
+def push_unsubscribe(endpoint: str, current_user: User) -> None:
+    kept = [s for s in current_user.push_subscriptions if s.endpoint != endpoint]
+    current_user.update(push_subscriptions=kept, updated_at=utcnow())

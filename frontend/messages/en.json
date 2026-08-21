@@ -625,7 +625,8 @@
       "unreadStatus": "{count} unread notifications",
       "title": "Notifications",
       "empty": "No notifications yet.",
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "enablePush": "Enable notifications on this device"
     },
     "LocationMapPicker": {
       "hint": "Drag the pin (or tap the map) to mark the exact spot.",

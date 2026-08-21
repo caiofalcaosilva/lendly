@@ -15,6 +15,8 @@ from app.schemas.notification import (
     ClearReadResponse,
     MarkAllReadResponse,
     NotificationResponse,
+    PushSubscribeRequest,
+    PushUnsubscribeRequest,
     UnreadCountResponse,
 )
 from app.schemas.user import InAppNotificationPreferencesUpdate, UserResponse
@@ -112,6 +114,23 @@ def update_preferences(
     """Toggles which categories show up in the bell — independent from the
     email preferences in PUT /users/me/notification-preferences."""
     return notification_service.update_inapp_prefs(data, current_user)
+
+
+@router.post("/push-subscribe", status_code=204)
+def push_subscribe(
+    data: PushSubscribeRequest, current_user: User = Depends(get_current_user)
+):
+    """Registers this device/browser for Web Push — inert (still 204s)
+    until VAPID_PRIVATE_KEY is configured server-side, same as the rest
+    of the notification pipeline."""
+    notification_service.push_subscribe(data, current_user)
+
+
+@router.post("/push-unsubscribe", status_code=204)
+def push_unsubscribe(
+    data: PushUnsubscribeRequest, current_user: User = Depends(get_current_user)
+):
+    notification_service.push_unsubscribe(data.endpoint, current_user)
 
 
 @router.websocket("/ws")

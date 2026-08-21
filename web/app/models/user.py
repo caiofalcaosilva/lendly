@@ -25,6 +25,13 @@ class RefreshSession(EmbeddedDocument):
     user_agent = StringField(max_length=300)
 
 
+class PushSubscription(EmbeddedDocument):
+    endpoint = StringField(required=True)
+    p256dh = StringField(required=True)
+    auth = StringField(required=True)
+    created_at = DateTimeField(default=utcnow)
+
+
 class GoogleConnection(EmbeddedDocument):
     """Google's own stable user id ("sub" claim) plus connect-flow
     bookkeeping — set only for accounts that signed up or linked via
@@ -235,6 +242,9 @@ class User(Document):
     totp_enabled = BooleanField(default=False)
     trusted_devices = ListField(StringField(), default=list)
     refresh_sessions = ListField(EmbeddedDocumentField(RefreshSession), default=list)
+    push_subscriptions = ListField(
+        EmbeddedDocumentField(PushSubscription), default=list
+    )
     notification_prefs = EmbeddedDocumentField(
         NotificationPreferences, default=NotificationPreferences
     )

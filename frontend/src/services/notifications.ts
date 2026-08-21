@@ -25,4 +25,13 @@ export const notificationsService = {
 
   updatePreferences: (data: Partial<InAppNotificationPreferences>) =>
     api.put<User>('/notifications/preferences', data).then((r) => r.data),
+
+  pushSubscribe: (subscription: PushSubscriptionJSON) =>
+    api.post('/notifications/push-subscribe', {
+      endpoint: subscription.endpoint,
+      keys: subscription.keys,
+    }),
+
+  pushUnsubscribe: (endpoint: string) =>
+    api.post('/notifications/push-unsubscribe', { endpoint }),
 }

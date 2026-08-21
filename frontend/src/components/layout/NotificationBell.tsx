@@ -4,22 +4,12 @@ import { Link } from '@/i18n/navigation'
 import { Bell } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useNotifications } from '@/contexts/NotificationsContext'
-import { useAuth } from '@/contexts/AuthContext'
 import { formatDate } from '@/lib/utils'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { cn } from '@/lib/utils'
 
 export default function NotificationBell({ className }: { className?: string }) {
-  const {
-    notifications,
-    unreadCount,
-    markAllRead,
-    badgeDebug,
-    lastNonzeroBadgeDebug,
-    requestSystemNotificationPermission,
-    lastNotificationCtorError,
-  } = useNotifications()
-  const { user } = useAuth()
+  const { notifications, unreadCount, markAllRead, pushStatus, subscribeToPush } = useNotifications()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const locale = useLocale() as 'pt' | 'en'
@@ -116,26 +106,14 @@ export default function NotificationBell({ className }: { className?: string }) 
             {t('viewAll')}
           </Link>
 
-          {/* TEMPORARY — Badging API diagnostic while investigating the
-              Android app-icon badge. Remove once closed, along with
-              badgeDebug/lastNonzeroBadgeDebug in NotificationsContext.tsx. */}
-          {user?.email === 'caiofalcaosilva@gmail.com' && (
-            <div className="px-3.5 py-3 text-xs font-mono text-white bg-black border-t-4 border-yellow-400 break-all flex-shrink-0 space-y-2">
-              <p>LIVE: {badgeDebug || '(vazio — effect ainda não rodou)'}</p>
-              <p className="text-yellow-300">ÚLTIMA COM CONTAGEM &gt; 0: {lastNonzeroBadgeDebug}</p>
-              <p className="text-red-400">ERRO DO new Notification(): {lastNotificationCtorError}</p>
-              <p>
-                Permissão de notificação:{' '}
-                {typeof Notification !== 'undefined' ? Notification.permission : '(API indisponível)'}
-              </p>
-              <button
-                type="button"
-                onClick={requestSystemNotificationPermission}
-                className="underline text-yellow-300"
-              >
-                Pedir permissão de notificação
-              </button>
-            </div>
+          {pushStatus === 'unsubscribed' && (
+            <button
+              type="button"
+              onClick={subscribeToPush}
+              className="block w-full px-3.5 py-2.5 text-center text-xs font-medium text-ink-muted hover:text-ink hover:bg-surface-2 border-t border-border transition-colors flex-shrink-0"
+            >
+              {t('enablePush')}
+            </button>
           )}
         </div>
       )}

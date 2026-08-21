@@ -13,6 +13,17 @@ function wsUrl(token: string) {
   return `${base}/notifications/ws?token=${encodeURIComponent(token)}`
 }
 
+// applicationServerKey needs raw bytes, not the base64url string the
+// backend/env var carries.
+function urlBase64ToUint8Array(base64: string) {
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4)
+  const base64Safe = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(base64Safe)
+  return Uint8Array.from(Array.from(raw).map((c) => c.charCodeAt(0)))
+}
+
+type PushStatus = 'unsupported' | 'unsubscribed' | 'subscribed'
+
 interface NotificationsContextType {
   notifications: AppNotification[]
   unreadCount: number
@@ -27,21 +38,12 @@ interface NotificationsContextType {
   /** Bulk-deletes every already-read notification. Unread ones are never
    * touched by this, on either side — see the backend's clear_read_notifications. */
   clearRead: () => void
-  /** TEMPORARY — Badging API diagnostic, see NotificationBell's debug block.
-   * Remove both once the Android app-icon-badge investigation is closed. */
-  badgeDebug: string
-  /** TEMPORARY — persisted separately since opening the bell (which is
-   * the only place badgeDebug is shown) always zeroes unreadCount first. */
-  lastNonzeroBadgeDebug: string
-  /** TEMPORARY — testing whether a real OS notification gives Android's
-   * launcher the "hook" it needs to actually render the app-icon badge
-   * (setAppBadge alone doesn't, per investigation). No Service Worker —
-   * only fires while this tab is open, unlike real Web Push. */
-  requestSystemNotificationPermission: () => void
-  /** TEMPORARY — last error thrown by `new Notification(...)`, if any
-   * (e.g. Android Chrome's "Illegal constructor, use
-   * ServiceWorkerRegistration.showNotification()"). */
-  lastNotificationCtorError: string
+  /** 'unsupported' when the browser has no Push API (or no VAPID key is
+   * configured), 'unsubscribed'/'subscribed' otherwise. */
+  pushStatus: PushStatus
+  /** Requests notification permission and subscribes this device/browser
+   * to Web Push — no-ops if pushStatus is 'unsupported'. */
+  subscribeToPush: () => void
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null)
@@ -131,68 +133,48 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     document.title = unreadCount > 0 ? `(${unreadCount > 99 ? '99+' : unreadCount}) ${base}` : base
   }, [unreadCount])
 
-  // Same idea as the tab title above, but on the home-screen app icon
-  // (installed PWA only) — Badging API, unsupported browsers just no-op.
-  // Only reflects reality while this tab's WebSocket is connected; there's
-  // no push channel to update it once the app is closed.
-  // Reading this by opening the bell always clears unreadCount first
-  // (markAllRead above), so a live value here can never actually show a
-  // >0 attempt — it's always already been zeroed by the time it's read.
-  // Persisting the last >0 attempt to localStorage sidesteps that: it
-  // survives both the immediate clear and the app being backgrounded/
-  // reopened, so it still shows what really happened at notification time.
-  const [badgeDebug, setBadgeDebug] = useState('')
+  // Home-screen app icon badge on installed PWAs — Badging API,
+  // unsupported browsers just no-op. Only reflects reality while this
+  // tab's WebSocket is connected (no push channel updates it once the
+  // app is closed) — the real Web Push subscription below is what makes
+  // a fresh notification arrive (and re-set this) even while closed.
   useEffect(() => {
-    const supported = 'setAppBadge' in navigator
-    const standalone = window.matchMedia('(display-mode: standalone)').matches
-    const base = `supported=${supported} standalone=${standalone} ua=${navigator.userAgent}`
-    if (!supported) {
-      setBadgeDebug(`${base} | not called (unsupported)`)
-      return
+    if (!('setAppBadge' in navigator)) return
+    if (unreadCount > 0) {
+      navigator.setAppBadge(unreadCount).catch(() => {})
+    } else {
+      navigator.clearAppBadge().catch(() => {})
     }
-    const call = unreadCount > 0 ? navigator.setAppBadge(unreadCount) : navigator.clearAppBadge()
-    call
-      .then(() => {
-        const result = `${base} | ${unreadCount > 0 ? 'setAppBadge' : 'clearAppBadge'}(${unreadCount}) OK @ ${new Date().toLocaleTimeString()}`
-        if (unreadCount > 0) localStorage.setItem('lendly_badge_debug_last_nonzero', result)
-        setBadgeDebug(result)
-      })
-      .catch((e) => {
-        const result = `${base} | ${unreadCount > 0 ? 'setAppBadge' : 'clearAppBadge'}(${unreadCount}) ERROR: ${e} @ ${new Date().toLocaleTimeString()}`
-        if (unreadCount > 0) localStorage.setItem('lendly_badge_debug_last_nonzero', result)
-        setBadgeDebug(result)
-      })
   }, [unreadCount])
 
-  // TEMPORARY — fires a real OS notification (no Service Worker, only
-  // while this tab is open) for every unread notification not already
-  // notified this session, whether it arrived via the initial resync
-  // (app just opened with pre-existing unread ones) or live over the
-  // WebSocket. Testing whether Android needs a real notification to give
-  // the app-icon badge something to attach to.
-  const notifiedIdsRef = useRef<Set<string>>(new Set())
+  // Service Worker registration — Web Push only (see public/sw.js): no
+  // fetch handler, doesn't cache or intercept anything.
+  const [pushStatus, setPushStatus] = useState<PushStatus>('unsupported')
   useEffect(() => {
-    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-    for (const n of notifications) {
-      if (!n.read_at && !notifiedIdsRef.current.has(n.id)) {
-        notifiedIdsRef.current.add(n.id)
-        // Android Chrome throws (not just rejects) on the bare constructor
-        // without a Service Worker — "Illegal constructor, use
-        // ServiceWorkerRegistration.showNotification() instead" — so this
-        // must be a hard try/catch, not left to bubble into the render tree.
-        try {
-          new Notification(n.title, { body: n.body || undefined, icon: '/icons/icon-192.png', tag: n.id })
-        } catch (e) {
-          localStorage.setItem('lendly_notification_ctor_error', String(e))
-        }
-      }
-    }
-  }, [notifications])
+    if (!isAuthenticated) return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return
 
-  const requestSystemNotificationPermission = useCallback(() => {
-    if (typeof Notification === 'undefined') return
-    Notification.requestPermission()
-  }, [])
+    navigator.serviceWorker.register('/sw.js').then(async (registration) => {
+      const existing = await registration.pushManager.getSubscription()
+      setPushStatus(existing ? 'subscribed' : 'unsubscribed')
+    })
+  }, [isAuthenticated])
+
+  const subscribeToPush = useCallback(() => {
+    if (pushStatus === 'unsupported') return
+    Notification.requestPermission().then((permission) => {
+      if (permission !== 'granted') return
+      navigator.serviceWorker.ready.then(async (registration) => {
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+        })
+        await notificationsService.pushSubscribe(subscription.toJSON())
+        setPushStatus('subscribed')
+      })
+    })
+  }, [pushStatus])
 
   const markAllRead = useCallback(() => {
     if (unreadCountRef.current === 0) return
@@ -234,12 +216,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         markRead,
         deleteNotification,
         clearRead,
-        badgeDebug,
-        lastNonzeroBadgeDebug:
-          typeof window !== 'undefined' ? localStorage.getItem('lendly_badge_debug_last_nonzero') || '(nenhuma ainda)' : '',
-        requestSystemNotificationPermission,
-        lastNotificationCtorError:
-          typeof window !== 'undefined' ? localStorage.getItem('lendly_notification_ctor_error') || '(nenhum)' : '',
+        pushStatus,
+        subscribeToPush,
       }}
     >
       {children}

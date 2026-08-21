@@ -89,6 +89,17 @@ class Settings(BaseSettings):
     # are private and served via a presigned URL instead.
     R2_PUBLIC_URL: str = ""
 
+    # Web Push (browser system notifications + app-icon badge on
+    # installed PWAs) — see app/services/push_service.py. Blank by
+    # default, same "inert until filled in" pattern as above: no push is
+    # ever sent, the frontend's subscribe button just no-ops. Generate a
+    # key pair with `vapid --gen` (from the pywebpush package) or the
+    # equivalent — VAPID_PUBLIC_KEY is also needed client-side as
+    # NEXT_PUBLIC_VAPID_PUBLIC_KEY (frontend/.env.example).
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_CLAIMS_EMAIL: str = "mailto:contato@lendly.com.br"
+
     model_config = {"env_file": ".env"}
 
 
