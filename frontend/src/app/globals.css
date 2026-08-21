@@ -81,7 +81,11 @@
 
 @layer base {
   body {
-    @apply bg-bg text-ink antialiased;
+    /* Safety net — a single off-screen element (e.g. a positioned tooltip
+       near a screen edge) shouldn't be able to make the whole page
+       horizontally scrollable. Real fixes still belong at the source;
+       this only guards against the page itself ever scrolling sideways. */
+    @apply bg-bg text-ink antialiased overflow-x-hidden;
   }
 }
 

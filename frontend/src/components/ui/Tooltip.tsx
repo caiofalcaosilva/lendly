@@ -8,7 +8,7 @@ export default function Tooltip({ label, children, className }: { label: string;
       {children}
       <span
         role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 text-xs text-bg opacity-0 transition-opacity group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100"
+        className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 max-w-[min(80vw,220px)] whitespace-normal text-center rounded-md bg-ink px-2.5 py-1 text-xs text-bg opacity-0 transition-opacity group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100"
       >
         {label}
       </span>
