@@ -112,7 +112,8 @@
     "ItemsPageCarousel": {
       "previousSlide": "Slide anterior",
       "nextSlide": "Próximo slide",
-      "goToSlide": "Ir para o slide {number}"
+      "goToSlide": "Ir para o slide {number}",
+      "slideAlt": "Banner promocional {number}"
     },
     "ImageLightbox": {
       "close": "Fechar"
@@ -162,7 +163,8 @@
       "makeCover": "Tornar capa",
       "removePhoto": "Remover foto",
       "addPhoto": "Adicionar foto",
-      "uploadError": "Erro ao enviar foto"
+      "uploadError": "Erro ao enviar foto",
+      "photoAlt": "Foto {number} do item"
     },
     "ItemForm": {
       "errors": {
@@ -696,6 +698,7 @@
       "loginToRequest": "Entrar para solicitar",
       "temporarilyUnavailable": "Item temporariamente indisponível",
       "availableAround": "Este item deve ficar disponível novamente em {date}",
+      "howToGetThere": "Como chegar",
       "cancelNotify": "Cancelar aviso",
       "notifyWhenAvailable": "Avise-me quando disponível",
       "requiresVerification": "Esse item exige verificação de identidade aprovada.",
@@ -758,6 +761,7 @@
     "Claims": {
       "title": "Sinistros e garantia",
       "subtitle": "Danos e perdas registrados pelos donos, e o saldo do fundo coletivo formado pela taxa de garantia.",
+      "evidencePhotoAlt": "Foto de evidência {number} do sinistro",
       "collected": "Arrecadado",
       "paidOut": "Pago em sinistros",
       "balance": "Saldo",
@@ -837,7 +841,8 @@
       "removeSlide": "Remover slide",
       "addSlide": "Adicionar slide",
       "linkPlaceholder": "Link (opcional)",
-      "errorUpload": "Erro ao enviar imagem"
+      "errorUpload": "Erro ao enviar imagem",
+      "slideAlt": "Slide {number} do banner"
     },
     "Actions": {
       "title": "Histórico de ações do admin",
@@ -1454,6 +1459,7 @@
       "errorCreating": "Erro ao criar grupo"
     },
     "Id": {
+      "breadcrumbGroups": "Meus grupos",
       "confirmLeave": "Sair deste grupo?",
       "confirmDelete": "Excluir este grupo? Os itens compartilhados só com ele voltam a ser públicos.",
       "confirmAdminDelete": "Excluir este grupo como admin? Os itens compartilhados só com ele voltam a ser públicos.",
@@ -1693,5 +1699,16 @@
       "errorTitle": "Não foi possível entrar",
       "backToLogin": "Voltar ao login"
     }
+  },
+  "NotFound": {
+    "title": "Página não encontrada",
+    "description": "O link pode estar quebrado, ou a página pode ter sido movida ou removida.",
+    "backHome": "Voltar ao início"
+  },
+  "ErrorPage": {
+    "title": "Algo deu errado",
+    "description": "Encontramos um erro inesperado. Você pode tentar de novo, ou voltar ao início.",
+    "retry": "Tentar de novo",
+    "backHome": "Voltar ao início"
   }
 }

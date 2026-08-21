@@ -100,6 +100,19 @@ app.add_middleware(SlowAPIMiddleware)
 
 
 @app.middleware("http")
+async def security_headers(request: Request, call_next):
+    """Baseline response headers — CSP is deliberately left out: this API
+    only ever returns JSON, and a policy tuned wrong risks breaking a
+    webhook/callback flow for no real benefit here."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    return response
+
+
+@app.middleware("http")
 async def block_view_as_mutations(request: Request, call_next):
     """Blocks every mutating request carrying a view_as token (see
     admin_view_as_service) — keeps that mode strictly read-only."""

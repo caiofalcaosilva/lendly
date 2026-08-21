@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import EmptyState from '@/components/ui/EmptyState'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import ItemCard from '@/components/items/ItemCard'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import Modal from '@/components/ui/Modal'
@@ -415,6 +416,13 @@ export default function GroupDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <Breadcrumbs
+        items={[
+          { label: t('breadcrumbGroups'), href: '/groups' },
+          { label: group.name },
+        ]}
+      />
+
       <div className="bg-surface rounded-panel border border-border p-6 mb-8">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">

@@ -1,5 +1,18 @@
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days — unrelated to the JWT's own exp, just cookie lifetime
 
+// This cookie only ever holds a presence check for Next's Edge Middleware
+// (middleware.ts) to redirect logged-out visitors away from protected
+// routes before hydration — middleware runs server-side and has no access
+// to localStorage, which is where the real token lives and is actually
+// used (Authorization header, see lib/api.ts). Can't be HttpOnly (only a
+// Set-Cookie response header can set that, and this is set from JS on
+// purpose); `Secure` is still worth attaching whenever the page is
+// actually served over https.
+function cookieAttrs() {
+  const secure = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  return `path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax${secure ? '; Secure' : ''}`
+}
+
 export function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null
   return localStorage.getItem('lendly_token')
@@ -13,7 +26,7 @@ export function getRefreshToken(): string | null {
 export function setTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem('lendly_token', accessToken)
   localStorage.setItem('lendly_refresh_token', refreshToken)
-  document.cookie = `lendly_token=${accessToken}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`
+  document.cookie = `lendly_token=${accessToken}; ${cookieAttrs()}`
 }
 
 export function clearTokens() {
@@ -35,7 +48,7 @@ export function startViewAs(viewAsAccessToken: string, targetUserId: string) {
   if (adminToken) localStorage.setItem(VIEW_AS_ADMIN_TOKEN_KEY, adminToken)
   localStorage.setItem(VIEW_AS_TARGET_KEY, targetUserId)
   localStorage.setItem('lendly_token', viewAsAccessToken)
-  document.cookie = `lendly_token=${viewAsAccessToken}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`
+  document.cookie = `lendly_token=${viewAsAccessToken}; ${cookieAttrs()}`
   // AuthContext hydrates `user` synchronously from this cache before its
   // fresh /users/me call resolves — leaving the admin's own cached object
   // here would make that first render see the wrong identity and trip
@@ -48,7 +61,7 @@ export function exitViewAs() {
   const adminToken = localStorage.getItem(VIEW_AS_ADMIN_TOKEN_KEY)
   if (adminToken) {
     localStorage.setItem('lendly_token', adminToken)
-    document.cookie = `lendly_token=${adminToken}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`
+    document.cookie = `lendly_token=${adminToken}; ${cookieAttrs()}`
   }
   localStorage.removeItem(VIEW_AS_ADMIN_TOKEN_KEY)
   localStorage.removeItem(VIEW_AS_TARGET_KEY)

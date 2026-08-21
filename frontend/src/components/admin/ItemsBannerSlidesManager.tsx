@@ -90,7 +90,7 @@ export default function ItemsBannerSlidesManager() {
           >
             <div className="relative w-32 h-20 rounded-control overflow-hidden border border-border bg-surface-2">
               {/* eslint-disable-next-line @next/next/no-img-element -- admin-uploaded public URL, arbitrary R2/disk host not worth adding to next/image's domain allowlist */}
-              <img src={slide.image_url} alt="" className="w-full h-full object-cover" />
+              <img src={slide.image_url} alt={t('slideAlt', { number: i + 1 })} className="w-full h-full object-cover" />
               <div className="absolute top-1 right-1">
                 <Tooltip label={t('removeSlide')}>
                   <button

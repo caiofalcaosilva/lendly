@@ -74,7 +74,7 @@ export default function ItemPhotoUploader({
             onDrop={() => drop(i)}
             className="group relative w-[90px] h-[90px] rounded-control overflow-hidden border border-border bg-surface-2 cursor-grab active:cursor-grabbing"
           >
-            <Image src={url} alt="" fill unoptimized className="object-cover" />
+            <Image src={url} alt={t('photoAlt', { number: i + 1 })} fill unoptimized className="object-cover" />
             {i === 0 ? (
               <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-primary text-primary-on">
                 {t('cover')}

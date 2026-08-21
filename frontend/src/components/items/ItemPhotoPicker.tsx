@@ -66,7 +66,7 @@ export default function ItemPhotoPicker({
             className="group relative w-[90px] h-[90px] rounded-control overflow-hidden border border-border bg-surface-2 cursor-grab active:cursor-grabbing"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- local blob: preview, next/image can't optimize these */}
-            <img src={src} alt="" className="w-full h-full object-cover" />
+            <img src={src} alt={t('photoAlt', { number: i + 1 })} className="w-full h-full object-cover" />
             {i === 0 ? (
               <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-primary text-primary-on">
                 {t('cover')}

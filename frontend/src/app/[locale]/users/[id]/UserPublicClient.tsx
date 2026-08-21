@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
-import { MapPin, Star, Package, ArrowLeft, Calendar, Clock, Phone, Globe, Flag, Instagram, MessageCircle, Heart } from 'lucide-react'
+import { MapPin, Star, Package, Calendar, Clock, Phone, Globe, Flag, Instagram, MessageCircle, Heart } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { PublicUser, Item, Review } from '@/types'
 import { usersService } from '@/services/users'
@@ -18,6 +18,7 @@ import ReputationBadges from '@/components/ui/ReputationBadges'
 import Badge from '@/components/ui/Badge'
 import ReportModal from '@/components/reports/ReportModal'
 import Avatar from '@/components/ui/Avatar'
+import Breadcrumbs from '@/components/ui/Breadcrumbs'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -107,12 +108,12 @@ export default function UserPublicClient() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <Link
-        href="/items"
-        className="inline-flex items-center gap-2 text-ink-muted hover:text-ink text-sm mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" /> {t('backToItems')}
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: t('backToItems'), href: '/items' },
+          { label: user.trade_name || user.name },
+        ]}
+      />
 
       {/* Profile header */}
       <div className="bg-surface rounded-panel border border-border p-6 mb-8">

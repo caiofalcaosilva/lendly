@@ -112,7 +112,8 @@
     "ItemsPageCarousel": {
       "previousSlide": "Previous slide",
       "nextSlide": "Next slide",
-      "goToSlide": "Go to slide {number}"
+      "goToSlide": "Go to slide {number}",
+      "slideAlt": "Promotional banner {number}"
     },
     "ImageLightbox": {
       "close": "Close"
@@ -162,7 +163,8 @@
       "makeCover": "Make cover",
       "removePhoto": "Remove photo",
       "addPhoto": "Add photo",
-      "uploadError": "Error uploading photo"
+      "uploadError": "Error uploading photo",
+      "photoAlt": "Item photo {number}"
     },
     "ItemForm": {
       "errors": {
@@ -696,6 +698,7 @@
       "loginToRequest": "Log in to request",
       "temporarilyUnavailable": "Item temporarily unavailable",
       "availableAround": "This item should be available again on {date}",
+      "howToGetThere": "Directions",
       "cancelNotify": "Cancel notification",
       "notifyWhenAvailable": "Notify me when available",
       "requiresVerification": "This item requires approved identity verification.",
@@ -758,6 +761,7 @@
     "Claims": {
       "title": "Claims and guarantee",
       "subtitle": "Damage/loss claims filed by owners, and the guarantee pool's balance.",
+      "evidencePhotoAlt": "Claim evidence photo {number}",
       "collected": "Collected",
       "paidOut": "Paid out in claims",
       "balance": "Balance",
@@ -837,7 +841,8 @@
       "removeSlide": "Remove slide",
       "addSlide": "Add slide",
       "linkPlaceholder": "Link (optional)",
-      "errorUpload": "Error uploading image"
+      "errorUpload": "Error uploading image",
+      "slideAlt": "Banner slide {number}"
     },
     "Actions": {
       "title": "Admin action history",
@@ -1454,6 +1459,7 @@
       "errorCreating": "Error creating group"
     },
     "Id": {
+      "breadcrumbGroups": "My groups",
       "confirmLeave": "Leave this group?",
       "confirmDelete": "Delete this group? Items shared only with it become public again.",
       "confirmAdminDelete": "Delete this group as admin? Items shared only with it become public again.",
@@ -1693,5 +1699,16 @@
       "errorTitle": "Couldn't sign in",
       "backToLogin": "Back to login"
     }
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The link might be broken, or the page may have been moved or removed.",
+    "backHome": "Back to home"
+  },
+  "ErrorPage": {
+    "title": "Something went wrong",
+    "description": "We hit an unexpected error. You can try again, or go back to home.",
+    "retry": "Try again",
+    "backHome": "Back to home"
   }
 }

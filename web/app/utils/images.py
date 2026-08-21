@@ -7,6 +7,7 @@ from app.utils import errors
 
 ALLOWED_PHOTO_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_PHOTO_DIMENSION = 1600
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
 
 async def load_and_resize(file: UploadFile) -> Image.Image:
@@ -19,7 +20,11 @@ async def load_and_resize(file: UploadFile) -> Image.Image:
     if file.content_type not in ALLOWED_PHOTO_CONTENT_TYPES:
         raise errors.bad_request("Formato de imagem não suportado")
 
-    raw = await file.read()
+    # Read one byte past the cap so an oversized file is rejected here,
+    # before PIL ever spends CPU/memory decoding it.
+    raw = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise errors.bad_request("Imagem muito grande (máximo 8MB)")
     try:
         Image.open(io.BytesIO(raw)).verify()
         img = Image.open(io.BytesIO(raw)).convert("RGB")

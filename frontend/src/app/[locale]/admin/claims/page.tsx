@@ -218,9 +218,9 @@ export default function AdminClaimsPage() {
 
               {claim.photos.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {claim.photos.map((url) => (
+                  {claim.photos.map((url, i) => (
                     // eslint-disable-next-line @next/next/no-img-element -- evidence photos from R2/disk storage, not next/image-optimized
-                    <img key={url} src={url} alt="" className="w-20 h-20 rounded-control object-cover border border-border" />
+                    <img key={url} src={url} alt={t('evidencePhotoAlt', { number: i + 1 })} className="w-20 h-20 rounded-control object-cover border border-border" />
                   ))}
                 </div>
               )}

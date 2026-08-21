@@ -49,7 +49,7 @@ export default function ItemsPageCarousel() {
   const image = (
     <Image
       src={slide.image_url}
-      alt=""
+      alt={t('slideAlt', { number: active + 1 })}
       fill
       className="object-cover"
       unoptimized

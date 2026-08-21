@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import { Link, useRouter } from '@/i18n/navigation'
 import {
-  MapPin, Star, Tag, Package, AlertTriangle, Edit, Trash2, Flag, BellRing, BellOff, CalendarDays, ShieldCheck, Users,
+  MapPin, Navigation, Star, Tag, Package, AlertTriangle, Edit, Trash2, Flag, BellRing, BellOff, CalendarDays, ShieldCheck, Users,
   ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
@@ -210,7 +210,7 @@ export default function ItemDetailClient() {
                   onClick={() => setActivePhoto(i)}
                   className={`relative w-16 h-16 rounded-control overflow-hidden border-2 transition-colors ${i === activePhoto ? 'border-primary' : 'border-transparent'}`}
                 >
-                  <Image src={photo} alt="" fill className="object-cover" unoptimized />
+                  <Image src={photo} alt={`${item.title} (foto ${i + 1})`} fill className="object-cover" unoptimized />
                 </button>
               ))}
             </div>
@@ -266,6 +266,18 @@ export default function ItemDetailClient() {
             <div className="flex items-center gap-1.5 text-ink-muted text-sm mb-5">
               <MapPin className="w-4 h-4" />
               {[item.neighborhood, item.city].filter(Boolean).join(', ')}
+              <a
+                href={
+                  item.latitude != null && item.longitude != null
+                    ? `https://www.google.com/maps/search/?api=1&query=${item.latitude},${item.longitude}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([item.neighborhood, item.city].filter(Boolean).join(', '))}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:text-primary-hover transition-colors ml-1"
+              >
+                <Navigation className="w-3.5 h-3.5" /> {t('howToGetThere')}
+              </a>
             </div>
           )}
 
