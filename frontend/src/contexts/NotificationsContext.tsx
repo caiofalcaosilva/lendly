@@ -116,6 +116,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     document.title = unreadCount > 0 ? `(${unreadCount > 99 ? '99+' : unreadCount}) ${base}` : base
   }, [unreadCount])
 
+  // Same idea as the tab title above, but on the home-screen app icon
+  // (installed PWA only) — Badging API, unsupported browsers just no-op.
+  // Only reflects reality while this tab's WebSocket is connected; there's
+  // no push channel to update it once the app is closed.
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return
+    if (unreadCount > 0) {
+      navigator.setAppBadge(unreadCount).catch(() => {})
+    } else {
+      navigator.clearAppBadge().catch(() => {})
+    }
+  }, [unreadCount])
+
   const markAllRead = useCallback(() => {
     if (unreadCountRef.current === 0) return
     notificationsService.markAllRead()
