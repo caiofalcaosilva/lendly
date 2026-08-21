@@ -10,7 +10,14 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { cn } from '@/lib/utils'
 
 export default function NotificationBell({ className }: { className?: string }) {
-  const { notifications, unreadCount, markAllRead, badgeDebug, lastNonzeroBadgeDebug } = useNotifications()
+  const {
+    notifications,
+    unreadCount,
+    markAllRead,
+    badgeDebug,
+    lastNonzeroBadgeDebug,
+    requestSystemNotificationPermission,
+  } = useNotifications()
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -115,6 +122,17 @@ export default function NotificationBell({ className }: { className?: string }) 
             <div className="px-3.5 py-3 text-xs font-mono text-white bg-black border-t-4 border-yellow-400 break-all flex-shrink-0 space-y-2">
               <p>LIVE: {badgeDebug || '(vazio — effect ainda não rodou)'}</p>
               <p className="text-yellow-300">ÚLTIMA COM CONTAGEM &gt; 0: {lastNonzeroBadgeDebug}</p>
+              <p>
+                Permissão de notificação:{' '}
+                {typeof Notification !== 'undefined' ? Notification.permission : '(API indisponível)'}
+              </p>
+              <button
+                type="button"
+                onClick={requestSystemNotificationPermission}
+                className="underline text-yellow-300"
+              >
+                Pedir permissão de notificação
+              </button>
             </div>
           )}
         </div>

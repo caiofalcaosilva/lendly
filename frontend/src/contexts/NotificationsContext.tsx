@@ -33,6 +33,11 @@ interface NotificationsContextType {
   /** TEMPORARY — persisted separately since opening the bell (which is
    * the only place badgeDebug is shown) always zeroes unreadCount first. */
   lastNonzeroBadgeDebug: string
+  /** TEMPORARY — testing whether a real OS notification gives Android's
+   * launcher the "hook" it needs to actually render the app-icon badge
+   * (setAppBadge alone doesn't, per investigation). No Service Worker —
+   * only fires while this tab is open, unlike real Web Push. */
+  requestSystemNotificationPermission: () => void
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null)
@@ -155,6 +160,28 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       })
   }, [unreadCount])
 
+  // TEMPORARY — fires a real OS notification (no Service Worker, only
+  // while this tab is open) for every unread notification not already
+  // notified this session, whether it arrived via the initial resync
+  // (app just opened with pre-existing unread ones) or live over the
+  // WebSocket. Testing whether Android needs a real notification to give
+  // the app-icon badge something to attach to.
+  const notifiedIdsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+    for (const n of notifications) {
+      if (!n.read_at && !notifiedIdsRef.current.has(n.id)) {
+        notifiedIdsRef.current.add(n.id)
+        new Notification(n.title, { body: n.body || undefined, icon: '/icons/icon-192.png', tag: n.id })
+      }
+    }
+  }, [notifications])
+
+  const requestSystemNotificationPermission = useCallback(() => {
+    if (typeof Notification === 'undefined') return
+    Notification.requestPermission()
+  }, [])
+
   const markAllRead = useCallback(() => {
     if (unreadCountRef.current === 0) return
     notificationsService.markAllRead()
@@ -198,6 +225,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         badgeDebug,
         lastNonzeroBadgeDebug:
           typeof window !== 'undefined' ? localStorage.getItem('lendly_badge_debug_last_nonzero') || '(nenhuma ainda)' : '',
+        requestSystemNotificationPermission,
       }}
     >
       {children}
