@@ -17,6 +17,7 @@ export default function NotificationBell({ className }: { className?: string }) 
     badgeDebug,
     lastNonzeroBadgeDebug,
     requestSystemNotificationPermission,
+    lastNotificationCtorError,
   } = useNotifications()
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
@@ -122,6 +123,7 @@ export default function NotificationBell({ className }: { className?: string }) 
             <div className="px-3.5 py-3 text-xs font-mono text-white bg-black border-t-4 border-yellow-400 break-all flex-shrink-0 space-y-2">
               <p>LIVE: {badgeDebug || '(vazio — effect ainda não rodou)'}</p>
               <p className="text-yellow-300">ÚLTIMA COM CONTAGEM &gt; 0: {lastNonzeroBadgeDebug}</p>
+              <p className="text-red-400">ERRO DO new Notification(): {lastNotificationCtorError}</p>
               <p>
                 Permissão de notificação:{' '}
                 {typeof Notification !== 'undefined' ? Notification.permission : '(API indisponível)'}

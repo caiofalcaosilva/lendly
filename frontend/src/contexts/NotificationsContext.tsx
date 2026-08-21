@@ -38,6 +38,10 @@ interface NotificationsContextType {
    * (setAppBadge alone doesn't, per investigation). No Service Worker —
    * only fires while this tab is open, unlike real Web Push. */
   requestSystemNotificationPermission: () => void
+  /** TEMPORARY — last error thrown by `new Notification(...)`, if any
+   * (e.g. Android Chrome's "Illegal constructor, use
+   * ServiceWorkerRegistration.showNotification()"). */
+  lastNotificationCtorError: string
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null)
@@ -172,7 +176,15 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     for (const n of notifications) {
       if (!n.read_at && !notifiedIdsRef.current.has(n.id)) {
         notifiedIdsRef.current.add(n.id)
-        new Notification(n.title, { body: n.body || undefined, icon: '/icons/icon-192.png', tag: n.id })
+        // Android Chrome throws (not just rejects) on the bare constructor
+        // without a Service Worker — "Illegal constructor, use
+        // ServiceWorkerRegistration.showNotification() instead" — so this
+        // must be a hard try/catch, not left to bubble into the render tree.
+        try {
+          new Notification(n.title, { body: n.body || undefined, icon: '/icons/icon-192.png', tag: n.id })
+        } catch (e) {
+          localStorage.setItem('lendly_notification_ctor_error', String(e))
+        }
       }
     }
   }, [notifications])
@@ -226,6 +238,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         lastNonzeroBadgeDebug:
           typeof window !== 'undefined' ? localStorage.getItem('lendly_badge_debug_last_nonzero') || '(nenhuma ainda)' : '',
         requestSystemNotificationPermission,
+        lastNotificationCtorError:
+          typeof window !== 'undefined' ? localStorage.getItem('lendly_notification_ctor_error') || '(nenhum)' : '',
       }}
     >
       {children}
