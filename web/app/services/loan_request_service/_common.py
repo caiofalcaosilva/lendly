@@ -44,6 +44,29 @@ def reserved_quantity(
     return sum(r.quantity or 1 for r in qs)
 
 
+def compute_next_available_date(item: Item) -> datetime | None:
+    """When the item should have at least one free unit again, based on
+    requests currently in_progress (the item is actually out right now —
+    not just accepted-but-not-picked-up-yet). None means a unit is free
+    today already, so no notice is needed."""
+    quantity_total = item.quantity_total or 1
+    active = list(
+        LoanRequest.objects(item=item, status="in_progress").order_by(
+            "expected_return_date"
+        )
+    )
+    occupied = sum(r.quantity or 1 for r in active)
+    if occupied < quantity_total:
+        return None
+    freed = 0
+    needed = occupied - quantity_total + 1
+    for req in active:
+        freed += req.quantity or 1
+        if freed >= needed:
+            return req.expected_return_date
+    return None
+
+
 def to_response(req: LoanRequest, viewer: User | None = None) -> LoanRequestResponse:
     claim = Claim.objects(loan_request=req).order_by("-created_at").first()
     has_pending_extension_payment = (

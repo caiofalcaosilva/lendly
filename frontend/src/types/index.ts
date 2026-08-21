@@ -529,6 +529,7 @@ export interface Item {
   requires_identity_verification: boolean
   fulfillment_options: ('pickup' | 'delivery')[]
   quantity_total: number
+  next_available_date?: string | null
   created_at: string
 }
 

@@ -371,6 +371,15 @@ export default function ItemDetailClient() {
                     )}
                   </Button>
                 </div>
+              ) : item.next_available_date ? (
+                <div className="space-y-2">
+                  <div className="bg-surface-2 text-ink-muted text-center py-3 px-4 rounded-control text-sm">
+                    {t('availableAround', { date: formatDate(item.next_available_date, locale) })}
+                  </div>
+                  <Button className="w-full" size="lg" onClick={() => setShowRequest(true)}>
+                    {item.availability_type === 'free' ? t('requestLoan') : t('requestRental')}
+                  </Button>
+                </div>
               ) : item.requires_identity_verification && user?.identity_status !== 'approved' ? (
                 <div className="space-y-2">
                   <div className="flex items-start gap-2 bg-warning-subtle border border-warning/30 rounded-control p-3 text-sm text-warning">

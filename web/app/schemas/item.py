@@ -172,6 +172,9 @@ class ItemResponse(BaseModel):
     available_days: list[int] = []
     requires_identity_verification: bool = False
     fulfillment_options: list[str] = ["pickup"]
+    # Only ever populated by the single-item fetch (get_item) — computing
+    # it is a query per item, too costly to run on every row of a listing.
+    next_available_date: datetime | None = None
     created_at: datetime
 
 

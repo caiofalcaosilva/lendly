@@ -695,6 +695,7 @@
       "listedBy": "Anunciado por",
       "loginToRequest": "Entrar para solicitar",
       "temporarilyUnavailable": "Item temporariamente indisponível",
+      "availableAround": "Este item deve ficar disponível novamente em {date}",
       "cancelNotify": "Cancelar aviso",
       "notifyWhenAvailable": "Avise-me quando disponível",
       "requiresVerification": "Esse item exige verificação de identidade aprovada.",

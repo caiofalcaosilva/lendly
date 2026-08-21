@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import Radio from '@/components/ui/Radio'
+import DatePicker from '@/components/ui/DatePicker'
 
 const WEEKDAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
 
@@ -22,6 +23,7 @@ const WEEKDAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 's
 // weekday() convention, 0=segunda...6=domingo. Converting once here keeps
 // every other comparison in this file in the backend's terms.
 const toBackendWeekday = (dateStr: string) => (new Date(dateStr).getUTCDay() + 6) % 7
+const toJsWeekday = (backendDay: number) => (backendDay + 1) % 7
 
 function buildSchema(
   availableDays: number[],
@@ -86,6 +88,12 @@ export default function RequestModal({ item, onClose }: Props) {
   } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { quantity: 1 } })
 
   const today = new Date().toISOString().split('T')[0]
+  const todayDate = new Date()
+  todayDate.setHours(0, 0, 0, 0)
+  const disabledWeekdays =
+    availableDays.length > 0
+      ? [0, 1, 2, 3, 4, 5, 6].filter((jsDay) => !availableDays.map(toJsWeekday).includes(jsDay))
+      : []
 
   const pickupDate = watch('pickup_date')
   const returnDate = watch('expected_return_date')
@@ -188,19 +196,23 @@ export default function RequestModal({ item, onClose }: Props) {
             {t('availableDaysNotice', { days: availableDays.map((d) => t(`weekdays.${WEEKDAY_KEYS[d]}`)).join(', ') })}
           </p>
         )}
-        <Input
+        <DatePicker
           label={t('pickupDate')}
-          type="date"
-          min={today}
-          {...register('pickup_date')}
+          value={pickupDate ?? ''}
+          onChange={(v) => setValue('pickup_date', v, { shouldValidate: true })}
+          minDate={todayDate}
+          disabledWeekdays={disabledWeekdays}
+          locale={locale}
           error={errors.pickup_date?.message}
           required
         />
-        <Input
+        <DatePicker
           label={t('expectedReturnDate')}
-          type="date"
-          min={today}
-          {...register('expected_return_date')}
+          value={returnDate ?? ''}
+          onChange={(v) => setValue('expected_return_date', v, { shouldValidate: true })}
+          minDate={todayDate}
+          disabledWeekdays={disabledWeekdays}
+          locale={locale}
           error={errors.expected_return_date?.message}
           required
         />

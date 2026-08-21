@@ -72,19 +72,29 @@ def refuse(
 
 
 @router.patch("/{request_id}/start", response_model=LoanRequestResponse)
-def start(request_id: str, current_user: User = Depends(get_current_user)):
+def start(
+    request_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
     """Either side confirms pickup. Only moves to 'in_progress' once BOTH
     the owner and the requester have confirmed — for paid items, also
     blocked until the Pix payment has been confirmed."""
-    return loan_request_service.confirm_pickup(request_id, current_user)
+    return loan_request_service.confirm_pickup(
+        request_id, current_user, background_tasks
+    )
 
 
 @router.patch("/{request_id}/start/force", response_model=LoanRequestResponse)
-def force_start(request_id: str, current_user: User = Depends(get_current_user)):
+def force_start(
+    request_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
     """Owner-only escape hatch: forces the pickup through without the
     requester's confirmation, once the grace period since the owner's own
     confirmation has elapsed. Flags the request as pickup_forced."""
-    return loan_request_service.force_pickup(request_id, current_user)
+    return loan_request_service.force_pickup(request_id, current_user, background_tasks)
 
 
 @router.patch("/{request_id}/start/code", response_model=LoanRequestResponse)

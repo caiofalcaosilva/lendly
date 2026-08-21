@@ -21,7 +21,10 @@ from app.services import (
     storage,
 )
 from app.services.item_service._common import get_owned_item, to_response
-from app.services.loan_request_service._common import reserved_quantity
+from app.services.loan_request_service._common import (
+    compute_next_available_date,
+    reserved_quantity,
+)
 from app.utils import errors
 from app.utils.geo import haversine_km, radius_km_to_radians, to_point
 from app.utils.money import to_cents
@@ -206,7 +209,8 @@ def get_item(item_id: str, current_user: User | None = None) -> ItemResponse:
     item = Item.objects(id=item_id, is_active=True).first()
     if not item:
         raise errors.not_found("Item not found")
-    return to_response(item, current_user)
+    next_available_date = compute_next_available_date(item)
+    return to_response(item, current_user, next_available_date=next_available_date)
 
 
 def check_availability(

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.models.item import Item
 from app.models.user import User
 from app.schemas.item import ItemGroupSummary, ItemOwnerResponse, ItemResponse
@@ -24,7 +26,11 @@ def _visible_group_summaries(
     ]
 
 
-def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
+def to_response(
+    item: Item,
+    current_user: User | None = None,
+    next_available_date: datetime | None = None,
+) -> ItemResponse:
     owner = item.owner
     is_favorited = False
     if current_user and current_user.favorites:
@@ -84,6 +90,7 @@ def to_response(item: Item, current_user: User | None = None) -> ItemResponse:
         available_days=item.available_days or [],
         requires_identity_verification=item.requires_identity_verification or False,
         fulfillment_options=item.fulfillment_options or ["pickup"],
+        next_available_date=next_available_date,
         created_at=item.created_at,
     )
 

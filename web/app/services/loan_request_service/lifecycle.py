@@ -132,6 +132,22 @@ def create_request(
     if already_reserved + quantity > quantity_total:
         raise errors.conflict("Não há unidades suficientes disponíveis nessas datas")
 
+    # Separate from the check above: this caps how much of the item ONE
+    # requester can have outstanding at once, regardless of date overlap —
+    # for quantity_total=1 this means "only one active request at a time";
+    # for higher quantities, several are allowed as long as their sum fits.
+    own_active = LoanRequest.objects(
+        item=item,
+        requester=current_user,
+        status__in=["pending", "accepted", "in_progress"],
+    )
+    own_quantity = sum(r.quantity or 1 for r in own_active)
+    if own_quantity + quantity > quantity_total:
+        raise errors.conflict(
+            "Você já tem solicitações em andamento para este item. Aguarde "
+            "a devolução para poder solicitar de novo."
+        )
+
     options = item.fulfillment_options or ["pickup"]
     if len(options) == 1:
         # Only one option — nothing to ask the requester, just use it.
@@ -223,16 +239,42 @@ def refuse_request(
     return to_response(req, viewer=current_user)
 
 
-def _complete_pickup(req: LoanRequest) -> None:
+def _auto_refuse_unfulfillable(item: Item, background_tasks: BackgroundTasks) -> None:
+    """Called right after a pickup is confirmed (the item just got more
+    scarce) — re-checks every still-pending request for this item against
+    its own date range and refuses whichever no longer fit. Not a manual
+    owner decision, so it skips reliability/response-time recalculation
+    (those should only move when the owner actively refuses something)."""
+    quantity_total = item.quantity_total or 1
+    for candidate in LoanRequest.objects(item=item, status="pending"):
+        reserved = reserved_quantity(
+            item,
+            candidate.pickup_date,
+            candidate.expected_return_date,
+            exclude_request_id=str(candidate.id),
+        )
+        if reserved + (candidate.quantity or 1) > quantity_total:
+            candidate.update(
+                status="refused", responded_at=utcnow(), updated_at=utcnow()
+            )
+            candidate.reload()
+            record_activity(candidate, "rental.refused")
+            _notify_status_change(candidate, background_tasks)
+
+
+def _complete_pickup(req: LoanRequest, background_tasks: BackgroundTasks) -> None:
     req.update(status="in_progress", updated_at=utcnow())
     req.reload()
     if req.item.availability_type == "paid":
         payment_service.release_payment(req)
         req.reload()
     record_activity(req, "rental.started")
+    _auto_refuse_unfulfillable(req.item, background_tasks)
 
 
-def confirm_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
+def confirm_pickup(
+    request_id: str, current_user: User, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
     """Either side confirms the item changed hands. Only once BOTH the
     owner and the requester have confirmed does the request actually move
     to 'in_progress' — an owner acting alone can no longer claim a pickup
@@ -272,12 +314,14 @@ def confirm_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
         req.pickup_confirmation.confirmed_by_owner_at
         and req.pickup_confirmation.confirmed_by_requester_at
     ):
-        _complete_pickup(req)
+        _complete_pickup(req, background_tasks)
 
     return to_response(req, viewer=current_user)
 
 
-def force_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
+def force_pickup(
+    request_id: str, current_user: User, background_tasks: BackgroundTasks
+) -> LoanRequestResponse:
     """Owner-only escape hatch: moves the request to 'in_progress' without
     the requester's confirmation, once the owner has waited out the grace
     period since confirming their own side. Flagged via pickup_forced so
@@ -298,7 +342,7 @@ def force_pickup(request_id: str, current_user: User) -> LoanRequestResponse:
     req.update(set__pickup_confirmation__forced=True, updated_at=utcnow())
     req.reload()
     record_activity(req, "rental.pickup_forced", actor=current_user)
-    _complete_pickup(req)
+    _complete_pickup(req, background_tasks)
     return to_response(req, viewer=current_user)
 
 
@@ -340,7 +384,7 @@ def confirm_pickup_by_code(
     )
     req.reload()
     record_activity(req, "rental.pickup_confirmed", actor=current_user)
-    _complete_pickup(req)
+    _complete_pickup(req, background_tasks)
 
     background_tasks.add_task(
         notification_service.create_notification,
