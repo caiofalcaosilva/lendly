@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
@@ -16,6 +16,10 @@ import Footer from '@/components/layout/Footer'
 const inter = Inter({ subsets: ['latin'] })
 // Numbers only (price, date, phone, counts) — see design_system.md.
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
+
+export const viewport: Viewport = {
+  themeColor: '#1f7a46',
+}
 
 export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'Metadata' })
@@ -36,6 +40,13 @@ export async function generateMetadata({ params: { locale } }: { params: { local
     twitter: {
       card: 'summary_large_image',
       images: ['/og-image.jpg'],
+    },
+    // Without this, launching from the iOS home screen still shows
+    // Safari's address bar — manifest.ts alone isn't enough there yet.
+    appleWebApp: {
+      capable: true,
+      title: 'Lendly',
+      statusBarStyle: 'default',
     },
   }
 }
