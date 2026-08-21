@@ -6,7 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError
 from mongoengine.errors import ValidationError as MongoValidationError
@@ -97,6 +97,26 @@ app.add_middleware(
 
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
+
+
+_LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "0.0.0.0"}
+
+
+@app.middleware("http")
+async def force_https(request: Request, call_next):
+    """Belt-and-suspenders on top of whatever the hosting platform already
+    does — Render terminates TLS and proxies to us over plain http, so we
+    read X-Forwarded-Proto (not request.url.scheme, which would always say
+    "http" behind that proxy) to tell if the original request was really
+    insecure. Skipped entirely for localhost/LAN dev, where there's no
+    reverse proxy setting that header and no TLS to redirect to."""
+    hostname = request.url.hostname or ""
+    is_local = hostname in _LOCAL_HOSTNAMES or hostname.startswith("192.168.")
+    forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    if not is_local and forwarded_proto == "http":
+        https_url = request.url.replace(scheme="https")
+        return RedirectResponse(str(https_url), status_code=307)
+    return await call_next(request)
 
 
 @app.middleware("http")
