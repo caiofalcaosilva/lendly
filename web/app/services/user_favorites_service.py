@@ -39,8 +39,8 @@ def get_favorite_users(
             business_category=(
                 u.business_profile.business_category if u.business_profile else None
             ),
-            city=u.city,
-            neighborhood=u.neighborhood,
+            city=u.address.city,
+            neighborhood=u.address.neighborhood,
             average_rating=u.reputation.average_rating,
             reliability_score=u.reputation.reliability_score,
             reliability_count=u.reputation.reliability_count or 0,

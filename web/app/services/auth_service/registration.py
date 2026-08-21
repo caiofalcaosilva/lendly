@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from fastapi import BackgroundTasks, Request
 
-from app.models.user import BusinessProfile, TermsAcceptance, User
+from app.models.user import Address, BusinessProfile, TermsAcceptance, User
 from app.schemas.user import TokenResponse, UserCreate, UserResponse
 from app.services import email_service
 from app.services.auth_service._common import (
@@ -47,15 +47,17 @@ def register_user(
         name=data.name,
         email=data.email,
         phone=normalize_digits(data.phone) if data.phone else None,
-        zip_code=data.zip_code,
-        street=data.street,
-        number=data.number,
-        complement=data.complement,
-        neighborhood=data.neighborhood,
-        city=data.city,
-        state=data.state,
-        latitude=data.latitude,
-        longitude=data.longitude,
+        address=Address(
+            zip_code=data.zip_code,
+            street=data.street,
+            number=data.number,
+            complement=data.complement,
+            neighborhood=data.neighborhood,
+            city=data.city,
+            state=data.state,
+            latitude=data.latitude,
+            longitude=data.longitude,
+        ),
         password_hash=hash_password(data.password),
         is_verified=False,
         terms_acceptance=TermsAcceptance(

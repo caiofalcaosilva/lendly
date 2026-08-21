@@ -85,6 +85,18 @@ _BUSINESS_PROFILE_FIELDS = {
     "whatsapp",
 }
 
+_ADDRESS_FIELDS = {
+    "zip_code",
+    "street",
+    "number",
+    "complement",
+    "neighborhood",
+    "city",
+    "state",
+    "latitude",
+    "longitude",
+}
+
 
 @router.put("/me", response_model=UserResponse)
 def update_profile(data: UserUpdate, current_user: User = Depends(get_current_user)):
@@ -104,14 +116,19 @@ def update_profile(data: UserUpdate, current_user: User = Depends(get_current_us
         business_updates = {
             k: updates.pop(k) for k in list(updates) if k in _BUSINESS_PROFILE_FIELDS
         }
-        if business_updates:
-            dotted_updates = {}
-            for k, v in business_updates.items():
-                if k == "cnpj":
-                    dotted_updates["set__business_profile__cnpj"] = encrypt(v)
-                    dotted_updates["set__business_profile__cnpj_hash"] = digits_hash(v)
-                else:
-                    dotted_updates[f"set__business_profile__{k}"] = v
+        address_updates = {
+            k: updates.pop(k) for k in list(updates) if k in _ADDRESS_FIELDS
+        }
+        dotted_updates = {}
+        for k, v in business_updates.items():
+            if k == "cnpj":
+                dotted_updates["set__business_profile__cnpj"] = encrypt(v)
+                dotted_updates["set__business_profile__cnpj_hash"] = digits_hash(v)
+            else:
+                dotted_updates[f"set__business_profile__{k}"] = v
+        for k, v in address_updates.items():
+            dotted_updates[f"set__address__{k}"] = v
+        if dotted_updates:
             current_user.update(**dotted_updates)
         updates["updated_at"] = utcnow()
         current_user.update(**updates)
@@ -369,8 +386,8 @@ def list_businesses():
             business_category=(
                 u.business_profile.business_category if u.business_profile else None
             ),
-            city=u.city,
-            neighborhood=u.neighborhood,
+            city=u.address.city,
+            neighborhood=u.address.neighborhood,
             average_rating=u.reputation.average_rating,
             reliability_score=u.reputation.reliability_score,
             reliability_count=u.reputation.reliability_count or 0,

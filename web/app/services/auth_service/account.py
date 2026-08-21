@@ -8,7 +8,7 @@ from mongoengine import Q
 from app.models.group import Group
 from app.models.item import Item
 from app.models.loan_request import LoanRequest
-from app.models.user import User
+from app.models.user import Address, User
 from app.schemas.user import (
     AccountDeleteRequest,
     EmailChangeRequest,
@@ -58,15 +58,7 @@ def delete_account(data: AccountDeleteRequest, current_user: User) -> None:
         email=f"deleted-{current_user.id}@lendly.invalid",
         password_hash=hash_password(secrets.token_urlsafe(32)),
         phone=None,
-        zip_code=None,
-        street=None,
-        number=None,
-        complement=None,
-        neighborhood=None,
-        city=None,
-        state=None,
-        latitude=None,
-        longitude=None,
+        address=Address(),
         # $unset, not $set null — business_profile.cnpj's sparse unique
         # index still tracks (and can collide on) an explicit null.
         unset__business_profile=1,

@@ -154,6 +154,24 @@ class InAppNotificationPreferences(EmbeddedDocument):
     group_membership_changed = BooleanField(default=True)
 
 
+class Address(EmbeddedDocument):
+    """The user's own home address — always present (default=), even if
+    every field is still blank. Item/Group keep their own separate flat
+    address fields (denormalized from this one at creation time), not
+    embedded — out of scope here, see the User-only decision this was
+    scoped to."""
+
+    zip_code = StringField(max_length=10)
+    latitude = FloatField()
+    longitude = FloatField()
+    street = StringField(max_length=200)
+    number = StringField(max_length=20)
+    complement = StringField(max_length=100)
+    neighborhood = StringField(max_length=100)
+    city = StringField(max_length=100)
+    state = StringField(max_length=2, choices=BRAZIL_STATES)
+
+
 class User(Document):
     name = StringField(required=True, max_length=100)
     email = EmailField(required=True, unique=True)
@@ -165,15 +183,7 @@ class User(Document):
     # Capped at 3 by featured_items_service.set_featured_items, not enforced here.
     featured_items = ListField(ReferenceField("Item"))
     favorite_users = ListField(ReferenceField("User"), default=list)
-    zip_code = StringField(max_length=10)
-    latitude = FloatField()
-    longitude = FloatField()
-    street = StringField(max_length=200)
-    number = StringField(max_length=20)
-    complement = StringField(max_length=100)
-    neighborhood = StringField(max_length=100)
-    city = StringField(max_length=100)
-    state = StringField(max_length=2, choices=BRAZIL_STATES)
+    address = EmbeddedDocumentField(Address, default=Address)
     # Optional — absent for accounts created via "Continuar com Google"
     # (see auth_service/google.py), which have no password to check against.
     password_hash = StringField()

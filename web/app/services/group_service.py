@@ -157,12 +157,14 @@ def create_group(data: GroupCreate, current_user: User) -> GroupResponse:
         members=[current_user],
         # Denormalized from the creator, same idea as Item's address fields —
         # only used if they later opt the group into "grupos perto de você".
-        neighborhood=current_user.neighborhood,
-        city=current_user.city,
-        state=current_user.state,
-        latitude=current_user.latitude,
-        longitude=current_user.longitude,
-        location=to_point(current_user.latitude, current_user.longitude),
+        neighborhood=current_user.address.neighborhood,
+        city=current_user.address.city,
+        state=current_user.address.state,
+        latitude=current_user.address.latitude,
+        longitude=current_user.address.longitude,
+        location=to_point(
+            current_user.address.latitude, current_user.address.longitude
+        ),
     )
     group.save()
     activity_service.record(
@@ -241,12 +243,12 @@ def refresh_location(group_id: str, current_user: User) -> GroupResponse:
         )
     creator = group.created_by
     group.update(
-        neighborhood=creator.neighborhood,
-        city=creator.city,
-        state=creator.state,
-        latitude=creator.latitude,
-        longitude=creator.longitude,
-        location=to_point(creator.latitude, creator.longitude),
+        neighborhood=creator.address.neighborhood,
+        city=creator.address.city,
+        state=creator.address.state,
+        latitude=creator.address.latitude,
+        longitude=creator.address.longitude,
+        location=to_point(creator.address.latitude, creator.address.longitude),
         updated_at=utcnow(),
     )
     group.reload()

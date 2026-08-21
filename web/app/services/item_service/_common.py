@@ -48,8 +48,8 @@ def to_response(
         owner=ItemOwnerResponse(
             id=str(owner.id),
             name=owner.name,
-            neighborhood=owner.neighborhood,
-            city=owner.city,
+            neighborhood=owner.address.neighborhood,
+            city=owner.address.city,
             average_rating=owner.reputation.average_rating,
             reliability_score=owner.reputation.reliability_score,
             reliability_count=owner.reputation.reliability_count or 0,

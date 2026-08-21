@@ -153,12 +153,12 @@ def create_item(
     latitude = (
         data.latitude
         if data.latitude is not None
-        else (current_user.latitude if using_owner_address else None)
+        else (current_user.address.latitude if using_owner_address else None)
     )
     longitude = (
         data.longitude
         if data.longitude is not None
-        else (current_user.longitude if using_owner_address else None)
+        else (current_user.address.longitude if using_owner_address else None)
     )
 
     item = Item(
@@ -177,11 +177,12 @@ def create_item(
         declared_value_cents=declared_value_cents,
         usage_rules=data.usage_rules,
         zip_code=data.zip_code
-        or (current_user.zip_code if using_owner_address else None),
+        or (current_user.address.zip_code if using_owner_address else None),
         neighborhood=data.neighborhood
-        or (current_user.neighborhood if using_owner_address else None),
-        city=data.city or (current_user.city if using_owner_address else None),
-        state=data.state or (current_user.state if using_owner_address else None),
+        or (current_user.address.neighborhood if using_owner_address else None),
+        city=data.city or (current_user.address.city if using_owner_address else None),
+        state=data.state
+        or (current_user.address.state if using_owner_address else None),
         latitude=latitude,
         longitude=longitude,
         location=to_point(latitude, longitude),
