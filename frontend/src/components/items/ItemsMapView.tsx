@@ -154,8 +154,17 @@ function FocusItem({
     const item = itemsWithCoords.find((i) => i.id === focusItem.id)
     const marker = markersRef.current.get(focusItem.id)
     if (!item || !marker || item.latitude == null || item.longitude == null) return
-    if (clusterRef.current?.zoomToShowLayer) {
-      clusterRef.current.zoomToShowLayer(marker, () => marker.openPopup())
+    // On a fresh mount (list -> map click), the cluster group's ref can
+    // already point at the plugin instance before Leaflet has actually
+    // attached it to the map (its own effect hasn't run yet) — calling
+    // zoomToShowLayer that early reads `this._map._zoom` on an undefined
+    // `_map` and throws. Only take that path once it's really attached;
+    // map.flyTo below is always safe since the map itself sets its zoom
+    // synchronously at construction.
+    const cluster = clusterRef.current
+    const clusterReady = cluster?.zoomToShowLayer && (cluster as unknown as { _map?: unknown })._map
+    if (clusterReady) {
+      cluster!.zoomToShowLayer!(marker, () => marker.openPopup())
     } else {
       map.flyTo([item.latitude, item.longitude], 16)
       marker.openPopup()
@@ -203,12 +212,6 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
             url={theme === 'dark' ? TILE_URLS.dark : TILE_URLS.light}
           />
           <FitBounds points={boundsPoints} />
-          <FocusItem
-            focusItem={focusItem}
-            itemsWithCoords={itemsWithCoords}
-            markersRef={markersRef}
-            clusterRef={clusterRef}
-          />
 
           {homeLocation && (
             <>
@@ -285,6 +288,16 @@ export default function ItemsMapView({ items, getDistance, homeLocation, liveLoc
               )
             })}
           </MarkerClusterGroup>
+
+          {/* Rendered after MarkerClusterGroup on purpose — its effect
+              needs the cluster layer already attached to the map (see
+              FocusItem's own comment on the _map guard below). */}
+          <FocusItem
+            focusItem={focusItem}
+            itemsWithCoords={itemsWithCoords}
+            markersRef={markersRef}
+            clusterRef={clusterRef}
+          />
         </MapContainer>
       </div>
 
