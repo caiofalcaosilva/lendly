@@ -363,9 +363,7 @@ def mark_claim_paid(
     Kept as an admin escape hatch for a stuck/missed webhook, same
     reasoning as the rest of the payment flow having no automatic retry
     (see docs/pagamento-online.md)."""
-    claim = atomic_transition(
-        claim_id, _PAYABLE_STATUSES, "paid", paid_by=admin, paid_at=utcnow()
-    )
+    claim = atomic_transition(claim_id, _PAYABLE_STATUSES, "paid", paid_at=utcnow())
     if not claim:
         raise errors.conflict("Esse sinistro já não está mais pagável")
     _maybe_clear_restriction(claim.requester)
@@ -438,7 +436,6 @@ def advance_paid_by_lendly(
         claim_id,
         "overdue",
         "advanced_by_lendly",
-        advanced_by=admin,
         advanced_at=utcnow(),
     )
     if not updated:
@@ -452,7 +449,6 @@ def advance_paid_by_lendly(
         # status so the admin can retry (same pattern as approve_claim).
         claim.update(
             status="overdue",
-            unset__advanced_by=1,
             unset__advanced_at=1,
             updated_at=utcnow(),
         )
@@ -500,7 +496,6 @@ def cancel_claim(
         claim_id,
         ["approved", "overdue"],
         "cancelled",
-        cancelled_by=admin,
         cancelled_at=utcnow(),
         cancellation_reason=reason,
     )

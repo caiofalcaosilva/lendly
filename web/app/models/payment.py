@@ -67,9 +67,6 @@ class Payment(Document):
     status = StringField(default="pending", choices=PAYMENT_STATUSES)
     pix_charge = EmbeddedDocumentField(PixCharge)
     created_at = DateTimeField(default=utcnow)
-    held_at = DateTimeField()
-    released_at = DateTimeField()
-    refunded_at = DateTimeField()
     updated_at = DateTimeField(default=utcnow)
 
     meta = {

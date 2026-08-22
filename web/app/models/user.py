@@ -88,7 +88,6 @@ class PhoneVerification(EmbeddedDocument):
 
     code = StringField(max_length=6)
     attempts = IntField(default=0)
-    generated_at = DateTimeField()
     expires_at = DateTimeField()
 
 

@@ -30,7 +30,6 @@ def send_code(current_user: User) -> PhoneVerificationSendResponse:
         phone_verification=PhoneVerification(
             code=code,
             attempts=0,
-            generated_at=utcnow(),
             expires_at=utcnow() + timedelta(minutes=expire_minutes),
         )
     )

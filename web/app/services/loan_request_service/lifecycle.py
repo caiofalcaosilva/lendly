@@ -210,7 +210,7 @@ def accept_request(
     updates = {"status": "accepted", "responded_at": utcnow(), "updated_at": utcnow()}
     if req.fulfillment_method == "delivery":
         updates["delivery_confirmation"] = DeliveryCode(
-            code=_generate_delivery_code(), attempts=0, generated_at=utcnow()
+            code=_generate_delivery_code(), attempts=0
         )
     req.update(**updates)
     req.reload()
@@ -409,9 +409,7 @@ def regenerate_delivery_code(
         raise errors.bad_request("Este pedido não usa entrega com código")
 
     req.update(
-        delivery_confirmation=DeliveryCode(
-            code=_generate_delivery_code(), attempts=0, generated_at=utcnow()
-        ),
+        delivery_confirmation=DeliveryCode(code=_generate_delivery_code(), attempts=0),
         updated_at=utcnow(),
     )
     req.reload()

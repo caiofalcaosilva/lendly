@@ -411,7 +411,7 @@ def _release_payment_doc(payment: Payment) -> None:
     to match, at whatever point in the workflow that's meant to become
     visible (webhook time for extensions, pickup-confirmation time for
     rentals — see call sites)."""
-    payment.update(status="released", released_at=utcnow(), updated_at=utcnow())
+    payment.update(status="released", updated_at=utcnow())
     _record_payment_activity(payment, "payment.released")
 
 
@@ -446,7 +446,7 @@ def refund_payment(req: LoanRequest) -> None:
             f"Não foi possível estornar o pagamento agora ({e}). "
             "Tente novamente em instantes."
         ) from e
-    payment.update(status="refunded", refunded_at=utcnow(), updated_at=utcnow())
+    payment.update(status="refunded", updated_at=utcnow())
     req.update(payment_status="refunded", updated_at=utcnow())
     _record_payment_activity(payment, "payment.refunded")
 
@@ -513,7 +513,7 @@ def handle_webhook(
     # status (confirmed live against the sandbox — the Advanced Payments-era
     # API this replaced used "approved" instead).
     if remote_status == "processed":
-        payment.update(status="held", held_at=utcnow(), updated_at=utcnow())
+        payment.update(status="held", updated_at=utcnow())
         # payment_status on the LoanRequest tracks the rental charge only —
         # it's what gates confirm_pickup. An extension payment reaching
         # "held" must not overwrite it (the rental payment may already be

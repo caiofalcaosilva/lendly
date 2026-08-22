@@ -64,7 +64,6 @@ class DeliveryCode(EmbeddedDocument):
 
     code = StringField(max_length=6)
     attempts = IntField(default=0)
-    generated_at = DateTimeField()
 
 
 class LoanRequest(Document):

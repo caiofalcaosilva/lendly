@@ -55,15 +55,8 @@ class Claim(Document):
     rejection_reason = StringField(max_length=500)
     reviewed_by = ReferenceField("User")
     reviewed_at = DateTimeField()
-    # Manual fallback only — the happy path marks this via the Pix webhook
-    # now (see payment_service.handle_webhook). Kept as an admin escape
-    # hatch for a stuck/missed webhook, same reasoning as the rest of the
-    # payment flow having no automatic retry (see docs/pagamento-online.md).
-    paid_by = ReferenceField("User")
     paid_at = DateTimeField()
-    advanced_by = ReferenceField("User")
     advanced_at = DateTimeField()
-    cancelled_by = ReferenceField("User")
     cancelled_at = DateTimeField()
     cancellation_reason = StringField(max_length=500)
     created_at = DateTimeField(default=utcnow)
