@@ -27,7 +27,7 @@ def test_send_push_noop_without_vapid_key(monkeypatch):
     called = MagicMock()
     monkeypatch.setattr(push_service, "webpush", called)
 
-    push_service.send_push(user, "Title", "Body", "/link")
+    push_service.send_push(user, "notif-1", "Title", "Body", "/link")
 
     called.assert_not_called()
     user.delete()
@@ -39,7 +39,7 @@ def test_send_push_calls_webpush_per_subscription(monkeypatch):
     called = MagicMock()
     monkeypatch.setattr(push_service, "webpush", called)
 
-    push_service.send_push(user, "Title", "Body", "/link")
+    push_service.send_push(user, "notif-1", "Title", "Body", "/link")
 
     assert called.call_count == 2
     user.reload()
@@ -58,7 +58,7 @@ def test_send_push_prunes_gone_subscription(monkeypatch):
 
     monkeypatch.setattr(push_service, "webpush", fake_webpush)
 
-    push_service.send_push(user, "Title", "Body", "/link")
+    push_service.send_push(user, "notif-1", "Title", "Body", "/link")
 
     user.reload()
     endpoints = [s.endpoint for s in user.push_subscriptions]
@@ -76,7 +76,7 @@ def test_send_push_keeps_subscription_on_other_errors(monkeypatch):
 
     monkeypatch.setattr(push_service, "webpush", fake_webpush)
 
-    push_service.send_push(user, "Title", "Body", "/link")
+    push_service.send_push(user, "notif-1", "Title", "Body", "/link")
 
     user.reload()
     assert len(user.push_subscriptions) == 2

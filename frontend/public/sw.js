@@ -8,7 +8,10 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title || 'Lendly', {
       body: data.body || undefined,
       icon: '/icons/icon-192.png',
-      tag: data.link || undefined,
+      // Unique per notification so several stack in the tray instead of
+      // replacing each other — only a genuine re-delivery of the exact
+      // same notification (same id) collapses onto one entry.
+      tag: data.id || undefined,
       data,
     }),
   )

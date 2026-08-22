@@ -46,7 +46,7 @@ async def create_notification(
         str(recipient.id),
         {"kind": "notification", **_to_response(notif).model_dump(mode="json")},
     )
-    push_service.send_push(recipient, title, body, link)
+    push_service.send_push(recipient, str(notif.id), title, body, link)
 
 
 async def _broadcast_sync(user: User, payload: dict) -> None:
