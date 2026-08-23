@@ -337,6 +337,9 @@
       "placeholder": "Escreva uma mensagem...",
       "send": "Enviar mensagem"
     },
+    "EmojiPicker": {
+      "ariaLabel": "Inserir emoji"
+    },
     "ExtensionModal": {
       "errorChooseDate": "Escolha a nova data de devolução",
       "errorGeneric": "Erro ao pedir prorrogação",

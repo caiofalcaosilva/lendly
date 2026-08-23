@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Message } from '@/types'
 import { messagesService } from '@/services/messages'
 import { getAccessToken } from '@/lib/tokenStorage'
+import EmojiPicker from '@/components/ui/EmojiPicker'
 
 function wsUrl(requestId: string, token: string) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -25,6 +26,7 @@ export default function ChatPanel({
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const seenIds = useRef<Set<string>>(new Set())
   const t = useTranslations('Common.ChatPanel')
 
@@ -128,7 +130,14 @@ export default function ChatPanel({
       {error && <p className="px-4 text-xs text-danger">{error}</p>}
 
       <form onSubmit={handleSend} className="flex gap-2 p-3 border-t border-border">
+        <EmojiPicker
+          onSelect={(emoji) => {
+            setText((prev) => prev + emoji)
+            inputRef.current?.focus()
+          }}
+        />
         <input
+          ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={t('placeholder')}

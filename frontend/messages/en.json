@@ -337,6 +337,9 @@
       "placeholder": "Write a message...",
       "send": "Send message"
     },
+    "EmojiPicker": {
+      "ariaLabel": "Insert emoji"
+    },
     "ExtensionModal": {
       "errorChooseDate": "Choose the new return date",
       "errorGeneric": "Error requesting extension",
