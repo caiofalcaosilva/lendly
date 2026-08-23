@@ -338,7 +338,14 @@
       "send": "Send message"
     },
     "EmojiPicker": {
-      "ariaLabel": "Insert emoji"
+      "ariaLabel": "Insert emoji",
+      "categorySmileys": "Smileys & emotions",
+      "categoryGestures": "Gestures & people",
+      "categoryHearts": "Hearts",
+      "categoryLending": "Lending & logistics",
+      "categoryFood": "Food & drink",
+      "categoryNature": "Nature",
+      "categorySymbols": "Symbols"
     },
     "ExtensionModal": {
       "errorChooseDate": "Choose the new return date",

@@ -338,7 +338,14 @@
       "send": "Enviar mensagem"
     },
     "EmojiPicker": {
-      "ariaLabel": "Inserir emoji"
+      "ariaLabel": "Inserir emoji",
+      "categorySmileys": "Rostos e emoções",
+      "categoryGestures": "Gestos e pessoas",
+      "categoryHearts": "Corações",
+      "categoryLending": "Empréstimo e logística",
+      "categoryFood": "Comida e bebida",
+      "categoryNature": "Natureza",
+      "categorySymbols": "Símbolos"
     },
     "ExtensionModal": {
       "errorChooseDate": "Escolha a nova data de devolução",
