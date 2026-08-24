@@ -13,8 +13,8 @@ const AUTO_ADVANCE_MS = 5000
 // screens and shorter on narrow ones. A fixed height keeps it visually
 // consistent at every width; object-cover crops the sides of the image
 // to fill it (more crop on wide screens, less on narrow ones).
-const DESKTOP_HEIGHT = 280
-const MOBILE_HEIGHT = 160
+const DESKTOP_HEIGHT = 300
+const MOBILE_HEIGHT = 250
 
 /// Admin-uploaded promotional carousel for the items/browse page — a
 /// quick-communication banner for Lendly's own announcements/promos, not
