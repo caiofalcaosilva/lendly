@@ -16,6 +16,7 @@ def _to_response(doc: ItemsBannerSlide) -> ItemsBannerSlideResponse:
     return ItemsBannerSlideResponse(
         id=str(doc.id),
         image_url=doc.image_url,
+        image_url_mobile=doc.image_url_mobile,
         link_url=doc.link_url,
         order=doc.order,
     )
@@ -28,18 +29,28 @@ def list_slides() -> list[ItemsBannerSlideResponse]:
     return [_to_response(d) for d in ItemsBannerSlide.objects().order_by("order")]
 
 
+async def _save_image(file: UploadFile) -> str:
+    img = await load_and_resize(file)
+    key = f"items-banner/{uuid.uuid4().hex}.jpg"
+    return storage.save_public_image(img, key)
+
+
 async def create_slide(
-    file: UploadFile, link_url: str | None
+    file: UploadFile, file_mobile: UploadFile | None, link_url: str | None
 ) -> ItemsBannerSlideResponse:
     count = ItemsBannerSlide.objects().count()
     if count >= MAX_SLIDES:
         raise errors.bad_request(f"Máximo de {MAX_SLIDES} slides no carrossel")
 
-    img = await load_and_resize(file)
-    key = f"items-banner/{uuid.uuid4().hex}.jpg"
-    url = storage.save_public_image(img, key)
+    url = await _save_image(file)
+    url_mobile = await _save_image(file_mobile) if file_mobile else None
 
-    doc = ItemsBannerSlide(image_url=url, link_url=link_url or None, order=count)
+    doc = ItemsBannerSlide(
+        image_url=url,
+        image_url_mobile=url_mobile,
+        link_url=link_url or None,
+        order=count,
+    )
     doc.save()
     return _to_response(doc)
 
@@ -53,10 +64,56 @@ def update_slide(slide_id: str, link_url: str | None) -> ItemsBannerSlideRespons
     return _to_response(doc)
 
 
+async def replace_image(slide_id: str, file: UploadFile) -> ItemsBannerSlideResponse:
+    """Re-uploads the desktop image for an existing slide, without
+    touching its mobile version or link."""
+    doc = ItemsBannerSlide.objects(id=slide_id).first()
+    if not doc:
+        raise errors.not_found("Slide não encontrado")
+    old_url = doc.image_url
+    url = await _save_image(file)
+    doc.update(image_url=url, updated_at=utcnow())
+    storage.delete_public_image(old_url)
+    doc.reload()
+    return _to_response(doc)
+
+
+async def replace_mobile_image(
+    slide_id: str, file: UploadFile
+) -> ItemsBannerSlideResponse:
+    """Adds or re-uploads the mobile-specific image for an existing
+    slide — optional, falls back to the desktop image when unset."""
+    doc = ItemsBannerSlide.objects(id=slide_id).first()
+    if not doc:
+        raise errors.not_found("Slide não encontrado")
+    old_url = doc.image_url_mobile
+    url = await _save_image(file)
+    doc.update(image_url_mobile=url, updated_at=utcnow())
+    if old_url:
+        storage.delete_public_image(old_url)
+    doc.reload()
+    return _to_response(doc)
+
+
+def remove_mobile_image(slide_id: str) -> ItemsBannerSlideResponse:
+    """Clears the mobile-specific image — the slide goes back to
+    falling back to the desktop image on mobile."""
+    doc = ItemsBannerSlide.objects(id=slide_id).first()
+    if not doc:
+        raise errors.not_found("Slide não encontrado")
+    if doc.image_url_mobile:
+        storage.delete_public_image(doc.image_url_mobile)
+        doc.update(unset__image_url_mobile=1, updated_at=utcnow())
+        doc.reload()
+    return _to_response(doc)
+
+
 def delete_slide(slide_id: str) -> None:
     doc = ItemsBannerSlide.objects(id=slide_id).first()
     if not doc:
         raise errors.not_found("Slide não encontrado")
+    storage.delete_public_image(doc.image_url)
+    storage.delete_public_image(doc.image_url_mobile)
     doc.delete()
 
 

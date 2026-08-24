@@ -6,9 +6,10 @@ export const itemsBannerSlidesService = {
   list: () => api.get<ItemsBannerSlide[]>('/items-banner-slides').then((r) => r.data),
 
   // Admin — the rest require an admin session.
-  upload: (file: File, linkUrl?: string) => {
+  upload: (file: File, fileMobile?: File, linkUrl?: string) => {
     const formData = new FormData()
     formData.append('file', file)
+    if (fileMobile) formData.append('file_mobile', fileMobile)
     if (linkUrl) formData.append('link_url', linkUrl)
     return api
       .post<ItemsBannerSlide>('/admin/items-banner-slides', formData)
@@ -18,6 +19,27 @@ export const itemsBannerSlidesService = {
   updateLink: (id: string, linkUrl: string) =>
     api
       .patch<ItemsBannerSlide>(`/admin/items-banner-slides/${id}`, { link_url: linkUrl || null })
+      .then((r) => r.data),
+
+  replaceImage: (id: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api
+      .post<ItemsBannerSlide>(`/admin/items-banner-slides/${id}/image`, formData)
+      .then((r) => r.data)
+  },
+
+  replaceMobileImage: (id: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api
+      .post<ItemsBannerSlide>(`/admin/items-banner-slides/${id}/image-mobile`, formData)
+      .then((r) => r.data)
+  },
+
+  removeMobileImage: (id: string) =>
+    api
+      .delete<ItemsBannerSlide>(`/admin/items-banner-slides/${id}/image-mobile`)
       .then((r) => r.data),
 
   remove: (id: string) => api.delete(`/admin/items-banner-slides/${id}`),

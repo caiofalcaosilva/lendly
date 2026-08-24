@@ -842,7 +842,7 @@
       "announcementPlaceholder": "E.g.: Scheduled maintenance today at 10 PM — the site may be unstable.",
       "announcementActive": "Announcement active",
       "itemsBanner": "Items page carousel",
-      "itemsBannerHint": "Only shows on \"Browse items\" — your own artwork/banners, auto-rotating (not the placeholder reserved for third-party ads).",
+      "itemsBannerHint": "Top banner on \"Browse items\", auto-rotating — your own artwork/announcements. Each slide takes a desktop image (wide format) and an optional mobile one (more compact format); without a mobile version, it falls back to a cropped desktop image.",
       "lastUpdated": "Last changed by {name} on {date}",
       "saveChanges": "Save changes",
       "saved": "Saved"
@@ -852,7 +852,13 @@
       "addSlide": "Add slide",
       "linkPlaceholder": "Link (optional)",
       "errorUpload": "Error uploading image",
-      "slideAlt": "Banner slide {number}"
+      "slideAlt": "Banner slide {number}",
+      "desktopLabel": "Desktop",
+      "mobileLabel": "Mobile",
+      "replaceDesktopImage": "Replace desktop image",
+      "addMobileImage": "Add mobile version",
+      "replaceMobileImage": "Replace mobile version",
+      "removeMobileImage": "Remove mobile version (falls back to desktop)"
     },
     "Actions": {
       "title": "Admin action history",

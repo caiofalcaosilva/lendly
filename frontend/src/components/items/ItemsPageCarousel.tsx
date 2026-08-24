@@ -8,15 +8,24 @@ import { itemsBannerSlidesService } from '@/services/itemsBannerSlides'
 
 const AUTO_ADVANCE_MS = 5000
 
+// Fixed pixel heights, not an aspect-ratio — width is always the full
+// viewport (full-bleed), so a ratio would make the banner taller on wide
+// screens and shorter on narrow ones. A fixed height keeps it visually
+// consistent at every width; object-cover crops the sides of the image
+// to fill it (more crop on wide screens, less on narrow ones).
+const DESKTOP_HEIGHT = 280
+const MOBILE_HEIGHT = 160
+
 /// Admin-uploaded promotional carousel for the items/browse page — a
 /// quick-communication banner for Lendly's own announcements/promos, not
 /// third-party ads. Full-bleed at the very top of the page (rendered
-/// outside the page's max-width column, no rounded corners), wide
-/// leaderboard proportions on desktop and a more compact ratio on
-/// mobile — matches the reference banner formats the aspect ratios below
-/// were sized against. Renders nothing when there are no slides. Mirrors
-/// ItemDetailClient's photo carousel (arrows + dots), with auto-advance
-/// added since this is a showcase, not a gallery to browse.
+/// outside the page's max-width column, no rounded corners). Desktop and
+/// mobile each get their own image and fixed height — real separate
+/// artwork, not one image cropped two ways — with image_url_mobile
+/// falling back to image_url when a slide only has one. Renders nothing
+/// when there are no slides. Mirrors ItemDetailClient's photo carousel
+/// (arrows + dots), with auto-advance added since this is a showcase,
+/// not a gallery to browse.
 export default function ItemsPageCarousel() {
   const [slides, setSlides] = useState<ItemsBannerSlide[]>([])
   const [active, setActive] = useState(0)
@@ -50,24 +59,26 @@ export default function ItemsPageCarousel() {
   if (slides.length === 0) return null
 
   const slide = slides[active]
-  const image = (
-    <Image
-      src={slide.image_url}
-      alt={t('slideAlt', { number: active + 1 })}
-      fill
-      className="object-cover"
-      priority
-    />
+  const alt = t('slideAlt', { number: active + 1 })
+  const frames = (
+    <>
+      <div className="sm:hidden relative" style={{ height: MOBILE_HEIGHT }}>
+        <Image src={slide.image_url_mobile || slide.image_url} alt={alt} fill className="object-cover" priority />
+      </div>
+      <div className="hidden sm:block relative" style={{ height: DESKTOP_HEIGHT }}>
+        <Image src={slide.image_url} alt={alt} fill className="object-cover" priority />
+      </div>
+    </>
   )
 
   return (
-    <div className="relative w-full aspect-[2/1] sm:aspect-[18/5] bg-surface-2 overflow-hidden">
+    <div className="relative w-full bg-surface-2 overflow-hidden">
       {slide.link_url ? (
-        <a href={slide.link_url} target="_blank" rel="noopener noreferrer" className="absolute inset-0">
-          {image}
+        <a href={slide.link_url} target="_blank" rel="noopener noreferrer" className="block">
+          {frames}
         </a>
       ) : (
-        image
+        frames
       )}
 
       {slides.length > 1 && (

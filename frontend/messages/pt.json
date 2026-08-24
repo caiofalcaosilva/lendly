@@ -842,7 +842,7 @@
       "announcementPlaceholder": "Ex: Manutenção programada hoje às 22h — o site pode ficar instável.",
       "announcementActive": "Aviso ativo",
       "itemsBanner": "Carrossel da página de itens",
-      "itemsBannerHint": "Aparece só em \"Explorar itens\" — suas próprias artes/banners, em rotação automática (não é o espaço reservado pra anúncios de terceiros).",
+      "itemsBannerHint": "Banner de topo em \"Explorar itens\", em rotação automática — suas próprias artes/avisos. Cada slide aceita uma imagem pro desktop (formato largo) e outra opcional pro mobile (formato mais compacto); sem a versão mobile, usa a do desktop cortada.",
       "lastUpdated": "Última alteração por {name} em {date}",
       "saveChanges": "Salvar alterações",
       "saved": "Salvo"
@@ -852,7 +852,13 @@
       "addSlide": "Adicionar slide",
       "linkPlaceholder": "Link (opcional)",
       "errorUpload": "Erro ao enviar imagem",
-      "slideAlt": "Slide {number} do banner"
+      "slideAlt": "Slide {number} do banner",
+      "desktopLabel": "Desktop",
+      "mobileLabel": "Mobile",
+      "replaceDesktopImage": "Trocar imagem do desktop",
+      "addMobileImage": "Adicionar versão mobile",
+      "replaceMobileImage": "Trocar versão mobile",
+      "removeMobileImage": "Remover versão mobile (volta a usar a do desktop)"
     },
     "Actions": {
       "title": "Histórico de ações do admin",

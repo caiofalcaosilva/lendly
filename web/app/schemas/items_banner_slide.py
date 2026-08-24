@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 class ItemsBannerSlideResponse(BaseModel):
     id: str
     image_url: str
+    image_url_mobile: str | None = None
     link_url: str | None = None
     order: int
 

@@ -420,6 +420,7 @@ export interface Announcement {
 export interface ItemsBannerSlide {
   id: string
   image_url: string
+  image_url_mobile?: string | null
   link_url?: string | null
   order: number
 }
