@@ -15,7 +15,6 @@ import ItemsPageCarousel from '@/components/items/ItemsPageCarousel'
 import EmptyState from '@/components/ui/EmptyState'
 import Skeleton from '@/components/ui/Skeleton'
 import Select from '@/components/ui/Select'
-import AdSlot from '@/components/ui/AdSlot'
 
 function MapLoading() {
   const t = useTranslations('Items')
@@ -359,8 +358,24 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
           )}
         </div>
 
-        {/* Nearby feed — personalized, doesn't react to the filters below */}
-        {nearbyItems.length > 0 && (
+        {/* Filters — own card container so the whole panel reads as one
+            module instead of controls floating loose on the page. */}
+        <div className="mb-6 bg-surface border border-border rounded-panel p-4">
+          <ItemFilters
+            filters={filters}
+            onChange={setFilters}
+            userHasLocation={userHasLocation}
+            userHasZip={userHasZip}
+            isAuthenticated={isAuthenticated}
+            categories={categories}
+          />
+        </div>
+
+        {/* Nearby feed — personalized convenience row, only shown while
+            the visitor hasn't asked for anything specific yet. With an
+            active search/filter it would just repeat items already in
+            the results below. */}
+        {!hasActiveFilters && nearbyItems.length > 0 && (
           <div className="mb-8">
             <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted mb-3">
               <MapPin className="w-4 h-4 text-primary" /> {t('nearYou')}
@@ -375,22 +390,6 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
           </div>
         )}
 
-        {/* Filters */}
-        <div className="mb-6">
-          <ItemFilters
-            filters={filters}
-            onChange={setFilters}
-            userHasLocation={userHasLocation}
-            userHasZip={userHasZip}
-            isAuthenticated={isAuthenticated}
-            categories={categories}
-          />
-        </div>
-
-        <ItemsPageCarousel />
-
-        <AdSlot />
-
         {/* Results header + view toggle */}
         <h2 className="sr-only">{t('resultsHeading')}</h2>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
@@ -399,9 +398,6 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
               <>
                 <span className="text-ink-muted font-medium">{items.length}</span>{' '}
                 {view === 'list' ? t('itemsLoaded', { count: items.length }) : t('itemsOnMap', { count: items.length })}
-                {filters.radius_km > 0 && (
-                  <span className="text-primary"> · {t('withinRadius', { km: filters.radius_km })}</span>
-                )}
               </>
             )}
           </p>
@@ -527,6 +523,13 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
             )}
           </>
         )}
+
+        {/* Promotional carousel — after the results, not between the
+            visitor and what they came for. Renders nothing without
+            admin-configured slides. */}
+        <div className="mt-8">
+          <ItemsPageCarousel />
+        </div>
       </div>
     </div>
   )

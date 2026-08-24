@@ -102,9 +102,6 @@
       "label": "Versão beta",
       "tooltip": "O Lendly ainda está em fase de testes"
     },
-    "AdSlot": {
-      "placeholder": "Espaço para anúncio"
-    },
     "GoogleButton": {
       "label": "Continuar com Google",
       "orDivider": "ou",
@@ -654,7 +651,6 @@
     "itemsLoaded": "{count, plural, one {# item carregado} other {# itens carregados}}",
     "resultsHeading": "Resultados",
     "itemsOnMap": "{count, plural, one {# item no mapa} other {# itens no mapa}}",
-    "withinRadius": "a até {km} km de você",
     "listView": "Lista",
     "mapView": "Mapa",
     "sortLabel": "Ordenar por",

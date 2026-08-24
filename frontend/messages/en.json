@@ -102,9 +102,6 @@
       "label": "Beta version",
       "tooltip": "Lendly is still in testing"
     },
-    "AdSlot": {
-      "placeholder": "Ad space"
-    },
     "GoogleButton": {
       "label": "Continue with Google",
       "orDivider": "or",
@@ -654,7 +651,6 @@
     "itemsLoaded": "{count, plural, one {# item loaded} other {# items loaded}}",
     "resultsHeading": "Results",
     "itemsOnMap": "{count, plural, one {# item on the map} other {# items on the map}}",
-    "withinRadius": "within {km} km of you",
     "listView": "List",
     "mapView": "Map",
     "sortLabel": "Sort by",

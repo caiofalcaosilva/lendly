@@ -8,11 +8,10 @@ import { itemsBannerSlidesService } from '@/services/itemsBannerSlides'
 
 const AUTO_ADVANCE_MS = 5000
 
-/// Admin-uploaded promotional carousel for the items/browse page — see
-/// components/ui/AdSlot.tsx for the separate, still-unwired placeholder
-/// reserved for future third-party ads. Renders nothing when there are no
-/// slides. Mirrors ItemDetailClient's photo carousel (arrows + dots), with
-/// auto-advance added since this is a showcase, not a gallery to browse.
+/// Admin-uploaded promotional carousel for the items/browse page. Renders
+/// nothing when there are no slides. Mirrors ItemDetailClient's photo
+/// carousel (arrows + dots), with auto-advance added since this is a
+/// showcase, not a gallery to browse.
 export default function ItemsPageCarousel() {
   const [slides, setSlides] = useState<ItemsBannerSlide[]>([])
   const [active, setActive] = useState(0)
