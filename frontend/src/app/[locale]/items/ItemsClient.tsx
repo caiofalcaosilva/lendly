@@ -334,6 +334,11 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
 
   return (
     <div className="min-h-screen bg-bg">
+      {/* Promotional carousel — full-bleed at the very top of the page,
+          a quick-communication banner for Lendly's own announcements.
+          Renders nothing without admin-configured slides. */}
+      <ItemsPageCarousel />
+
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
@@ -523,13 +528,6 @@ export default function ItemsClient({ initialItems, initialFilters, initialSort 
             )}
           </>
         )}
-
-        {/* Promotional carousel — after the results, not between the
-            visitor and what they came for. Renders nothing without
-            admin-configured slides. */}
-        <div className="mt-8">
-          <ItemsPageCarousel />
-        </div>
       </div>
     </div>
   )

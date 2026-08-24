@@ -8,10 +8,15 @@ import { itemsBannerSlidesService } from '@/services/itemsBannerSlides'
 
 const AUTO_ADVANCE_MS = 5000
 
-/// Admin-uploaded promotional carousel for the items/browse page. Renders
-/// nothing when there are no slides. Mirrors ItemDetailClient's photo
-/// carousel (arrows + dots), with auto-advance added since this is a
-/// showcase, not a gallery to browse.
+/// Admin-uploaded promotional carousel for the items/browse page — a
+/// quick-communication banner for Lendly's own announcements/promos, not
+/// third-party ads. Full-bleed at the very top of the page (rendered
+/// outside the page's max-width column, no rounded corners), wide
+/// leaderboard proportions on desktop and a more compact ratio on
+/// mobile — matches the reference banner formats the aspect ratios below
+/// were sized against. Renders nothing when there are no slides. Mirrors
+/// ItemDetailClient's photo carousel (arrows + dots), with auto-advance
+/// added since this is a showcase, not a gallery to browse.
 export default function ItemsPageCarousel() {
   const [slides, setSlides] = useState<ItemsBannerSlide[]>([])
   const [active, setActive] = useState(0)
@@ -56,7 +61,7 @@ export default function ItemsPageCarousel() {
   )
 
   return (
-    <div className="relative aspect-[21/9] sm:aspect-[3/1] bg-surface-2 rounded-panel overflow-hidden mb-6">
+    <div className="relative w-full aspect-[2/1] sm:aspect-[18/5] bg-surface-2 overflow-hidden">
       {slide.link_url ? (
         <a href={slide.link_url} target="_blank" rel="noopener noreferrer" className="absolute inset-0">
           {image}
