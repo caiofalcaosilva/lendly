@@ -3,5 +3,5 @@
 ruff==0.12.7
 mypy==2.3.0
 pytest==8.3.3
-httpx==0.27.2
+httpx==0.28.1
 pre-commit==4.6.1
